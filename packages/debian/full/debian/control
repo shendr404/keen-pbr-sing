@@ -5,13 +5,15 @@ Maintainer: Maxim Kurbatov <maxim+keen-pbr@kurb.me>
 Build-Depends: debhelper-compat (= 13), cmake, pkg-config, g++, ninja-build, libcurl4-openssl-dev | libcurl4-gnutls-dev, libnl-3-dev, libnl-route-3-dev, libfmt-dev, libunwind-dev, nlohmann-json3-dev, zlib1g-dev
 Standards-Version: 4.6.2
 Rules-Requires-Root: no
-Homepage: https://github.com/maksimkurb/keen-pbr
+Homepage: https://github.com/shendr404/keen-pbr-sing
 
 Package: keen-pbr
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, conntrack, iptables | nftables
 Suggests: xtables-addons-dkms, dnsmasq
-Description: Policy-based routing daemon with REST API and Web UI
- keen-pbr routes traffic selectively by IPs, CIDRs, and domains.
+Description: keen-pbr-sing policy routing with REST API and Web UI
+ keen-pbr-sing routes selected traffic through a sing-box TUN on Keenetic
+ and shows per-outbound traffic. Based on keen-pbr by Maxim Kurbatov.
+ The package name remains keen-pbr.
  This package includes the daemon, REST API, and bundled frontend assets.
  Install xtables-addons-dkms only when using the iptables backend.

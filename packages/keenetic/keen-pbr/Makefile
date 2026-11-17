@@ -97,14 +97,14 @@ endif
 define Package/keen-pbr
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=Keen Policy-Based Routing (full)
+  TITLE:=keen-pbr-sing (full)
   VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
   DEPENDS:=+conntrack +ipset +iptables +libatomic +libcurl +libnl-core +libnl-route +libstdcpp +zlib +libzstd
   VARIANT:=full
 endef
 
 define Package/keen-pbr/description
-  Policy-based routing daemon for OpenWRT and Keenetic routers with REST API and WebUI.
+  keen-pbr-sing: sing-box TUN routing for Keenetic, with per-outbound traffic stats, REST API and WebUI. The package name stays keen-pbr.
 endef
 
 define Package/keen-pbr/conffiles
@@ -158,14 +158,14 @@ endef
 define Package/keen-pbr-headless
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=Keen Policy-Based Routing (headless)
+  TITLE:=keen-pbr-sing (headless)
   VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
   DEPENDS:=+conntrack +ipset +iptables +libatomic +libcurl +libnl-core +libnl-route +libstdcpp +zlib +libzstd
   VARIANT:=headless
 endef
 
 define Package/keen-pbr-headless/description
-  Policy-based routing daemon for OpenWRT and Keenetic routers. REST API and WebUI are NOT included in the headless variant.
+  keen-pbr-sing: sing-box TUN routing for Keenetic, without the REST API or WebUI. The package name stays keen-pbr-headless.
 endef
 
 define Package/keen-pbr-headless/conffiles

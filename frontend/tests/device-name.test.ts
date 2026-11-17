@@ -4,10 +4,10 @@ import { getDevicePageTitle } from "../src/auth/device-name"
 
 describe("device page title", () => {
   test("uses the product name when the device name is empty", () => {
-    expect(getDevicePageTitle("")).toBe("keen-pbr")
+    expect(getDevicePageTitle("")).toBe("keen-pbr-sing")
   })
 
   test("prefixes the product name with the configured device name", () => {
-    expect(getDevicePageTitle("Home router")).toBe("Home router - keen-pbr")
+    expect(getDevicePageTitle("Home router")).toBe("Home router - keen-pbr-sing")
   })
 })

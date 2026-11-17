@@ -1,7 +1,7 @@
 export const ruTranslation = {
   auth: {
-    loading: "Загрузка keen-pbr…",
-    title: "Вход в keen-pbr",
+    loading: "Загрузка keen-pbr-sing…",
+    title: "Вход в keen-pbr-sing",
     description: "Введите пароль администратора, чтобы продолжить.",
     password: "Пароль",
     signIn: "Войти",
@@ -150,7 +150,7 @@ export const ruTranslation = {
     },
   },
   brand: {
-    logoAlt: "логотип keen-pbr",
+    logoAlt: "логотип keen-pbr-sing",
     tagline: "Пакет для пакетов с пакетами",
     openMenu: "Открыть меню",
   },
@@ -221,7 +221,7 @@ export const ruTranslation = {
       issueCount_few: "{{count}} проблемы",
       issueCount_many: "{{count}} проблем",
       issueCount_other: "{{count}} проблемы",
-      versionLine: "keen-pbr {{version}} · сборка {{build}} · {{os}}",
+      versionLine: "keen-pbr-sing {{version}} · сборка {{build}} · {{os}}",
       whatsNew: "Что нового?",
       confirmStop: "Остановить службу?",
       confirmStopAction: "Да, остановить",
@@ -1070,7 +1070,7 @@ export const ruTranslation = {
         deviceNameLabel: "Имя устройства",
         deviceNamePlaceholder: "Например, Домашний роутер",
         deviceNameHint:
-          "Отображается в заголовке страницы браузера и под логотипом keen-pbr. Оставьте поле пустым, чтобы использовать стандартное оформление.",
+          "Отображается в заголовке страницы браузера и под логотипом keen-pbr-sing. Оставьте поле пустым, чтобы использовать стандартное оформление.",
         strictEnforcementLabel:
           "Блокировать трафик при недоступности outbound (kill-switch)",
         strictEnforcementHint:

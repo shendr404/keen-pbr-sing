@@ -41,7 +41,7 @@ export function LoginPage() {
   return (
     <main className="grid min-h-svh grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] bg-background md:h-svh md:grid-cols-[minmax(300px,38%)_minmax(0,1fr)] md:grid-rows-[minmax(0,1fr)_auto] md:overflow-hidden">
       <aside
-        aria-label="keen-pbr"
+        aria-label="keen-pbr-sing"
         className={`${brandPanelClassName} flex min-w-0 items-center px-5 py-4 md:col-start-1 md:row-start-1 md:justify-center md:p-12`}
       >
         <div className="flex min-w-0 items-center gap-3 md:gap-4">
@@ -54,7 +54,7 @@ export function LoginPage() {
           </div>
           <div className="min-w-0">
             <p className="text-base leading-tight font-semibold tracking-tight md:text-[22px]">
-              keen-pbr
+              keen-pbr-sing
             </p>
             <p
               className="mt-1 max-w-[calc(100vw-6.25rem)] truncate text-xs text-white/60 md:mt-1.5 md:max-w-65 md:text-[13px]"
