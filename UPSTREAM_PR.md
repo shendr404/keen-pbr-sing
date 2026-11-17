@@ -33,6 +33,16 @@ Labels are `outbound`, `type`, `source` and `interface`. A direction the source 
 
 The Outbounds page has a Traffic column. The overview cards show the same rate (or the cumulative totals until the second sample).
 
+## Keenetic follow-ups
+
+These showed up on a Keenetic with Entware, the iptables backend, NDM `FORWARD` policy DROP, and a sing-box TUN named `sbtun`:
+
+- Interface outbounds get `FORWARD` accepts (LAN to the interface, and the return path `RELATED,ESTABLISHED`). They are inserted only when missing. `/opt/etc/ndm/netfilter.d/51-keen-pbr-forward.sh` installs them again after NDM rebuilds the filter table. `ip6tables` runs only when IPv6 is enabled. Stop and uninstall remove the rules.
+- A TUN, or a point-to-point interface with no gateway route, is reachable as `default dev <iface>`. `gateway: "auto"` is ignored and the UI says so, instead of leaving the outbound unavailable.
+- If the managed block in `/opt/etc/dnsmasq.conf` loses `conf-script=... dnsmasq-config-entry`, apply puts the line back, keeps the previous file as `dnsmasq.conf.backup-keenpbr-confscript`, and the dnsmasq status warnings report it.
+- A downloaded list that is an HTML page or has a line over 4096 bytes is rejected. The previous cache stays. A cache that is already in that state is left unused instead of aborting the list with "List line exceeds 4096-byte limit".
+- README describes a DNS server `detour` plus a `dns.rules` entry for lists whose names the ISP poisons. The config check warns when a list is routed through an interface, urltest, or icmptest outbound and no such rule exists.
+
 ## Notes for review
 
 No firewall rules were added, so the packet path is unchanged. The iptables aggregation is one extra pass over rules we already parse.

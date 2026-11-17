@@ -1218,3 +1218,43 @@ TEST_CASE("populate_routing_state: test group selects a child reachable through 
                                  rule.action == RuleAction::lookup && rule.table == 100;
                       }));
 }
+
+TEST_CASE("a TUN interface outbound is reachable without a gateway") {
+    auto cfg = parse_minimal_config(R"({
+        "iproute":{"table_start":100},
+        "outbounds":[{"tag":"proxy","type":"interface","interface":"lo",
+                      "gateway":"auto"}]
+    })");
+    struct ProbeGuard {
+        ~ProbeGuard() { set_interface_link_probe_for_tests({}); }
+    } guard;
+    set_interface_link_probe_for_tests([](const std::string& iface) {
+        InterfaceLinkFlags flags;
+        if (iface == "lo") flags.tun = true;
+        return flags;
+    });
+    const auto& outbound = cfg.outbounds->front();
+    CHECK(is_interface_outbound_reachable(outbound, {}));
+    const auto note = point_to_point_gateway_note(outbound, {});
+    REQUIRE(note.has_value());
+    CHECK(note->find("ignored") != std::string::npos);
+
+    auto marks = allocate_outbound_marks(cfg.fwmark.value_or(FwmarkConfig{}),
+                                         cfg.outbounds.value_or(std::vector<Outbound>{}));
+    NetlinkManager netlink;
+    RouteTable routes(netlink, true);
+    PolicyRuleManager rules(netlink, true);
+    const std::vector<DumpedRoute> no_routes;
+    populate_routing_state(cfg, marks, routes, rules,
+                           [](const Outbound& ob) {
+                               return is_interface_outbound_reachable(ob, {});
+                           },
+                           nullptr, true, {}, &no_routes);
+    const auto installed = std::find_if(routes.get_routes().begin(), routes.get_routes().end(),
+                                        [](const RouteSpec& route) {
+                                            return route.table == 100 && route.family == AF_INET &&
+                                                   !route.unreachable && route.interface == "lo" &&
+                                                   !route.gateway.has_value();
+                                        });
+    CHECK(installed != routes.get_routes().end());
+}

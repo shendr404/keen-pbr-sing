@@ -97,6 +97,13 @@ int detect_ip_family(const std::string& ip) {
     throw ConfigError("Invalid IP address: " + ip);
 }
 
+std::function<InterfaceLinkFlags(const std::string&)> g_interface_link_probe;
+
+bool safe_iface_name(const std::string& iface) {
+    if (iface.empty() || iface.size() >= IFNAMSIZ) return false;
+    return iface.find('/') == std::string::npos && iface.find('.') != 0;
+}
+
 bool is_interface_up(const std::string& iface) {
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd < 0) {
@@ -114,6 +121,26 @@ bool is_interface_up(const std::string& iface) {
     }
 
     return (ifr.ifr_flags & IFF_UP) != 0;
+}
+
+InterfaceLinkFlags read_interface_link_flags(const std::string& iface) {
+    if (g_interface_link_probe) return g_interface_link_probe(iface);
+    InterfaceLinkFlags flags;
+    if (!safe_iface_name(iface)) return flags;
+    const std::string tun_flags = "/sys/class/net/" + iface + "/tun_flags";
+    if (access(tun_flags.c_str(), F_OK) == 0) flags.tun = true;
+
+    const int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd < 0) return flags;
+    struct ifreq ifr {};
+    std::strncpy(ifr.ifr_name, iface.c_str(), IFNAMSIZ - 1);
+    ifr.ifr_name[IFNAMSIZ - 1] = '\0';
+    if (ioctl(fd, SIOCGIFFLAGS, &ifr) == 0 &&
+        (ifr.ifr_flags & IFF_POINTOPOINT) != 0) {
+        flags.point_to_point = true;
+    }
+    close(fd);
+    return flags;
 }
 
 bool ipv4_prefix_contains(const in_addr& network, const in_addr& candidate, int prefix_len) {
@@ -291,6 +318,49 @@ static uint32_t safe_table_id(uint32_t table_start, uint32_t offset) {
 }
 
 } // anonymous namespace
+
+InterfaceLinkFlags interface_link_flags(const std::string& iface) {
+    return read_interface_link_flags(iface);
+}
+
+void set_interface_link_probe_for_tests(
+    const std::function<InterfaceLinkFlags(const std::string&)>& probe) {
+    g_interface_link_probe = probe;
+}
+
+bool interface_uses_device_route(const Outbound& outbound,
+                                 int family,
+                                 const std::vector<DumpedRoute>* main_routes) {
+    if (outbound.type != OutboundType::INTERFACE) return false;
+    const auto iface = outbound.interface.value_or("");
+    if (iface.empty()) return false;
+    const InterfaceLinkFlags flags = interface_link_flags(iface);
+    if (flags.tun) return true;
+    if (!flags.point_to_point) return false;
+    if (main_routes == nullptr) return true;
+    const auto& configured = family == AF_INET ? outbound.gateway : outbound.gateway6;
+    if (configured && *configured != kAutoGateway) {
+        return !interface_has_gateway_route(*main_routes, iface, *configured);
+    }
+    return !discover_interface_gateway(outbound, family, *main_routes).available;
+}
+
+std::optional<std::string> point_to_point_gateway_note(
+    const Outbound& outbound, const std::vector<DumpedRoute>& main_routes) {
+    const bool device4 = interface_uses_device_route(outbound, AF_INET, &main_routes);
+    const bool device6 = interface_uses_device_route(outbound, AF_INET6, &main_routes);
+    if (!device4 && !device6) return std::nullopt;
+    const auto iface = outbound.interface.value_or("");
+    std::string gateway;
+    if (device4 && outbound.gateway) gateway = *outbound.gateway;
+    else if (device6 && outbound.gateway6) gateway = *outbound.gateway6;
+    std::string note = iface + " is a TUN or point-to-point interface";
+    if (!gateway.empty()) {
+        note += "; gateway '" + gateway + "' is ignored";
+    }
+    note += ". The route uses the device and does not need a gateway.";
+    return note;
+}
 
 InterfaceGatewayDiscovery discover_interface_gateway(
     const Outbound& outbound,
@@ -495,7 +565,10 @@ void populate_routing_state(const Config& cfg,
         }
     };
     const auto gateway_for_family = [main_routes](const Outbound& ob,
-                                                   int family) {
+                                                   int family) -> std::optional<std::string> {
+        if (interface_uses_device_route(ob, family, main_routes)) {
+            return std::nullopt;
+        }
         const auto& configured = family == AF_INET ? ob.gateway : ob.gateway6;
         if (!configured || *configured != "auto") return configured;
         if (!main_routes) return std::optional<std::string>{};
@@ -503,6 +576,9 @@ void populate_routing_state(const Config& cfg,
     };
     const auto route_family_available = [main_routes, &family_available](
                                              const Outbound& ob, int family) {
+        if (interface_uses_device_route(ob, family, main_routes)) {
+            return !family_available || family_available(ob, family);
+        }
         const auto& configured = family == AF_INET ? ob.gateway : ob.gateway6;
         if (configured && *configured == "auto" && !main_routes) {
             return false;
@@ -637,6 +713,7 @@ bool is_interface_outbound_family_reachable(
     if (iface.empty() || if_nametoindex(iface.c_str()) == 0 || !is_interface_up(iface)) {
         return false;
     }
+    if (interface_uses_device_route(outbound, family, &routes)) return true;
 
     const auto& configured = family == AF_INET ? outbound.gateway : outbound.gateway6;
     if (!configured) return true;

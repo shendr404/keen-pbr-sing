@@ -66,6 +66,37 @@ make keenetic-packages KEENETIC_CONFIG=mipsel-3.4 KEENETIC_VERSION=current
 
 The ipk is written under `build/packages/keenetic/current/mipsel/`.
 
+### Keenetic TUN (`sbtun`)
+
+NDM's filter `FORWARD` policy is DROP, so a packet routed into a sing-box TUN is thrown away and the reply never returns. For each interface outbound, keen-pbr inserts two accepts if they are not already there: LAN (`route.inbound_interfaces`, or `br0`) to the interface, and the interface back to the LAN for `RELATED,ESTABLISHED`. `/opt/etc/ndm/netfilter.d/51-keen-pbr-forward.sh` puts them back after NDM rebuilds the filter table. `ip6tables` is used only when `daemon.ipv6_enabled` is not false. Stop and uninstall delete the rules.
+
+A TUN has no gateway. `gateway: "auto"` (or any gateway that is not actually on the device) used to leave the outbound unavailable forever. A TUN (`/sys/class/net/<iface>/tun_flags`) is routed as `default dev <iface>`. The same applies to another point-to-point interface when no gateway route exists. The overview and the Outbounds page say that the gateway was ignored.
+
+### DNS for lists the ISP poisons
+
+Routing a list through `sbtun` does not change where the names are resolved. If the ISP answers those names with the wrong addresses, the connection never enters the tunnel. Give the list a DNS server that is itself sent through the outbound, and a DNS rule for the list:
+
+```json
+{
+  "dns": {
+    "resolver_integration": "dnsmasq",
+    "servers": [
+      { "tag": "proxy_dns", "type": "static", "address": "1.1.1.1", "detour": "proxy" }
+    ],
+    "rules": [
+      { "list": ["blocked-sites"], "servers": ["proxy_dns"] }
+    ]
+  },
+  "route": {
+    "rules": [
+      { "list": ["blocked-sites"], "outbound": "proxy" }
+    ]
+  }
+}
+```
+
+`detour` marks the DNS query with the outbound's fwmark, so the answer comes from the far side of the tunnel. If a list is routed through an interface, urltest, or icmptest outbound and no such DNS rule exists, keen-pbr warns when the config is checked.
+
 ## Upstream
 
 This repository is [keen-pbr-sing](https://github.com/shendr404/keen-pbr-sing). keen-pbr itself is written by Maxim Kurbatov. The license is the original GNU GPL v3 (`LICENSE`).

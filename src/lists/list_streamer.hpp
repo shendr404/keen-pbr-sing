@@ -4,9 +4,16 @@
 #include "../config/config.hpp"
 #include "list_entry_visitor.hpp"
 
+#include <optional>
 #include <string>
+#include <string_view>
 
 namespace keen_pbr3 {
+
+// Empty when the body can be stored as a domain/IP list. Otherwise a sentence
+// saying it is an HTML page or a line longer than 4096 bytes. Callers keep
+// the previous cache when this is set.
+std::optional<std::string> downloaded_list_problem(std::string_view body);
 
 class ListStreamer {
 public:

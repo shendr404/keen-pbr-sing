@@ -142,12 +142,16 @@ function mapRuntimeInterfaceToItem(
       : hasInterfaceName
         ? interfaceState.interface_name!
         : interfaceState.outbound_tag
-  const secondaryLabel =
+  const secondaryLabel = [
     (parentType === "urltest" || parentType === "icmptest") &&
     hasInterfaceName &&
     interfaceState.interface_name !== interfaceState.outbound_tag
       ? `(${interfaceState.interface_name})`
-      : undefined
+      : undefined,
+    interfaceState.detail,
+  ]
+    .filter(Boolean)
+    .join(" · ") || undefined
   const inventoryEntry = hasInterfaceName
     ? runtimeInterfaces?.get(interfaceState.interface_name!)
     : undefined
@@ -170,6 +174,7 @@ function mapRuntimeInterfaceToItem(
       .join(" · ") || undefined
   const content =
     runtimeInterfaces && hasInterfaceName ? (
+      <span className="flex min-w-0 flex-col gap-0.5">
       <InterfaceRowContent
         afterStatus={
           <>
@@ -196,6 +201,12 @@ function mapRuntimeInterfaceToItem(
         }
         showStatus={false}
       />
+      {interfaceState.detail ? (
+        <span className="text-xs text-muted-foreground">
+          {interfaceState.detail}
+        </span>
+      ) : null}
+      </span>
     ) : undefined
 
   return {

@@ -1,5 +1,6 @@
 #include "list_streamer.hpp"
 #include "../config/list_parser.hpp"
+#include "../log/logger.hpp"
 
 #include <array>
 #include <cerrno>
@@ -10,6 +11,61 @@
 #include <unistd.h>
 
 namespace keen_pbr3 {
+
+namespace {
+
+char ascii_lower(char c) {
+    if (c >= 'A' && c <= 'Z') return static_cast<char>(c - 'A' + 'a');
+    return c;
+}
+
+bool starts_with_ignore_case(std::string_view text, std::string_view prefix) {
+    if (text.size() < prefix.size()) return false;
+    for (std::size_t i = 0; i < prefix.size(); ++i) {
+        if (ascii_lower(text[i]) != ascii_lower(prefix[i])) return false;
+    }
+    return true;
+}
+
+} // namespace
+
+std::optional<std::string> downloaded_list_problem(std::string_view body) {
+    std::size_t start = 0;
+    if (body.size() >= 3 &&
+        static_cast<unsigned char>(body[0]) == 0xEF &&
+        static_cast<unsigned char>(body[1]) == 0xBB &&
+        static_cast<unsigned char>(body[2]) == 0xBF) {
+        start = 3;
+    }
+    while (start < body.size() &&
+           (body[start] == ' ' || body[start] == '\t' ||
+            body[start] == '\r' || body[start] == '\n')) {
+        ++start;
+    }
+    const std::string_view head = body.substr(start);
+    if (starts_with_ignore_case(head, "<!doctype") ||
+        starts_with_ignore_case(head, "<html") ||
+        starts_with_ignore_case(head, "<head") ||
+        starts_with_ignore_case(head, "<body")) {
+        return std::string("downloaded list looks like an HTML page, not a domain or IP list");
+    }
+    std::size_t column = 0;
+    std::size_t line_number = 1;
+    for (std::size_t i = 0; i < body.size(); ++i) {
+        if (body[i] == '\n') {
+            column = 0;
+            ++line_number;
+            continue;
+        }
+        if (body[i] == '\r') continue;
+        ++column;
+        if (column > ListStreamer::kMaxLineBytes) {
+            return "downloaded list line " + std::to_string(line_number) +
+                   " exceeds 4096 bytes; the previous list was kept";
+        }
+    }
+    return std::nullopt;
+}
 
 ListStreamer::ListStreamer(const CacheManager& cache)
     : cache_(cache)
@@ -97,6 +153,8 @@ void ListStreamer::stream_file(const std::filesystem::path& path,
     std::array<char, 4096> buffer {};
     std::string line;
     line.reserve(256);
+    std::string prefix;
+    bool prefix_checked = log_invalid_entries;
     std::size_t total_bytes = 0;
     std::size_t line_number = 1;
     ListParser::ParseContext context{log_invalid_entries};
@@ -115,6 +173,20 @@ void ListStreamer::stream_file(const std::filesystem::path& path,
             throw std::runtime_error("List file exceeds configured size limit: " + path.string());
         }
         for (ssize_t i = 0; i < count; ++i) {
+            if (!prefix_checked) {
+                const char ch = buffer[static_cast<std::size_t>(i)];
+                if (ch != ' ' && ch != '\t' && ch != '\r' && ch != '\n') prefix.push_back(ch);
+                if (prefix.size() >= 12) {
+                    prefix_checked = true;
+                    if (const auto problem = downloaded_list_problem(prefix)) {
+                        close_fd();
+                        Logger::instance().error(
+                            "List cache {} is not a domain list ({}). The cache is left unused.",
+                            path.string(), *problem);
+                        return;
+                    }
+                }
+            }
             if (buffer[static_cast<std::size_t>(i)] == '\n') {
                 ListParser::parse_line(line, visitor, path.string(), line_number++, &context);
                 line.clear();
@@ -122,6 +194,13 @@ void ListStreamer::stream_file(const std::filesystem::path& path,
             }
             if (line.size() >= kMaxLineBytes) {
                 close_fd();
+                if (!log_invalid_entries) {
+                    Logger::instance().error(
+                        "List cache {} line {} exceeds 4096 bytes or is not a domain list "
+                        "(often an HTML error page). The cache is left unused.",
+                        path.string(), line_number);
+                    return;
+                }
                 throw std::runtime_error("List line exceeds 4096-byte limit in " +
                                          path.string() + " at line " +
                                          std::to_string(line_number));

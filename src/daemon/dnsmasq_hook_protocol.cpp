@@ -120,6 +120,8 @@ HookInspectParse parse_hook_inspect_output(std::string_view text) {
             const auto st = parse_dropin_state(value);
             if (!st) return fail(where + "invalid dropin_state");
             r.dropin_state = *st;
+        } else if (key == "dropin_warning") {
+            r.dropin_warning = std::string(value);
         } else if (key == "static_endpoint") {
             const auto ep = parse_dnsmasq_endpoint(value);
             if (!ep) return fail(where + "invalid static_endpoint");

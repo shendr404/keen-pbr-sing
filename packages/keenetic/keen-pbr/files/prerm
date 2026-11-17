@@ -15,6 +15,7 @@ fi
 /opt/usr/lib/keen-pbr/dnsmasq-hook.sh uninstall >/dev/null 2>&1 || true
 
 # Remove firewall rules a crashed daemon may have left behind.
+/opt/usr/lib/keen-pbr/interface-forward.sh remove >/dev/null 2>&1 || true
 /opt/usr/lib/keen-pbr/cleanup-firewall.sh >/dev/null 2>&1 || true
 
 exit 0

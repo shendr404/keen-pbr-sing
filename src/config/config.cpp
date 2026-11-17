@@ -2142,6 +2142,66 @@ std::vector<std::string> config_warnings(const Config& config) {
             }
         }
     }
+    for (const auto& ob : outbounds) {
+        if (ob.type != OutboundType::INTERFACE) continue;
+        const auto iface = ob.interface.value_or("");
+        if (iface.empty()) continue;
+        const auto flags = interface_link_flags(iface);
+        if (!flags.tun && !flags.point_to_point) continue;
+        if (!ob.gateway && !ob.gateway6) continue;
+        const std::string which = ob.gateway.value_or(ob.gateway6.value_or(""));
+        warnings.push_back(
+            "Interface outbound '" + ob.tag + "' uses point-to-point interface '" +
+            iface + "'. gateway '" + which +
+            "' is ignored; the route is 'default dev " + iface + "' with no gateway.");
+    }
+    if (effective_resolver_integration(config) != ResolverIntegrationMode::NONE) {
+        const auto& rules = config.route.value_or(RouteConfig{}).rules.value_or(
+            std::vector<RouteRule>{});
+        const auto& dns_rules = config.dns.value_or(DnsConfig{}).rules.value_or(
+            std::vector<DnsRule>{});
+        const auto& dns_servers = config.dns.value_or(DnsConfig{}).servers.value_or(
+            std::vector<DnsServer>{});
+        for (const auto& rule : rules) {
+            if (rule.enabled && *rule.enabled == false) continue;
+            const auto outbound = std::find_if(
+                outbounds.begin(), outbounds.end(),
+                [&rule](const Outbound& candidate) { return candidate.tag == rule.outbound; });
+            if (outbound == outbounds.end()) continue;
+            if (outbound->type != OutboundType::INTERFACE &&
+                outbound->type != OutboundType::URLTEST &&
+                outbound->type != OutboundType::ICMPTEST) {
+                continue;
+            }
+            for (const auto& list_name : rule.list.value_or(std::vector<std::string>{})) {
+                bool covered = false;
+                for (const auto& dns_rule : dns_rules) {
+                    if (dns_rule.enabled && *dns_rule.enabled == false) continue;
+                    const auto& names = dns_rule.list;
+                    if (std::find(names.begin(), names.end(), list_name) == names.end()) continue;
+                    for (const auto& server_tag : dns_rule.servers) {
+                        const auto server = std::find_if(
+                            dns_servers.begin(), dns_servers.end(),
+                            [&server_tag](const DnsServer& candidate) {
+                                return candidate.tag == server_tag;
+                            });
+                        if (server != dns_servers.end() && server->detour &&
+                            *server->detour == rule.outbound) {
+                            covered = true;
+                        }
+                    }
+                }
+                if (!covered) {
+                    warnings.push_back(
+                        "List '" + list_name + "' is routed through outbound '" +
+                        rule.outbound + "', but no dns.rules entry sends those domains to a "
+                        "DNS server whose detour is '" + rule.outbound +
+                        "'. If the ISP poisons DNS for these names, queries still go out "
+                        "the normal resolver and the route never sees the real addresses.");
+                }
+            }
+        }
+    }
     return warnings;
 }
 

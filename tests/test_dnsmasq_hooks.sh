@@ -495,10 +495,14 @@ test_keenetic() {
     run apply entware:default || fail "keenetic: apply on a 3.3.1 config failed"
     [ "$(touched "$DNSMASQ_CONF")" = 0 ] || fail "keenetic: apply rewrote a 3.3.1 dnsmasq.conf"
 
-    # A damaged block is not duplicated.
+    # A block that lost its conf-script line is restored, not duplicated, and
+    # the previous file is kept beside it.
     printf 'user=nobody\n# BEGIN keen-pbr managed block\nfoo\n' > "$DNSMASQ_CONF"
-    [ "$(rc_of run apply entware:default)" = 1 ] || fail "keenetic: damaged block should exit 1"
+    run apply entware:default || fail "keenetic: damaged block should be repaired"
     [ "$(grep -c 'BEGIN keen-pbr managed block' "$DNSMASQ_CONF")" = 1 ] || fail "keenetic: damaged block duplicated"
+    grep -qxF "conf-script=$DNSMASQ_SH dnsmasq-config-entry" "$DNSMASQ_CONF" || fail "keenetic: conf-script line not restored"
+    grep -qxF 'user=nobody' "$DNSMASQ_CONF" || fail "keenetic: user line lost during repair"
+    grep -qxF 'foo' "$DNSMASQ_CONF.backup-keenpbr-confscript" || fail "keenetic: repair did not keep a backup"
 
     # Remove (integration off): no file changes, one restart.
     { printf 'user=nobody\n\n'; printf '%s\n' "$block_text"; } > "$DNSMASQ_CONF"

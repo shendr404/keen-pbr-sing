@@ -82,4 +82,27 @@ TEST_CASE("ListStreamer rejects files and lines over configured bounds") {
     CHECK_THROWS(stream_local(long_line, 8192));
 }
 
+TEST_CASE("downloaded_list_problem rejects HTML and over-long lines") {
+    CHECK_FALSE(downloaded_list_problem("example.com\n192.0.2.1\n").has_value());
+    const auto html = downloaded_list_problem("<!DOCTYPE html><html><body>blocked</body></html>\n");
+    REQUIRE(html.has_value());
+    CHECK(html->find("HTML") != std::string::npos);
+    CHECK(downloaded_list_problem(std::string(ListStreamer::kMaxLineBytes + 1, 'a')).has_value());
+}
+
+TEST_CASE("ListStreamer leaves an HTML cache unused instead of failing the list") {
+    TempDirectory temp;
+    CacheManager cache(temp.path(), 1024 * 1024);
+    {
+        std::ofstream out(cache.cache_path("blocked"));
+        out << "<!DOCTYPE html><html><body>not a list</body></html>\n";
+    }
+    ListConfig config;
+    config.url = "http://example.invalid/list.txt";
+    CountingVisitor visitor;
+    ListStreamer streamer(cache);
+    CHECK_NOTHROW(streamer.stream_list("blocked", config, visitor));
+    CHECK(visitor.count == 0);
+}
+
 } // namespace keen_pbr3

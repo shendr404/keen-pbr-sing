@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <unistd.h>
 #include <map>
 #include <netinet/in.h>
 #include <set>
@@ -27,6 +28,17 @@ namespace keen_pbr3 {
 namespace {
 // How often the daemon verifies that dnsmasq still serves the keen-pbr config.
 constexpr auto kDnsmasqCheckInterval = std::chrono::seconds{30};
+constexpr const char* kInterfaceForwardScript = "/opt/usr/lib/keen-pbr/interface-forward.sh";
+
+void sync_interface_forward_rules(bool remove) {
+    if (access(kInterfaceForwardScript, X_OK) != 0) return;
+    const auto result = run_command_capture(
+        {kInterfaceForwardScript, remove ? "remove" : "apply"});
+    if (result.exit_code != 0) {
+        Logger::instance().warn("interface FORWARD rules ({}) exited {}",
+                                remove ? "remove" : "apply", result.exit_code);
+    }
+}
 
 class FailedApplyCounter {
 public:
@@ -93,6 +105,7 @@ void Daemon::teardown_routing_and_firewall(bool explicit_stop) {
     }
 
     stop_dnsmasq_check();
+    sync_interface_forward_rules(true);
     host_table_cache_.invalidate();
     invalidate_routing_health_cache();
     runtime_generation_.fetch_add(1, std::memory_order_acq_rel);
@@ -518,6 +531,7 @@ void Daemon::apply_firewall(FirewallApplyMode mode,
         schedule_intercept_snapshot_update(std::move(applied_sets), intercept);
         rebind_guard.rebound = true;
     }
+    sync_interface_forward_rules(false);
 }
 
 FirewallBalanceCandidates Daemon::build_balance_candidates(

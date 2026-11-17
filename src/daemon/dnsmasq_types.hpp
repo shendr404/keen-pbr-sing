@@ -94,6 +94,8 @@ struct HookInstanceRecord {
     std::string dropin_file;
     std::string dropin_content;              // exact single line the hook installs
     DropinState dropin_state{DropinState::Absent};
+    // Set when apply had to put the conf-script line back into the managed block.
+    std::string dropin_warning;
     std::optional<DnsmasqEndpoint> static_endpoint;
     bool preflight_skip{false};              // only the netns harness sets this
     std::vector<std::string> missing_mounts; // OpenWrt: required but absent

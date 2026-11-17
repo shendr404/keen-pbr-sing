@@ -16,6 +16,7 @@
 # keen-pbr's policy routing rules only match its fwmarks, so once nothing marks
 # packets they are inert and are left alone (they disappear on reboot).
 
+INTERFACE_FORWARD="${INTERFACE_FORWARD:-/opt/usr/lib/keen-pbr/interface-forward.sh}"
 IPTABLES="${IPTABLES:-iptables}"
 IP6TABLES="${IP6TABLES:-ip6tables}"
 NFT="${NFT:-nft}"
@@ -75,6 +76,10 @@ if command -v "$IPSET" >/dev/null 2>&1; then
     for set in $("$IPSET" list -n 2>/dev/null | grep '^kpbr'); do
         "$IPSET" destroy "$set" >/dev/null 2>&1 && log "removed ipset $set"
     done
+fi
+
+if [ -x "$INTERFACE_FORWARD" ]; then
+    "$INTERFACE_FORWARD" remove >/dev/null 2>&1 || true
 fi
 
 if [ "$found" = 1 ]; then

@@ -27,6 +27,7 @@ DNSMASQ_SH="${DNSMASQ_SH:-/opt/usr/lib/keen-pbr/dnsmasq.sh}"
 DNSMASQ_CONF="${DNSMASQ_CONF:-/opt/etc/dnsmasq.conf}"
 RECOMMENDED_CONF="${RECOMMENDED_CONF:-/opt/usr/lib/keen-pbr/dnsmasq.recommended.conf}"
 BACKUP_CONF="${BACKUP_CONF:-$DNSMASQ_CONF.backup-keenpbr}"
+CONFSCRIPT_BACKUP="${CONFSCRIPT_BACKUP:-$DNSMASQ_CONF.backup-keenpbr-confscript}"
 FALLBACK_CONF="${FALLBACK_CONF:-/opt/etc/keen-pbr/dnsmasq-fallback.conf}"
 INIT_SCRIPT="${INIT_SCRIPT:-/opt/etc/init.d/S56dnsmasq}"
 RESTART_CMD="${RESTART_CMD:-$INIT_SCRIPT restart}"
@@ -132,17 +133,60 @@ do_inspect() {
     printf 'dropin_include=managed\n'
     printf 'dropin_content=%s\n' "$(conf_line)"
     printf 'dropin_state=%s\n' "$_st"
+    if [ -f "$CONFSCRIPT_BACKUP" ]; then
+        printf 'dropin_warning=%s\n' \
+            "restored conf-script=$(basename "$DNSMASQ_SH") dnsmasq-config-entry in $DNSMASQ_CONF; previous file kept as $CONFSCRIPT_BACKUP"
+    fi
 }
 
 do_restart() {
     eval "$RESTART_CMD" >/dev/null 2>&1 || die 1 "failed to restart dnsmasq"
 }
 
-# Appends the managed block when it is missing; nothing is written otherwise.
+# The managed block is present but the conf-script line inside it is gone.
+# NDM or a hand edit can drop that one line and leave the markers. Put the
+# line back and keep the previous file next to it.
+repair_block() {
+    cp -p "$DNSMASQ_CONF" "$CONFSCRIPT_BACKUP" || die 1 "cannot back up $DNSMASQ_CONF"
+    tmp="$DNSMASQ_CONF.keen-pbr.tmp"
+    awk -v begin="$BEGIN_MARK" -v end="$END_MARK" -v notice="$NOTICE_LINE" -v script="$(conf_line)" '
+        $0 == begin { inside = 1; seen = 0; print; next }
+        inside && $0 == end {
+            if (!seen) {
+                print notice
+                print script
+            }
+            print
+            inside = 0
+            next
+        }
+        inside && $0 == script { seen = 1; print; next }
+        inside && $0 == notice { print; next }
+        inside { next }
+        { print }
+        END {
+            if (inside) {
+                if (!seen) {
+                    print notice
+                    print script
+                }
+                print end
+            }
+        }
+    ' "$DNSMASQ_CONF" > "$tmp" || die 1 "cannot rewrite $DNSMASQ_CONF"
+    cat "$tmp" > "$DNSMASQ_CONF" || die 1 "cannot update $DNSMASQ_CONF"
+    rm -f "$tmp"
+    log "restored conf-script line in $DNSMASQ_CONF; previous file kept as $CONFSCRIPT_BACKUP"
+}
+
+# Appends the managed block when it is missing. A block that lost its
+# conf-script line is repaired from the backup of the current file.
 ensure_block() {
     block_present "$DNSMASQ_CONF" && return 0
     if grep -qxF "$BEGIN_MARK" "$DNSMASQ_CONF"; then
-        die 1 "the keen-pbr block in $DNSMASQ_CONF is damaged; restore it or remove it and run apply again"
+        repair_block
+        block_present "$DNSMASQ_CONF" || die 1 "could not restore the conf-script line in $DNSMASQ_CONF"
+        return 0
     fi
     {
         printf '\n'

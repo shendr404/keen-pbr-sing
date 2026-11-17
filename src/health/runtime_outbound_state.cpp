@@ -213,10 +213,15 @@ api::RuntimeOutboundStateElement build_interface_outbound_state(const Outbound& 
         ? api::RuntimeInterfaceStatusEnum::ACTIVE
         : api::RuntimeInterfaceStatusEnum::UNAVAILABLE;
 
-    if (!reachable) {
+    if (const auto note = point_to_point_gateway_note(outbound, main_routes)) {
+        interface_state.detail = *note;
+        state.detail = *note;
+    } else if (!reachable) {
         interface_state.detail = std::string("interface is not reachable from the main routing table");
+        state.detail = interface_state.detail;
     } else if (!active && primary_route == nullptr) {
         interface_state.detail = std::string("no active default route is installed in the outbound table");
+        state.detail = interface_state.detail;
     }
 
     state.interfaces = std::vector<api::RuntimeInterfaceState>{interface_state};

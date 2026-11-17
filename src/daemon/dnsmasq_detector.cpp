@@ -375,6 +375,7 @@ DnsmasqDetection DnsmasqDetector::detect(const DnsmasqDetectOptions& options) co
             DnsmasqInstance inst;
             inst.hook = rec;
             inst.selector = *sel;
+            if (!rec.dropin_warning.empty()) inst.warnings.push_back(rec.dropin_warning);
             inst.process = match_process(rec, procs, proc_root, inst.warnings);
             if (inst.process) {
                 inst.config = read_effective_config(inst.process->argv, rec.default_conf_file, rec.dropin_file);

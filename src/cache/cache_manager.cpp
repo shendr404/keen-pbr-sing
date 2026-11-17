@@ -1,4 +1,6 @@
 #include "cache_manager.hpp"
+#include "../lists/list_streamer.hpp"
+#include "../log/logger.hpp"
 
 #include <chrono>
 #include <fstream>
@@ -113,6 +115,11 @@ CacheDownloadResult CacheManager::download(const std::string& name,
     // The cache version is the raw payload, not transport metadata. A server
     // may return an equivalent 200 response with a new ETag; keep both the
     // file and metadata intact so callers do not restart or reconcile.
+    if (const auto problem = downloaded_list_problem(result.body)) {
+        Logger::instance().error("List '{}': {}", name, *problem);
+        return download_failed(*problem);
+    }
+
     if (cache_contents_equal(final_path, result.body)) {
         CacheDownloadResult unchanged;
         unchanged.status = CacheDownloadStatus::NotModified;

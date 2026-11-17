@@ -9,6 +9,7 @@
 #include <functional>
 #include <map>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace keen_pbr3 {
@@ -43,6 +44,32 @@ InterfaceGatewayDiscovery discover_interface_gateway(
     const std::vector<DumpedRoute>& main_routes);
 
 bool interface_outbound_uses_auto_gateway(const Outbound& outbound);
+
+// tun_flags means a TUN (sing-box sbtun). point_to_point is IFF_POINTOPOINT
+// (L2TP and many tunnels). A TUN is routed as `dev <iface>` with no gateway.
+// A point-to-point interface is routed that way only when no gateway route
+// can be found, so an L2TP peer that is present is still used.
+struct InterfaceLinkFlags {
+    bool tun{false};
+    bool point_to_point{false};
+};
+
+InterfaceLinkFlags interface_link_flags(const std::string& iface);
+// Tests substitute a probe so a missing /sys/class/net entry can stand in
+// for sbtun. Pass an empty function to restore the real check.
+void set_interface_link_probe_for_tests(
+    const std::function<InterfaceLinkFlags(const std::string&)>& probe);
+
+// True when this family should be installed as `default dev <iface>` and a
+// configured or "auto" gateway must not make the outbound unavailable.
+bool interface_uses_device_route(const Outbound& outbound,
+                                 int family,
+                                 const std::vector<DumpedRoute>* main_routes);
+
+// Set when this outbound is routed as `dev <iface>` and a configured gateway
+// (including "auto") is not used. Empty for an ordinary interface.
+std::optional<std::string> point_to_point_gateway_note(
+    const Outbound& outbound, const std::vector<DumpedRoute>& main_routes);
 
 // Resolve every routable outbound to the table used by its own fwmark. Test
 // groups map to their generated kill-switch table; their live lookup may point

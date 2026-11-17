@@ -418,6 +418,10 @@ esac
 rc=$?
 
 case "$1" in
+    start|restart|restartall)
+        [ -x /opt/usr/lib/keen-pbr/interface-forward.sh ] &&
+            /opt/usr/lib/keen-pbr/interface-forward.sh apply || true
+        ;;
     stop|kill)
         cleanup_after_stop
         ;;
