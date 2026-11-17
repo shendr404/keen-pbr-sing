@@ -45,6 +45,7 @@ import type {
   LifecycleOperationAcceptedResponse,
   ListRefreshRequest,
   ListRefreshResponse,
+  OutboundTrafficResponse,
   RoutingHealthErrorResponse,
   RoutingHealthResponse,
   RoutingTestRequest,
@@ -2401,6 +2402,123 @@ export function useGetRuntimeOutbounds<TData = Awaited<ReturnType<typeof getRunt
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetRuntimeOutboundsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+/**
+ * Bytes, packets and the recent rate for every configured outbound, plus the number of conntrack entries marked for that outbound when the kernel exposes marks.
+An outbound of type `interface` is counted from `/proc/net/dev`. That is the whole interface, so a TUN such as sing-box's `sbtun` shows whether traffic is actually crossing it. `tx_*` is what the kernel sends into the interface and `rx_*` is what it receives back.
+Any other outbound that has an fwmark is counted from the iptables MARK rules that set that mark (`iptables-save -c`). Those rules see the packets that were classified. With the default connmark restore, later packets of the same connection leave the chain before the MARK rule, so this is not the full flow volume. Receive counters are then omitted. The counters restart when the firewall rules are rebuilt. nftables has no per-rule counters here, so a non-interface outbound stays at `source: none` on that backend.
+`connections` counts `/proc/net/nf_conntrack` entries whose `mark` equals the outbound's fwmark. It is omitted when that file cannot be read or has no mark field (kernel 4.9 with conntrack marks, which keen-pbr already requires for CONNMARK, does expose it).
+Rates are the byte delta since the previous sample, a few seconds earlier. The first sample has no rate. Poll this endpoint; it is not part of the status event stream.
+
+ * @summary Per-outbound traffic counters
+ */
+export type getOutboundTrafficResponse200 = {
+  data: OutboundTrafficResponse
+  status: 200
+}
+
+export type getOutboundTrafficResponseSuccess = (getOutboundTrafficResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getOutboundTrafficResponse = (getOutboundTrafficResponseSuccess)
+
+export const getGetOutboundTrafficUrl = () => {
+
+
+
+
+  return `/api/runtime/outbound-traffic`
+}
+
+export const getOutboundTraffic = async ( options?: RequestInit): Promise<getOutboundTrafficResponse> => {
+
+  return apiFetch<getOutboundTrafficResponse>(getGetOutboundTrafficUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOutboundTrafficQueryKey = () => {
+    return [
+    `/api/runtime/outbound-traffic`
+    ] as const;
+    }
+
+
+export const getGetOutboundTrafficQueryOptions = <TData = Awaited<ReturnType<typeof getOutboundTraffic>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOutboundTraffic>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOutboundTrafficQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOutboundTraffic>>> = ({ signal }) => getOutboundTraffic({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOutboundTraffic>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOutboundTrafficQueryResult = NonNullable<Awaited<ReturnType<typeof getOutboundTraffic>>>
+export type GetOutboundTrafficQueryError = unknown
+
+
+export function useGetOutboundTraffic<TData = Awaited<ReturnType<typeof getOutboundTraffic>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOutboundTraffic>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOutboundTraffic>>,
+          TError,
+          Awaited<ReturnType<typeof getOutboundTraffic>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOutboundTraffic<TData = Awaited<ReturnType<typeof getOutboundTraffic>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOutboundTraffic>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOutboundTraffic>>,
+          TError,
+          Awaited<ReturnType<typeof getOutboundTraffic>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOutboundTraffic<TData = Awaited<ReturnType<typeof getOutboundTraffic>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOutboundTraffic>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Per-outbound traffic counters
+ */
+
+export function useGetOutboundTraffic<TData = Awaited<ReturnType<typeof getOutboundTraffic>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOutboundTraffic>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOutboundTrafficQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

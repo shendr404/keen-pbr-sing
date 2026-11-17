@@ -14,8 +14,10 @@ import {
   useGetHealthIssues,
   useGetHealthRouting,
   useGetHealthService,
+  useGetOutboundTraffic,
   useGetRuntimeOutbounds,
 } from "@/api/queries"
+import { outboundTrafficViews } from "@/components/shared/outbound-traffic"
 import { selectConfig } from "@/api/selectors"
 import { useAuth } from "@/auth/auth-context"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -88,6 +90,7 @@ export function OverviewPage() {
   const configQuery = useGetConfig()
   const routingHealthQuery = useGetHealthRouting()
   const runtimeOutboundsQuery = useGetRuntimeOutbounds()
+  const trafficQuery = useGetOutboundTraffic()
   const healthIssuesQuery = useGetHealthIssues()
 
   const serviceHealth =
@@ -109,6 +112,15 @@ export function OverviewPage() {
   const runtimeOutboundByTag = useMemo(
     () => new Map(runtimeOutbounds.map((state) => [state.tag, state])),
     [runtimeOutbounds]
+  )
+  const trafficByTag = useMemo(
+    () =>
+      outboundTrafficViews(
+        trafficQuery.data?.status === 200
+          ? trafficQuery.data.data.outbounds
+          : []
+      ),
+    [trafficQuery.data]
   )
 
   const isServiceRunning =
@@ -241,6 +253,7 @@ export function OverviewPage() {
             loadError={configQuery.isError || runtimeOutboundsQuery.isError}
             outbounds={loadedConfig?.outbounds ?? []}
             runtimeByTag={runtimeOutboundByTag}
+            trafficByTag={trafficByTag}
           />
           <DiagnosticsPanel
             healthy={healthySummaries}

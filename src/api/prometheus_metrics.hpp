@@ -4,6 +4,7 @@
 #include "../daemon/list_refresh_stats.hpp"
 #include "../dns/dns_balancer.hpp"
 #include "../firewall/firewall_counters.hpp"
+#include "../health/outbound_traffic.hpp"
 #include "../daemon/runtime_state_store.hpp"
 #include "../intercept/intercept_processor.hpp"
 
@@ -25,6 +26,8 @@ struct DaemonMetrics {
     // Read from the live iptables counters at scrape time; absent on nftables
     // and while no firewall is applied.
     FirewallCounters firewall_counters;
+    // Per-outbound interface / fwmark counters and the rate since the previous scrape.
+    OutboundTrafficReport outbound_traffic;
 };
 
 // Renders the Prometheus text exposition.  Everything here runs at scrape

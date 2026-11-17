@@ -7,7 +7,7 @@
 //
 //  Then include this file, and then do
 //
-//     KeenPbrTypesOdAvQi data = nlohmann::json::parse(jsonString);
+//     KeenPbrTypesF7BeC2 data = nlohmann::json::parse(jsonString);
 
 #pragma once
 
@@ -776,6 +776,29 @@ namespace api {
         ConfigUpdateResponseStatus status;
     };
 
+    enum class OutboundTrafficSource : int { FWMARK, INTERFACE, NONE };
+
+    struct OutboundTrafficEntry {
+        std::optional<int64_t> connections;
+        std::optional<std::string> interface_name;
+        std::optional<bool> interface_present;
+        std::optional<int64_t> rx_bytes;
+        std::optional<double> rx_bytes_per_sec;
+        std::optional<int64_t> rx_packets;
+        OutboundTrafficSource source;
+        std::string tag;
+        std::optional<int64_t> tx_bytes;
+        std::optional<double> tx_bytes_per_sec;
+        std::optional<int64_t> tx_packets;
+        std::string type;
+        std::optional<double> window_seconds;
+    };
+
+    struct OutboundTrafficResponse {
+        int64_t collected_at_unix_ms;
+        std::vector<OutboundTrafficEntry> outbounds;
+    };
+
     enum class ExpectedAction : int { BLACKHOLE, LOOKUP, UNREACHABLE };
 
     struct PolicyRuleCheck {
@@ -1047,7 +1070,7 @@ namespace api {
         StatusEventSnapshotType type;
     };
 
-    struct KeenPbrTypesOdAvQi {
+    struct KeenPbrTypesF7BeC2 {
         std::optional<ApiConfig> api_config;
         std::optional<AuthenticationConfigClass> authentication_config;
         std::optional<AuthLoginRequest> auth_login_request;
@@ -1114,6 +1137,9 @@ namespace api {
         std::optional<OutboundElement> outbound;
         std::optional<OutboundGroupElement> outbound_group;
         std::optional<OutboundGroupMemberElement> outbound_group_member;
+        std::optional<OutboundTrafficEntry> outbound_traffic_entry;
+        std::optional<OutboundTrafficResponse> outbound_traffic_response;
+        std::optional<OutboundTrafficSource> outbound_traffic_source;
         std::optional<PolicyRuleCheck> policy_rule_check;
         std::optional<ReloadResponse> reload_response;
         std::optional<ResolverIntegration> resolver_integration_mode;
@@ -1364,6 +1390,12 @@ namespace api {
     void from_json(const json & j, ListRefreshResponse & x);
     void to_json(json & j, const ListRefreshResponse & x);
 
+    void from_json(const json & j, OutboundTrafficEntry & x);
+    void to_json(json & j, const OutboundTrafficEntry & x);
+
+    void from_json(const json & j, OutboundTrafficResponse & x);
+    void to_json(json & j, const OutboundTrafficResponse & x);
+
     void from_json(const json & j, PolicyRuleCheck & x);
     void to_json(json & j, const PolicyRuleCheck & x);
 
@@ -1454,8 +1486,8 @@ namespace api {
     void from_json(const json & j, StatusEventSnapshot & x);
     void to_json(json & j, const StatusEventSnapshot & x);
 
-    void from_json(const json & j, KeenPbrTypesOdAvQi & x);
-    void to_json(json & j, const KeenPbrTypesOdAvQi & x);
+    void from_json(const json & j, KeenPbrTypesF7BeC2 & x);
+    void to_json(json & j, const KeenPbrTypesF7BeC2 & x);
 
     void from_json(const json & j, CheckStatus & x);
     void to_json(json & j, const CheckStatus & x);
@@ -1561,6 +1593,9 @@ namespace api {
 
     void from_json(const json & j, LifecycleOperationAcceptedResponseStatus & x);
     void to_json(json & j, const LifecycleOperationAcceptedResponseStatus & x);
+
+    void from_json(const json & j, OutboundTrafficSource & x);
+    void to_json(json & j, const OutboundTrafficSource & x);
 
     void from_json(const json & j, ExpectedAction & x);
     void to_json(json & j, const ExpectedAction & x);
@@ -2924,6 +2959,50 @@ namespace api {
         j["status"] = x.status;
     }
 
+    inline void from_json(const json & j, OutboundTrafficEntry& x) {
+        x.connections = get_stack_optional<int64_t>(j, "connections");
+        x.interface_name = get_stack_optional<std::string>(j, "interface_name");
+        x.interface_present = get_stack_optional<bool>(j, "interface_present");
+        x.rx_bytes = get_stack_optional<int64_t>(j, "rx_bytes");
+        x.rx_bytes_per_sec = get_stack_optional<double>(j, "rx_bytes_per_sec");
+        x.rx_packets = get_stack_optional<int64_t>(j, "rx_packets");
+        x.source = j.at("source").get<OutboundTrafficSource>();
+        x.tag = j.at("tag").get<std::string>();
+        x.tx_bytes = get_stack_optional<int64_t>(j, "tx_bytes");
+        x.tx_bytes_per_sec = get_stack_optional<double>(j, "tx_bytes_per_sec");
+        x.tx_packets = get_stack_optional<int64_t>(j, "tx_packets");
+        x.type = j.at("type").get<std::string>();
+        x.window_seconds = get_stack_optional<double>(j, "window_seconds");
+    }
+
+    inline void to_json(json & j, const OutboundTrafficEntry & x) {
+        j = json::object();
+        j["connections"] = x.connections;
+        j["interface_name"] = x.interface_name;
+        j["interface_present"] = x.interface_present;
+        j["rx_bytes"] = x.rx_bytes;
+        j["rx_bytes_per_sec"] = x.rx_bytes_per_sec;
+        j["rx_packets"] = x.rx_packets;
+        j["source"] = x.source;
+        j["tag"] = x.tag;
+        j["tx_bytes"] = x.tx_bytes;
+        j["tx_bytes_per_sec"] = x.tx_bytes_per_sec;
+        j["tx_packets"] = x.tx_packets;
+        j["type"] = x.type;
+        j["window_seconds"] = x.window_seconds;
+    }
+
+    inline void from_json(const json & j, OutboundTrafficResponse& x) {
+        x.collected_at_unix_ms = j.at("collected_at_unix_ms").get<int64_t>();
+        x.outbounds = j.at("outbounds").get<std::vector<OutboundTrafficEntry>>();
+    }
+
+    inline void to_json(json & j, const OutboundTrafficResponse & x) {
+        j = json::object();
+        j["collected_at_unix_ms"] = x.collected_at_unix_ms;
+        j["outbounds"] = x.outbounds;
+    }
+
     inline void from_json(const json & j, PolicyRuleCheck& x) {
         x.detail = get_stack_optional<std::string>(j, "detail");
         x.expected_action = get_stack_optional<ExpectedAction>(j, "expected_action");
@@ -3408,7 +3487,7 @@ namespace api {
         j["type"] = x.type;
     }
 
-    inline void from_json(const json & j, KeenPbrTypesOdAvQi& x) {
+    inline void from_json(const json & j, KeenPbrTypesF7BeC2& x) {
         x.api_config = get_stack_optional<ApiConfig>(j, "ApiConfig");
         x.authentication_config = get_stack_optional<AuthenticationConfigClass>(j, "AuthenticationConfig");
         x.auth_login_request = get_stack_optional<AuthLoginRequest>(j, "AuthLoginRequest");
@@ -3475,6 +3554,9 @@ namespace api {
         x.outbound = get_stack_optional<OutboundElement>(j, "Outbound");
         x.outbound_group = get_stack_optional<OutboundGroupElement>(j, "OutboundGroup");
         x.outbound_group_member = get_stack_optional<OutboundGroupMemberElement>(j, "OutboundGroupMember");
+        x.outbound_traffic_entry = get_stack_optional<OutboundTrafficEntry>(j, "OutboundTrafficEntry");
+        x.outbound_traffic_response = get_stack_optional<OutboundTrafficResponse>(j, "OutboundTrafficResponse");
+        x.outbound_traffic_source = get_stack_optional<OutboundTrafficSource>(j, "OutboundTrafficSource");
         x.policy_rule_check = get_stack_optional<PolicyRuleCheck>(j, "PolicyRuleCheck");
         x.reload_response = get_stack_optional<ReloadResponse>(j, "ReloadResponse");
         x.resolver_integration_mode = get_stack_optional<ResolverIntegration>(j, "ResolverIntegrationMode");
@@ -3517,7 +3599,7 @@ namespace api {
         x.xt_extension_health = get_stack_optional<XtExtensionHealthElement>(j, "XtExtensionHealth");
     }
 
-    inline void to_json(json & j, const KeenPbrTypesOdAvQi & x) {
+    inline void to_json(json & j, const KeenPbrTypesF7BeC2 & x) {
         j = json::object();
         j["ApiConfig"] = x.api_config;
         j["AuthenticationConfig"] = x.authentication_config;
@@ -3585,6 +3667,9 @@ namespace api {
         j["Outbound"] = x.outbound;
         j["OutboundGroup"] = x.outbound_group;
         j["OutboundGroupMember"] = x.outbound_group_member;
+        j["OutboundTrafficEntry"] = x.outbound_traffic_entry;
+        j["OutboundTrafficResponse"] = x.outbound_traffic_response;
+        j["OutboundTrafficSource"] = x.outbound_traffic_source;
         j["PolicyRuleCheck"] = x.policy_rule_check;
         j["ReloadResponse"] = x.reload_response;
         j["ResolverIntegrationMode"] = x.resolver_integration_mode;
@@ -4254,6 +4339,22 @@ namespace api {
         switch (x) {
             case LifecycleOperationAcceptedResponseStatus::ACCEPTED: j = "accepted"; break;
             default: throw std::runtime_error("Unexpected value in enumeration \"LifecycleOperationAcceptedResponseStatus\": " + std::to_string(static_cast<int>(x)));
+        }
+    }
+
+    inline void from_json(const json & j, OutboundTrafficSource & x) {
+        if (j == "fwmark") x = OutboundTrafficSource::FWMARK;
+        else if (j == "interface") x = OutboundTrafficSource::INTERFACE;
+        else if (j == "none") x = OutboundTrafficSource::NONE;
+        else { throw std::runtime_error("Cannot deserialize to enumeration \"OutboundTrafficSource\""); }
+    }
+
+    inline void to_json(json & j, const OutboundTrafficSource & x) {
+        switch (x) {
+            case OutboundTrafficSource::FWMARK: j = "fwmark"; break;
+            case OutboundTrafficSource::INTERFACE: j = "interface"; break;
+            case OutboundTrafficSource::NONE: j = "none"; break;
+            default: throw std::runtime_error("Unexpected value in enumeration \"OutboundTrafficSource\": " + std::to_string(static_cast<int>(x)));
         }
     }
 

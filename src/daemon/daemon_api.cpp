@@ -20,6 +20,7 @@
 #include "../api/server.hpp"
 #include "../api/status_stream.hpp"
 #include "../config/routing_state.hpp"
+#include "../health/outbound_traffic.hpp"
 #include "../health/routing_health_checker.hpp"
 #include "../health/runtime_interface_inventory.hpp"
 #include "../keenetic/interface_descriptions.hpp"
@@ -566,6 +567,53 @@ DnsCheckReport Daemon::check_dns_servers(const DnsCheckRequest& request) {
     });
 }
 
+OutboundTrafficReport Daemon::collect_outbound_traffic() {
+    const Config config = config_store_.active_config();
+    const auto snapshot = runtime_state_store_.snapshot();
+    OutboundMarkMap marks = snapshot.firewall_state.get_outbound_marks();
+    if (marks.empty()) {
+        try {
+            marks = allocate_outbound_marks(config);
+        } catch (const std::exception&) {
+            marks.clear();
+        }
+    }
+
+    const FirewallCounters* fw = nullptr;
+    FirewallCounters counters;
+    if (firewall_ && firewall_->backend() == FirewallBackend::iptables) {
+        const auto active = snapshot.firewall_state.active_firewall();
+        if (active) {
+            const bool ipv6 = config.daemon.value_or(DaemonConfig{})
+                                  .ipv6_enabled.value_or(config_defaults::ipv6_enabled);
+            counters = firewall_counter_cache_.get(active.get(), [&]() {
+                return collect_iptables_counters(
+                    run_command_capture,
+                    build_firewall_counter_index(
+                        active->plan, snapshot.firewall_state.get_outbound_marks()),
+                    ipv6, firewall_->raw_prerouting_mode());
+            });
+            fw = &counters;
+        }
+    }
+
+    std::map<std::string, MarkByteCounters> fwmark;
+    const std::map<std::string, MarkByteCounters>* fwmark_view = nullptr;
+    if (fw != nullptr) {
+        for (const auto& [tag, traffic] : counters.outbound_mark_counters) {
+            fwmark.emplace(tag, MarkByteCounters{traffic.packets, traffic.bytes});
+        }
+        fwmark_view = &fwmark;
+    }
+
+    OutboundTrafficCollector::Input input;
+    input.config = &config;
+    input.marks = &marks;
+    input.fwmark = fwmark_view;
+    return outbound_traffic_collector_.collect(
+        input, OutboundTrafficCollector::Clock::now());
+}
+
 void Daemon::setup_api() {
     if (!config_.api || !config_.api->enabled.value_or(false) || opts_.no_api) return;
 
@@ -728,6 +776,9 @@ void Daemon::setup_api() {
             }, true, "api-security-update");
         },
     });
+    api_ctx_->get_outbound_traffic_json_fn = [this]() {
+        return outbound_traffic_json(collect_outbound_traffic());
+    };
     api_ctx_->get_prometheus_metrics_fn = [this]() {
         const auto snapshot = runtime_state_store_.snapshot();
         ControlRuntimeSnapshot control;
@@ -755,6 +806,11 @@ void Daemon::setup_api() {
         }
         daemon.config_reload_errors = config_reload_errors_.load(std::memory_order_relaxed);
         daemon.lists = list_service_.refresh_stats();
+        try {
+            daemon.outbound_traffic = collect_outbound_traffic();
+        } catch (const std::exception& error) {
+            Logger::instance().debug("outbound traffic counters unavailable: {}", error.what());
+        }
         if (firewall_ && firewall_->backend() == FirewallBackend::iptables) {
             // nftables has no equivalent per-rule counters here.
             const auto active = snapshot.firewall_state.active_firewall();

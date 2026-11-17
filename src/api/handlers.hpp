@@ -86,6 +86,8 @@ struct ApiContext {
     std::function<std::string(LifecycleRequest)> submit_lifecycle_operation_fn;
     std::function<void(AuthenticationConfig, CorsConfig)> commit_api_security_fn;
     std::function<std::string()> get_prometheus_metrics_fn;
+    // GET /api/runtime/outbound-traffic.  Empty when the daemon did not install it.
+    std::function<std::string()> get_outbound_traffic_json_fn;
     // Optional packet-aware routing test callback. Keep the target-only
     // callback above for API test fixtures and older embedders.
     std::function<TestRoutingResult(const std::string&, const TestRoutingCriteria&)>
@@ -230,6 +232,7 @@ struct ApiContext {
 //   POST /api/config/save     - persist staged config and apply it
 //   GET  /api/health/routing  - routing and firewall health verification
 //   GET  /api/runtime/outbounds - live outbound/interface runtime state
+//   GET  /api/runtime/outbound-traffic - per-outbound byte, packet and connection counters
 //   GET  /api/runtime/interfaces - live system interface inventory
 //   POST /api/routing/test    - test expected/actual routing for an IP or domain
 void register_api_handlers(ApiServer& server, ApiContext& ctx);

@@ -61,6 +61,15 @@ struct FirewallCounters {
     uint64_t connections{0};
   };
   std::vector<Classification> balance_classifications;
+  // Packets and bytes that hit a keen-pbr MARK rule setting this outbound's
+  // fwmark, summed across families.  On the default connmark path that is the
+  // traffic which was classified, not the full flow: later packets are restored
+  // and leave the chain before the MARK rule.  Restarts from zero on apply.
+  struct MarkTraffic {
+    uint64_t packets{0};
+    uint64_t bytes{0};
+  };
+  std::map<std::string, MarkTraffic> outbound_mark_counters;
   // Packets accepted early by daemon.skip_marked_packets, by family.  A family
   // is present only when its rule exists and was read.
   std::map<std::string, uint64_t> skip_marked_packets;

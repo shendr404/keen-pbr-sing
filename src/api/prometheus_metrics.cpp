@@ -379,6 +379,56 @@ std::string prometheus_metrics(const InterceptCounters* counters,
         }
     }
 
+    // Per-outbound traffic.  interface counters are /proc/net/dev (a TUN such as
+    // sbtun shows the bytes that actually cross it).  fwmark counters are the
+    // iptables MARK rules for that outbound and, with connmark restore, count
+    // classified packets rather than the whole flow.  Receive counters are only
+    // known for an interface.
+    if (!daemon.outbound_traffic.entries.empty()) {
+        const auto labels_of = [](const OutboundTrafficEntry& entry) {
+            return label("outbound", entry.tag) + ',' + label("type", entry.type) + ',' +
+                   label("source", entry.source) + ',' +
+                   label("interface", entry.interface_name.value_or(""));
+        };
+        const auto emit = [&](const char* name, const char* type, const char* help,
+                              const auto& value_of) {
+            bool wrote_header = false;
+            for (const auto& entry : daemon.outbound_traffic.entries) {
+                const auto value = value_of(entry);
+                if (!value.has_value()) continue;
+                if (!wrote_header) {
+                    header(out, name, type, help);
+                    wrote_header = true;
+                }
+                sample(out, name, labels_of(entry), *value);
+            }
+        };
+        emit("keen_pbr_outbound_rx_bytes_total", "counter",
+             "Bytes received by an outbound. source=\"interface\" is /proc/net/dev; "
+             "fwmark outbounds do not have a receive counter.",
+             [](const OutboundTrafficEntry& entry) { return entry.rx_bytes; });
+        emit("keen_pbr_outbound_tx_bytes_total", "counter",
+             "Bytes sent by an outbound. source=\"interface\" is /proc/net/dev transmit. "
+             "source=\"fwmark\" is the iptables MARK rule byte counter for that fwmark "
+             "(classified traffic when connmark restore is on) and restarts when the rules are rebuilt.",
+             [](const OutboundTrafficEntry& entry) { return entry.tx_bytes; });
+        emit("keen_pbr_outbound_rx_packets_total", "counter",
+             "Packets received by an outbound. Present for interface outbounds.",
+             [](const OutboundTrafficEntry& entry) { return entry.rx_packets; });
+        emit("keen_pbr_outbound_tx_packets_total", "counter",
+             "Packets sent by an outbound. See keen_pbr_outbound_tx_bytes_total for what the source counts.",
+             [](const OutboundTrafficEntry& entry) { return entry.tx_packets; });
+        emit("keen_pbr_outbound_rx_bytes_per_second", "gauge",
+             "Receive rate in bytes per second since the previous sample, a few seconds ago.",
+             [](const OutboundTrafficEntry& entry) { return entry.rx_bytes_per_sec; });
+        emit("keen_pbr_outbound_tx_bytes_per_second", "gauge",
+             "Transmit rate in bytes per second since the previous sample, a few seconds ago.",
+             [](const OutboundTrafficEntry& entry) { return entry.tx_bytes_per_sec; });
+        emit("keen_pbr_outbound_connections", "gauge",
+             "Conntrack entries whose mark equals this outbound's fwmark.",
+             [](const OutboundTrafficEntry& entry) { return entry.connections; });
+    }
+
     dns_proxy_metrics(out, dns_proxy);
 
     // Probes.

@@ -481,6 +481,45 @@ paths:
               schema:
                 $ref: "#/components/schemas/RuntimeOutboundsResponse"
 
+  /api/runtime/outbound-traffic:
+    get:
+      summary: Per-outbound traffic counters
+      description: >
+        Bytes, packets and the recent rate for every configured outbound, plus
+        the number of conntrack entries marked for that outbound when the
+        kernel exposes marks.
+
+        An outbound of type `interface` is counted from `/proc/net/dev`. That
+        is the whole interface, so a TUN such as sing-box's `sbtun` shows
+        whether traffic is actually crossing it. `tx_*` is what the kernel
+        sends into the interface and `rx_*` is what it receives back.
+
+        Any other outbound that has an fwmark is counted from the iptables
+        MARK rules that set that mark (`iptables-save -c`). Those rules see
+        the packets that were classified. With the default connmark restore,
+        later packets of the same connection leave the chain before the MARK
+        rule, so this is not the full flow volume. Receive counters are then
+        omitted. The counters restart when the firewall rules are rebuilt.
+        nftables has no per-rule counters here, so a non-interface outbound
+        stays at `source: none` on that backend.
+
+        `connections` counts `/proc/net/nf_conntrack` entries whose `mark`
+        equals the outbound's fwmark. It is omitted when that file cannot be
+        read or has no mark field (kernel 4.9 with conntrack marks, which
+        keen-pbr already requires for CONNMARK, does expose it).
+
+        Rates are the byte delta since the previous sample, a few seconds
+        earlier. The first sample has no rate. Poll this endpoint; it is not
+        part of the status event stream.
+      operationId: getOutboundTraffic
+      responses:
+        "200":
+          description: Per-outbound traffic counters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutboundTrafficResponse"
+
   /api/diagnostics/command-failure:
     get:
       summary: Most recent failed command records
@@ -3173,6 +3212,92 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RuntimeOutboundState"
+
+    # -------------------------------------------------------------------------
+    # /api/runtime/outbound-traffic
+    # -------------------------------------------------------------------------
+
+    OutboundTrafficSource:
+      type: string
+      title: OutboundTrafficSource
+      enum: [interface, fwmark, none]
+      description: >
+        - interface: rx/tx come from /proc/net/dev for interface_name
+        - fwmark: tx comes from the iptables MARK rules of this outbound; rx is omitted
+        - none: no counter source was available
+
+    OutboundTrafficEntry:
+      type: object
+      required: [tag, type, source]
+      properties:
+        tag:
+          type: string
+          description: Configured outbound tag.
+          example: "proxy"
+        type:
+          type: string
+          description: Outbound type. Same values as Outbound.type. Kept as a free string so it does not rename the shared outbound-type enum.
+          example: "interface"
+        source:
+          $ref: "#/components/schemas/OutboundTrafficSource"
+        interface_name:
+          type: string
+          description: Interface name for an interface outbound.
+          example: "sbtun"
+        interface_present:
+          type: boolean
+          description: >
+            False when source is interface and that name is not in /proc/net/dev.
+            Omitted for other sources.
+        rx_bytes:
+          type: integer
+          format: int64
+          description: Cumulative bytes received. Interface outbounds only.
+        rx_packets:
+          type: integer
+          format: int64
+          description: Cumulative packets received. Interface outbounds only.
+        tx_bytes:
+          type: integer
+          format: int64
+          description: >
+            Cumulative bytes sent. For source fwmark this is the MARK-rule byte
+            counter (classified traffic), not the full flow.
+        tx_packets:
+          type: integer
+          format: int64
+          description: Cumulative packets sent. See tx_bytes.
+        rx_bytes_per_sec:
+          type: number
+          format: double
+          description: Receive rate since the previous sample. Omitted on the first sample and after a counter reset.
+        tx_bytes_per_sec:
+          type: number
+          format: double
+          description: Transmit rate since the previous sample. Omitted on the first sample and after a counter reset.
+        window_seconds:
+          type: number
+          format: double
+          description: Seconds between this sample and the one the rates were computed from.
+        connections:
+          type: integer
+          format: int64
+          description: >
+            Conntrack entries whose mark equals this outbound's fwmark.
+            Omitted when conntrack marks could not be read. Zero is a real count.
+
+    OutboundTrafficResponse:
+      type: object
+      required: [outbounds, collected_at_unix_ms]
+      properties:
+        collected_at_unix_ms:
+          type: integer
+          format: int64
+          description: Router unix time in milliseconds when this sample was taken.
+        outbounds:
+          type: array
+          items:
+            $ref: "#/components/schemas/OutboundTrafficEntry"
 
     # -------------------------------------------------------------------------
     # /api/runtime/interfaces

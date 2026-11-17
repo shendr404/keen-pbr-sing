@@ -9,6 +9,7 @@ import {
   useGetHealthService as useGeneratedHealthService,
   useGetRuntimeInterfaces as useGeneratedRuntimeInterfaces,
   useGetRuntimeOutbounds as useGeneratedRuntimeOutbounds,
+  useGetOutboundTraffic as useGeneratedOutboundTraffic,
 } from "@/api/generated/keen-api"
 import type { UseQueryOptions, UseQueryResult } from "@tanstack/react-query"
 
@@ -65,6 +66,16 @@ export function useGetHealthService<
         getHealthService({ signal })
       ),
       ...options?.query,
+    },
+  })
+}
+
+// Polled on its own: the rate has to move even when the status stream is quiet.
+export function useGetOutboundTraffic() {
+  return useGeneratedOutboundTraffic({
+    query: {
+      refetchInterval: 3000,
+      refetchOnWindowFocus: true,
     },
   })
 }

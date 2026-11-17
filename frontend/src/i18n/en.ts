@@ -1529,7 +1529,24 @@ export const enTranslation = {
         type: "Type",
         summary: "Details",
         runtime: "Runtime",
+        traffic: "Traffic",
         actions: "Actions",
+      },
+      traffic: {
+        down: "↓ {{value}}",
+        up: "↑ {{value}}",
+        perSecond: "{{value}}/s",
+        connections: "{{count}} conn",
+        classified: "classified {{bytes}} · {{packets}} pkt",
+        interfaceMissing: "{{interface}} is not present",
+        unavailable: "Traffic stats unavailable",
+        loading: "Reading counters…",
+        interfaceTitle:
+          "All traffic on {{interface}}, from /proc/net/dev. Down is received by the kernel, up is sent into the interface.",
+        fwmarkTitle:
+          "iptables counters for packets marked with this outbound's fwmark. With connmark restore this is classified traffic, not the whole flow.",
+        connectionsTitle:
+          "Conntrack entries whose mark equals this outbound's fwmark.",
       },
       summary: {
         interface: "ifname={{value}}",

@@ -78,12 +78,13 @@ keen-pbr hash-password
 | `GET /api/status/events` | Поток событий Server-Sent Events (SSE): сервер сам присылает изменения, опрашивать его не нужно. События: `snapshot` (полное состояние при подключении), `service`, `outbounds`, `interfaces`, `issues`, `routing`, `auth`, `config`. Раз в 15 секунд приходит служебный сигнал, чтобы соединение не закрывалось. Событие `config` содержит только номер ревизии; сами данные читайте через `GET /api/config`. После обрыва соединения новое подключение снова начинается с `snapshot`. |
 | `GET /api/health/issues` | Найденные проблемы и результаты проверок ядра: тот же список, что на странице обзора и в `keen-pbr status`. |
 | `GET /api/runtime/outbounds`, `/api/runtime/interfaces` | Текущее состояние outbounds и список системных интерфейсов. |
+| `GET /api/runtime/outbound-traffic` | Байты, пакеты, текущая скорость и число соединений conntrack по каждому outbound. |
 | `GET /api/health/routing`, `POST /api/routing/test` | Диагностика маршрутизации и firewall и проверка маршрута для конкретного домена или IP-адреса. |
 | `POST /api/lists/refresh` | Обновление одного или всех удалённых списков URL. |
 | `POST /api/dns/servers/check` | Проверка DNS-серверов из применённой конфигурации: работают ли они и не подменяют ли ответы. |
 | `GET /api/dns/test` | Поток событий перехвата DNS и TLS/QUIC-трафика либо проверка DNS в веб-интерфейсе. |
 | `GET /api/diagnostics/command-failure` | Журнал недавних сбоев системных команд. |
-| `GET /metrics` | Метрики Prometheus в текстовом формате. |
+| `GET /metrics` | Метрики Prometheus в текстовом формате, включая серии `keen_pbr_outbound_*`. |
 | `/api/auth/status`, `/api/auth/login`, `/api/auth/logout`, `/api/auth/password`, `/api/auth/settings` | Состояние аутентификации, вход и выход, пароль (`GET` показывает, задан ли он; `POST` задаёт новый), настройки аутентификации и CORS. |
 
 ---

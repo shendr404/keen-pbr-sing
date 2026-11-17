@@ -22,6 +22,11 @@ import {
   getOutboundGroupMembers,
 } from "@/pages/outbounds-utils"
 
+import {
+  outboundTrafficInline,
+  type OutboundTrafficView,
+} from "@/components/shared/outbound-traffic"
+
 import { type DotTone, Panel, PanelHeader, StatusDot } from "./overview-panel"
 
 const DASH = "—"
@@ -36,12 +41,14 @@ type GroupMember = {
 export function OutboundsOverviewPanel({
   outbounds,
   runtimeByTag,
+  trafficByTag,
   isLoading,
   loadError,
   dimmed,
 }: {
   outbounds: Outbound[]
   runtimeByTag: Map<string, RuntimeOutboundState>
+  trafficByTag?: Map<string, OutboundTrafficView>
   isLoading: boolean
   loadError: boolean
   dimmed: boolean
@@ -217,9 +224,12 @@ export function OutboundsOverviewPanel({
               {plain.map((outbound) => {
                 const runtimeState = runtimeByTag.get(outbound.tag)
                 const value = describePlainOutbound(outbound, t)
+                const traffic = dimmed
+                  ? undefined
+                  : outboundTrafficInline(trafficByTag?.get(outbound.tag), t)
                 return (
                   <div
-                    className="flex min-w-0 items-center gap-2 border-r border-b px-3 py-2"
+                    className="flex min-w-0 items-start gap-2 border-r border-b px-3 py-2"
                     key={outbound.tag}
                     title={runtimeState?.detail}
                   >
@@ -243,17 +253,26 @@ export function OutboundsOverviewPanel({
                             )
                       }
                     />
-                    <span className="truncate text-[13px] font-medium">
-                      {outbound.tag}
-                    </span>
-                    {value ? (
-                      <span
-                        className="ml-auto max-w-[55%] truncate font-mono text-[11px] text-muted-foreground"
-                        title={value}
-                      >
-                        {value}
-                      </span>
-                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="truncate text-[13px] font-medium">
+                          {outbound.tag}
+                        </span>
+                        {value ? (
+                          <span
+                            className="ml-auto max-w-[55%] truncate font-mono text-[11px] text-muted-foreground"
+                            title={value}
+                          >
+                            {value}
+                          </span>
+                        ) : null}
+                      </div>
+                      {traffic ? (
+                        <div className="truncate font-mono text-[11px] text-muted-foreground tabular-nums">
+                          {traffic}
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 )
               })}

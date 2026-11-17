@@ -19,6 +19,7 @@ import {
 import { queryKeys } from "@/api/query-keys"
 import {
   useGetConfig,
+  useGetOutboundTraffic,
   useGetRuntimeInterfaces,
   useGetRuntimeOutbounds,
 } from "@/api/queries"
@@ -38,6 +39,10 @@ import {
   RuntimeStateBadge,
 } from "@/components/shared/outbound-interface-status-list"
 import { PageHeader } from "@/components/shared/page-header"
+import {
+  OutboundTrafficFigures,
+  outboundTrafficViews,
+} from "@/components/shared/outbound-traffic"
 import {
   RuntimeOutboundDetails,
   RuntimeOutboundEntry,
@@ -84,6 +89,7 @@ export function OutboundsPage() {
   const configQuery = useGetConfig()
   const runtimeOutboundsQuery = useGetRuntimeOutbounds()
   const runtimeInterfacesQuery = useGetRuntimeInterfaces()
+  const trafficQuery = useGetOutboundTraffic()
   const loadedConfig = selectConfig(configQuery.data)
   const visibleDeleteRequest = deleteRequest ?? deletePreview
   // using toasts for mutation errors
@@ -93,6 +99,9 @@ export function OutboundsPage() {
       ? runtimeOutboundsQuery.data.data.outbounds
       : []
     ).map((runtimeOutbound) => [runtimeOutbound.tag, runtimeOutbound])
+  )
+  const trafficByTag = outboundTrafficViews(
+    trafficQuery.data?.status === 200 ? trafficQuery.data.data.outbounds : []
   )
   const runtimeInterfaceByName = new Map(
     (runtimeInterfacesQuery.data?.status === 200
@@ -240,12 +249,13 @@ export function OutboundsPage() {
             </Button>
           </BulkSelectionToolbar>
           <DataTable
-            mobileCards={{ titleColumns: [0, 1], bodyColumns: [3, 2] }}
+            mobileCards={{ titleColumns: [0, 1], bodyColumns: [4, 3, 2] }}
             headers={[
               t("pages.outbounds.headers.tag"),
               t("pages.outbounds.headers.type"),
               t("pages.outbounds.headers.summary"),
               t("pages.outbounds.headers.runtime"),
+              t("pages.outbounds.headers.traffic"),
               t("pages.outbounds.headers.actions"),
             ]}
             rows={outboundItems.map((outbound) => [
@@ -280,6 +290,13 @@ export function OutboundsPage() {
                 runtimeInterfaces={runtimeInterfaceByName}
                 runtimeState={outbound.runtimeState}
                 t={t}
+              />,
+              <OutboundTrafficFigures
+                failed={trafficQuery.isError}
+                key={`${outbound.id}-traffic`}
+                pending={trafficQuery.isLoading}
+                t={t}
+                traffic={trafficByTag.get(outbound.tag)}
               />,
               <ActionButtons
                 mobileIcons

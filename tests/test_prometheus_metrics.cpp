@@ -423,6 +423,47 @@ TEST_CASE("Prometheus exports the DNS proxy families with cumulative buckets") {
     CHECK(has(text, "keen_pbr_dns_hold_duration_seconds_bucket{le=\"+Inf\"} 0\n"));
 }
 
+TEST_CASE("Prometheus exports per-outbound traffic and skips unknown directions") {
+    Fixture f;
+    OutboundTrafficEntry proxy;
+    proxy.tag = "proxy";
+    proxy.type = "interface";
+    proxy.source = "interface";
+    proxy.interface_name = "sbtun";
+    proxy.rx_bytes = 1000;
+    proxy.rx_packets = 8;
+    proxy.tx_bytes = 4000;
+    proxy.tx_packets = 16;
+    proxy.rx_bytes_per_sec = 100.0;
+    proxy.tx_bytes_per_sec = 250.5;
+    proxy.connections = 4;
+    OutboundTrafficEntry wan;
+    wan.tag = "wan\"1";
+    wan.type = "table";
+    wan.source = "fwmark";
+    wan.tx_bytes = 30;
+    wan.tx_packets = 2;
+    wan.connections = 0;
+    f.daemon.outbound_traffic.entries = {proxy, wan};
+    const auto text = f.render();
+    const std::string proxy_labels =
+        "outbound=\"proxy\",type=\"interface\",source=\"interface\",interface=\"sbtun\"";
+    const std::string wan_labels =
+        "outbound=\"wan\\\"1\",type=\"table\",source=\"fwmark\",interface=\"\"";
+    CHECK(count_of(text, "# TYPE keen_pbr_outbound_tx_bytes_total counter") == 1);
+    CHECK(has(text, "keen_pbr_outbound_rx_bytes_total{" + proxy_labels + "} 1000\n"));
+    CHECK(has(text, "keen_pbr_outbound_tx_bytes_total{" + proxy_labels + "} 4000\n"));
+    CHECK(has(text, "keen_pbr_outbound_rx_packets_total{" + proxy_labels + "} 8\n"));
+    CHECK(has(text, "keen_pbr_outbound_tx_packets_total{" + proxy_labels + "} 16\n"));
+    CHECK(has(text, "keen_pbr_outbound_rx_bytes_per_second{" + proxy_labels + "} 100\n"));
+    CHECK(has(text, "keen_pbr_outbound_tx_bytes_per_second{" + proxy_labels + "} 250.5\n"));
+    CHECK(has(text, "keen_pbr_outbound_connections{" + proxy_labels + "} 4\n"));
+    CHECK(has(text, "keen_pbr_outbound_tx_bytes_total{" + wan_labels + "} 30\n"));
+    CHECK(has(text, "keen_pbr_outbound_connections{" + wan_labels + "} 0\n"));
+    CHECK_FALSE(has(text, "keen_pbr_outbound_rx_bytes_total{" + wan_labels));
+    CHECK_FALSE(has(text, "keen_pbr_outbound_rx_bytes_per_second{" + wan_labels));
+}
+
 TEST_CASE("Prometheus leaves the DNS proxy families out while no proxy runs") {
     Fixture f;
     const auto text = f.render();

@@ -1575,7 +1575,24 @@ export const ruTranslation = {
         type: "Тип",
         summary: "Детали",
         runtime: "Состояние",
+        traffic: "Трафик",
         actions: "Действия",
+      },
+      traffic: {
+        down: "↓ {{value}}",
+        up: "↑ {{value}}",
+        perSecond: "{{value}}/с",
+        connections: "{{count}} соед.",
+        classified: "классификация {{bytes}} · {{packets}} пак.",
+        interfaceMissing: "{{interface}} нет в системе",
+        unavailable: "Счётчики трафика недоступны",
+        loading: "Чтение счётчиков…",
+        interfaceTitle:
+          "Весь трафик интерфейса {{interface}} из /proc/net/dev. Вниз — принято ядром, вверх — отправлено в интерфейс.",
+        fwmarkTitle:
+          "Счётчики iptables для пакетов с fwmark этого outbound. При восстановлении connmark это классифицированный трафик, а не весь поток.",
+        connectionsTitle:
+          "Записи conntrack, у которых mark совпадает с fwmark этого outbound.",
       },
       summary: {
         interface: "ifname={{value}}",

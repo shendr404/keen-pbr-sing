@@ -8,6 +8,7 @@
 #include "../firewall/firewall_counters.hpp"
 #include "../dns/dns_check.hpp"
 #include "../health/health_issues.hpp"
+#include "../health/outbound_traffic.hpp"
 #include "../health/host_health_warnings.hpp"
 #include "../health/routing_health.hpp"
 #include "../health/service_health.hpp"
@@ -389,6 +390,7 @@ private:
 #ifdef WITH_API
   // API integration
   void setup_api();
+  OutboundTrafficReport collect_outbound_traffic();
   // POST /api/dns/servers/check: asks every DNS server of the applied config.
   DnsCheckReport check_dns_servers(const DnsCheckRequest &request);
   void finish_config_operation();
@@ -636,6 +638,7 @@ IcmpTester icmp_tester_;
   std::atomic<std::size_t> routing_tests_inflight_{0};
 
 #ifdef WITH_API
+  OutboundTrafficCollector outbound_traffic_collector_;
   std::unique_ptr<ApiServer> api_server_;
   std::unique_ptr<ApiContext> api_ctx_;
   std::unique_ptr<SseBroadcaster> dns_test_broadcaster_;

@@ -132,6 +132,13 @@ TEST_CASE("candidate classifications and skip_marked are aggregated per family")
   // The skip rule exists in two chains; the foreign MARK rule is not counted.
   CHECK(counters.skip_marked_packets.at("ipv4") == 905);
   CHECK(counters.skip_marked_packets.at("ipv6") == 12);
+  // wan1 is 400+7 packets.  The foreign 777-packet MARK of the same value is
+  // not a keen-pbr rule and must not be added.
+  CHECK(counters.outbound_mark_counters.at("wan1").packets == 407);
+  CHECK(counters.outbound_mark_counters.at("wan1").bytes == 30700);
+  CHECK(counters.outbound_mark_counters.at("wan2").packets == 389);
+  CHECK(counters.outbound_mark_counters.at("wan2").bytes == 28900);
+  CHECK(counters.outbound_mark_counters.count("vpn") == 0);
 }
 
 TEST_CASE("counters ignore balance comments that are not in the plan") {
@@ -139,6 +146,7 @@ TEST_CASE("counters ignore balance comments that are not in the plan") {
   aggregate_firewall_counters(parse_iptables_save_counters(save_v4()), "ipv4", {}, counters);
   CHECK(counters.balance_classifications.empty());
   CHECK(counters.skip_marked_packets.at("ipv4") == 905);
+  CHECK(counters.outbound_mark_counters.empty());
 }
 
 TEST_CASE("collect_iptables_counters reads each family once and omits unreadable ones") {

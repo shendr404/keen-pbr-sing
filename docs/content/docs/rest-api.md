@@ -78,12 +78,13 @@ The [OpenAPI document](https://github.com/maksimkurb/keen-pbr/blob/main/docs/ope
 | `GET /api/status/events` | Server-Sent Events (SSE) stream: the server pushes changes, so you do not need to poll. Events: `snapshot` (full state on connect), `service`, `outbounds`, `interfaces`, `issues`, `routing`, `auth`, `config`. A keep-alive signal arrives every 15 seconds. The `config` event carries only a revision number; read the data with `GET /api/config`. After a dropped connection, the new connection starts with a fresh `snapshot`. |
 | `GET /api/health/issues` | Detected problems and kernel check results: the same list as the overview page and `keen-pbr status`. |
 | `GET /api/runtime/outbounds`, `/api/runtime/interfaces` | Current outbound state and the list of system interfaces. |
+| `GET /api/runtime/outbound-traffic` | Bytes, packets, recent rate and conntrack count for each outbound. |
 | `GET /api/health/routing`, `POST /api/routing/test` | Routing and firewall diagnostics, and a route check for a specific domain or IP address. |
 | `POST /api/lists/refresh` | Refresh one or all remote URL lists. |
 | `POST /api/dns/servers/check` | Checks the DNS servers of the applied configuration: whether they work and whether they tamper with answers. |
 | `GET /api/dns/test` | Stream of DNS and TLS/QUIC interception events, or the DNS check in the web interface. |
 | `GET /api/diagnostics/command-failure` | Log of recent system command failures. |
-| `GET /metrics` | Prometheus text metrics. |
+| `GET /metrics` | Prometheus text metrics, including `keen_pbr_outbound_*` traffic series. |
 | `/api/auth/status`, `/api/auth/login`, `/api/auth/logout`, `/api/auth/password`, `/api/auth/settings` | Authentication status, login and logout, password (`GET` shows whether one is set; `POST` sets a new one), and authentication and CORS settings. |
 
 ---

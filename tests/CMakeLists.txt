@@ -98,6 +98,7 @@ add_executable(keen-pbr-tests
   test_routing_health_checker.cpp
   test_host_health_warnings.cpp
   test_runtime_outbound_state.cpp
+  test_outbound_traffic.cpp
   test_status.cpp
   test_health_issues.cpp
   test_operation_coordinator.cpp
@@ -114,6 +115,7 @@ add_executable(keen-pbr-tests
   ../src/daemon/runtime_state_store.cpp
   ../src/health/circuit_breaker.cpp
   ../src/health/runtime_outbound_state.cpp
+  ../src/health/outbound_traffic.cpp
   ../src/health/health_issues.cpp
   ../src/health/service_health.cpp
   ../src/health/routing_health_checker.cpp
