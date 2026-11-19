@@ -67,4 +67,24 @@ grep -q 'FORWARD' "$tmp/log" && fail "hook ran for mangle"
 : > "$tmp/log"
 type=iptables table=filter sh "$hook" || fail "hook filter"
 grep -q -- '-C FORWARD -i br0 -o sbtun ' "$tmp/log" || fail "hook did not install rules"
+
+# BusyBox awk treats an unescaped '{' as an interval and exits with
+# "bad regex '{'". read_config then prints nothing and the FORWARD accepts
+# are never installed. Run the same script through busybox awk.
+command -v busybox >/dev/null 2>&1 || fail "busybox is required"
+busybox awk 'BEGIN { exit 0 }' >/dev/null 2>&1 || fail "busybox awk is unavailable"
+if busybox awk 'BEGIN { gsub(/{/, "{", x) }' >/dev/null 2>&1; then
+    fail "this busybox awk accepts an unescaped brace; the check would not catch the bug"
+fi
+mkdir -p "$tmp/awkbin"
+cat > "$tmp/awkbin/awk" <<'EOF'
+#!/bin/sh
+exec busybox awk "$@"
+EOF
+chmod +x "$tmp/awkbin/awk"
+: > "$tmp/log"
+: > "$tmp/have"
+PATH="$tmp/awkbin:$PATH" sh "$script" apply iptables || fail "busybox awk apply failed"
+grep -q -- '-I FORWARD 1 -i br0 -o sbtun ' "$tmp/log" || fail "busybox awk did not see the interface"
+grep -q -- '-i sbtun -o br0 -m conntrack --ctstate RELATED,ESTABLISHED' "$tmp/log" || fail "busybox awk missed the return path"
 printf 'ok\n'

@@ -6,6 +6,7 @@
 #include "../util/format_compat.hpp"
 #include "../util/kernel_capabilities.hpp"
 #include "../util/safe_exec.hpp"
+#include "../util/xtables_list.hpp"
 #include "ipset_restore_pipe.hpp"
 #include "port_spec_util.hpp"
 #include <rapidxml.hpp>
@@ -89,13 +90,14 @@ void IptablesFirewall::validate_raw_prerouting_capability(bool ipv6) const {
         ", but raw is absent from " + registry_path + " (expected module " +
         module + "); no fallback to mangle PREROUTING was performed");
   }
-  const int probe = safe_exec({command, "-t", "raw", "-S"},
+  const int probe = safe_exec(xtables_list_args(command, "raw"),
                               /*suppress_output=*/true);
   if (probe != 0) {
     throw FirewallError(
         std::string("--use-raw") + (ipv6 ? "6" : "") +
         "-prerouting requested for " + family_label +
-        ", but " + command + " -t raw -S failed after raw was registered in " +
+        ", but " + command +
+        " -w -t raw -S failed after raw was registered in " +
         registry_path + "; no fallback to mangle PREROUTING was performed");
   }
 }
@@ -771,7 +773,7 @@ bool IptablesFirewall::probe_nflog_size_support(bool ipv6) {
 
 std::string IptablesFirewall::capture_table_dump(bool ipv6, const char *table) {
   const char *command = ipv6 ? "ip6tables" : "iptables";
-  const auto result = safe_exec_capture({command, "-t", table, "-S"},
+  const auto result = safe_exec_capture(xtables_list_args(command, table),
                                         /*suppress_stderr=*/true);
   if (result.exit_code != 0 || result.truncated || result.timed_out) {
     throw FirewallError(keen_pbr3::format("failed to inspect live {} {} table",
@@ -871,7 +873,7 @@ bool IptablesFirewall::live_prerouting_chain_present(bool ipv6) const {
 
 bool IptablesFirewall::live_snat_chain_present() {
   // A nat table that cannot be listed holds no chain of ours.
-  const auto result = safe_exec_capture({"iptables", "-t", "nat", "-S"},
+  const auto result = safe_exec_capture(xtables_list_args("iptables", "nat"),
                                         /*suppress_stderr=*/true);
   if (result.exit_code != 0 || result.truncated || result.timed_out) {
     return false;
@@ -952,11 +954,11 @@ void IptablesFirewall::remove_all_hooks(TableSnapshot &snapshot,
 void IptablesFirewall::verify_applied_hooks(bool ipv6) const {
   const char *command = ipv6 ? "ip6tables" : "iptables";
   const auto prerouting_hook = safe_exec_capture(
-      {command, "-t", prerouting_table_name(ipv6), "-S", "PREROUTING"},
+      xtables_list_args(command, prerouting_table_name(ipv6), "PREROUTING"),
       /*suppress_stderr=*/true);
-  const auto output_hook =
-      safe_exec_capture({command, "-t", "mangle", "-S", "OUTPUT"},
-                        /*suppress_stderr=*/true);
+  const auto output_hook = safe_exec_capture(
+      xtables_list_args(command, "mangle", "OUTPUT"),
+      /*suppress_stderr=*/true);
   if (prerouting_hook.exit_code != 0 || output_hook.exit_code != 0 ||
       count_exact_jump(prerouting_hook.stdout_output, "PREROUTING",
                        prerouting_chain_name(ipv6)) != 1 ||
@@ -974,7 +976,7 @@ void IptablesFirewall::verify_applied_hooks(bool ipv6) const {
   };
   const auto verify_pinned = [&](const char *builtin, const char *target) {
     const auto dump = safe_exec_capture(
-        {command, "-t", "mangle", "-S", builtin}, /*suppress_stderr=*/true);
+        xtables_list_args(command, "mangle", builtin), /*suppress_stderr=*/true);
     if (dump.exit_code != 0 ||
         count_exact_jump(dump.stdout_output, builtin, target) != 1 ||
         !first_rule_is_jump(dump.stdout_output, builtin, target)) {
@@ -999,7 +1001,8 @@ void IptablesFirewall::verify_applied_hooks(bool ipv6) const {
   if (pending_ruleset_.find(iptables_physical_chain_id(
           iptables_snat_chain_name(), PhysicalTable::nat, family)) != nullptr) {
     const auto dump = safe_exec_capture(
-        {command, "-t", "nat", "-S", "POSTROUTING"}, /*suppress_stderr=*/true);
+        xtables_list_args(command, "nat", "POSTROUTING"),
+        /*suppress_stderr=*/true);
     if (dump.exit_code != 0 ||
         count_exact_jump(dump.stdout_output, "POSTROUTING",
                          iptables_snat_chain_name()) != 1) {
@@ -1908,8 +1911,8 @@ IptablesFirewall::inspect_table(const char *command, const char *table,
   snapshot.command = command;
   snapshot.table = table;
   snapshot.ipv6 = ipv6;
-  const auto result = safe_exec_capture({command, "-t", table, "-S"},
-                                        /*suppress_stderr=*/true);
+  const auto args = xtables_list_args(command, table);
+  const auto result = safe_exec_capture(args, /*suppress_stderr=*/true);
   if (!command_succeeded(result)) {
     // A table the kernel does not provide cannot hold our chains; any other
     // listing failure is real.
@@ -1918,8 +1921,7 @@ IptablesFirewall::inspect_table(const char *command, const char *table,
     }
     throw FirewallError(keen_pbr3::format(
         "firewall cleanup command failed: {} (status {})",
-        safe_exec_command_string({command, "-t", table, "-S"}),
-        result.exit_code));
+        safe_exec_command_string(args), result.exit_code));
   }
   snapshot.present = true;
   snapshot.rules = result.stdout_output;

@@ -45,7 +45,7 @@ probe_case() {
 # A registered table with a failed command probe must report the authoritative
 # probe failure even when the module file is absent. An unregistered table with
 # no module reports the missing module instead.
-probe_case 1 "raw registered in /proc/net/ip_tables_names but iptables -t raw -S failed"
+probe_case 1 "raw registered in /proc/net/ip_tables_names but iptables -w -t raw -S failed"
 probe_case 0 "module missing: /missing/iptable_raw.ko"
 
 log() { :; }

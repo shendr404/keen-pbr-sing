@@ -47,7 +47,8 @@ jobs:
             libnl-3-dev \
             libnl-route-3-dev \
             libunwind-dev \
-            zlib1g-dev
+            zlib1g-dev \
+            busybox
 
       - name: Run doctest
         run: make test

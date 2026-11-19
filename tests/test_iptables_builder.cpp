@@ -191,7 +191,7 @@ public:
         "#!/bin/sh\n"
         "printf '%s %s\\n' \"$(basename \"$0\")\" \"$*\" >> \"$KEEN_TEST_LOG\"\n"
         "case \"$*\" in\n"
-        "  \"-t \"*\" -S\")\n"
+        "  \"-t \"*\" -S\"|\"-w -t \"*\" -S\")\n"
         "    if [ -s \"$KEEN_TEST_LIST_FAILURE\" ]; then\n"
         "      echo 'Tabla no existe / 表不存在' >&2; exit 3; fi\n"
         "    cat \"$KEEN_TEST_DUMP\"; exit 0;;\n"

@@ -115,13 +115,14 @@ CommandRunner iptables_runner(const IptTexts& texts,
                                   nullptr) {
   return [texts, calls](const std::vector<std::string>& args) {
     if (calls != nullptr) calls->push_back(args);
-    REQUIRE(args.size() == 4);
-    REQUIRE(args[1] == "-t");
-    REQUIRE(args[3] == "-S");
+    REQUIRE(args.size() == 5);
+    REQUIRE(args[1] == "-w");
+    REQUIRE(args[2] == "-t");
+    REQUIRE(args[4] == "-S");
     const bool v6 = args[0] == "ip6tables";
-    const bool raw = args[2] == "raw";
+    const bool raw = args[3] == "raw";
     // No source NAT in these fixtures: an empty nat table.
-    if (args[2] == "nat") return CommandResult{"-P POSTROUTING ACCEPT\n", 0, false};
+    if (args[3] == "nat") return CommandResult{"-P POSTROUTING ACCEPT\n", 0, false};
     return CommandResult{raw ? (v6 ? texts.v6_raw : texts.v4_raw)
                              : (v6 ? texts.v6_mangle : texts.v4_mangle),
                          0, false};

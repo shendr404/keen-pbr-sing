@@ -66,14 +66,14 @@ read_config() {
             }
             if ($0 ~ /"outbounds"[[:space:]]*:/) in_out = 1
             opens = $0
-            nopen = gsub(/{/, "{", opens)
+            nopen = gsub(/\{/, "{", opens)
             if (in_out) {
                 v = grab($0, "type"); if (v != "") type = v
                 v = grab($0, "interface"); if (v != "") iface = v
             }
             depth += nopen
             closes = $0
-            nclose = gsub(/}/, "}", closes)
+            nclose = gsub(/\}/, "}", closes)
             depth -= nclose
             if (depth < 0) depth = 0
             if (in_out && depth <= 1 && type == "interface" && iface != "") {

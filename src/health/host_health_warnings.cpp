@@ -2,6 +2,7 @@
 
 #include "../config/routing_state.hpp"
 #include "../log/logger.hpp"
+#include "../util/xtables_list.hpp"
 
 #include <algorithm>
 #include <charconv>
@@ -620,7 +621,7 @@ std::optional<std::string> IptablesTableCache::get(const CommandRunner& runner,
             return it->second.text;
         }
     }
-    const auto r = runner({command, "-t", table, "-S"});
+    const auto r = runner(xtables_list_args(command, table));
     if (r.exit_code != 0 || r.truncated) return std::nullopt;
     std::lock_guard<std::mutex> lock(mutex_);
     entries_[key] = Entry{r.stdout_output, Clock::now()};

@@ -236,7 +236,7 @@ raw_family_available() {
     fi
 
     if grep -qx raw "$registry" 2>/dev/null &&
-       "$command" -t raw -S >/dev/null 2>&1; then
+       "$command" -w -t raw -S >/dev/null 2>&1; then
         return 0
     fi
     load_kernel_module probe "$module" "" ""
@@ -249,8 +249,8 @@ raw_family_available() {
         esac
         return 1
     fi
-    if ! "$command" -t raw -S >/dev/null 2>&1; then
-        RAW_FAMILY_PROBE_REASON="raw registered in $registry but $command -t raw -S failed"
+    if ! "$command" -w -t raw -S >/dev/null 2>&1; then
+        RAW_FAMILY_PROBE_REASON="raw registered in $registry but $command -w -t raw -S failed"
         return 1
     fi
 }

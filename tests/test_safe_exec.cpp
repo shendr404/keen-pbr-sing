@@ -294,7 +294,7 @@ TEST_CASE("iptables_ipv6_supported: probes ip6tables-restore test script") {
     write_executable(
         temp_dir.path() / "ip6tables",
         "#!/bin/sh\n"
-        "[ \"$#\" -eq 3 ] && [ \"$1\" = -t ] && [ \"$2\" = mangle ] && [ \"$3\" = -S ]\n");
+        "[ \"$#\" -eq 4 ] && [ \"$1\" = -w ] && [ \"$2\" = -t ] && [ \"$3\" = mangle ] && [ \"$4\" = -S ]\n");
     write_executable(
         temp_dir.path() / "ip6tables-restore",
         "#!/bin/sh\n"

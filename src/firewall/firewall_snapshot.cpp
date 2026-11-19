@@ -1,5 +1,7 @@
 #include "firewall_snapshot.hpp"
 
+#include "../util/xtables_list.hpp"
+
 #include <utility>
 
 namespace keen_pbr3 {
@@ -9,12 +11,13 @@ bool read_failed(const CommandResult& result) {
     return result.exit_code != 0 || result.truncated;
 }
 
-// Reads `<command> -t <table> -S` and merges the parsed table.  The -S form is
-// what the backend lifecycle already relies on, so no extra tool is needed.
+// Reads `<command> -w -t <table> -S` and merges the parsed table.  The -S form
+// is what the backend lifecycle already relies on, so no extra tool is needed.
+// -w waits for the xtables lock instead of failing while NDM reloads it.
 bool read_iptables_table(const CommandRunner& runner, const char* command,
                          const char* table, PhysicalTable physical_table,
                          FirewallFamily family, PhysicalRuleset& into) {
-    const auto result = runner({command, "-t", table, "-S"});
+    const auto result = runner(xtables_list_args(command, table));
     if (read_failed(result)) return false;
     append_physical_ruleset(
         into, parse_iptables_save(result.stdout_output, family, physical_table));
