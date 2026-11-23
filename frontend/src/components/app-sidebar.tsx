@@ -63,6 +63,10 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
             url: "/outbounds",
           },
           {
+            title: t("nav.items.singbox"),
+            url: "/sing-box",
+          },
+          {
             title: t("nav.items.lists"),
             url: "/lists",
           },

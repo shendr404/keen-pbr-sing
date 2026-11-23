@@ -14,6 +14,7 @@
 #include "handler_dns_check.hpp"
 #include "handler_diagnostics.hpp"
 #include "handler_status_events.hpp"
+#include "handler_singbox.hpp"
 
 #include <httplib.h>
 
@@ -33,6 +34,7 @@ void register_api_handlers(ApiServer& server, ApiContext& ctx) {
     register_dns_check_handler(server, ctx);
     register_diagnostics_handler(server);
     register_status_events_handler(server, ctx);
+    register_singbox_handler(server, ctx);
     server.get_stream("/metrics", [&ctx](const httplib::Request&, httplib::Response& response) {
         if (!ctx.get_prometheus_metrics_fn) {
             throw ApiError("Metrics are unavailable", 503);

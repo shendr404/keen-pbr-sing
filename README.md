@@ -93,6 +93,22 @@ Routing a list through `sbtun` does not change where the names are resolved. If 
 
 `detour` marks the DNS query with the outbound's fwmark, so the answer comes from the far side of the tunnel. If a list is routed through an interface, urltest, or icmptest outbound and no such DNS rule exists, keen-pbr warns when the config is checked.
 
+## Sing-box links
+
+I can add a sing-box node from the Web UI instead of a shell script. Open **Sing-box**, paste a `vless://`, `hysteria2://`, `trojan://`, `ss://`, or `vmess://` link, preview the server and port, name it, and save. The daemon writes `/opt/etc/sing-box/config.json`, keeps a private copy of the links in `/opt/etc/keen-pbr/sing-box-links.json`, runs `sing-box check`, and adds a keen-pbr `interface` outbound for the TUN (`sbtun` by default, gateway `auto`). If the check fails, the previous sing-box config is put back. Secrets stay out of the log and out of the profile list the UI shows.
+
+A subscription URL can be a base64 list of links, a plain list, sing-box JSON, or Clash JSON. I keep the manual nodes, replace the subscription nodes, and let you choose `direct`, a sing-box `selector`, or `urltest`. Refresh is a button. An interval in hours is stored and shown as due when you open the page; it does not run a background fetch while the UI is closed. The Outbounds card names the TUN and the mode for that keen-pbr outbound.
+
+The package, binary, and API paths stay `keen-pbr`. These routes are under the same Web UI login: `GET /api/sing-box/profiles`, `POST /api/sing-box/preview`, `POST /api/sing-box/connections`, `POST /api/sing-box/connections/delete`, `POST /api/sing-box/profiles/select`, `POST /api/sing-box/subscriptions`, `POST /api/sing-box/subscriptions/refresh`.
+
+### Ссылки sing-box
+
+Соединение можно добавить из веб-интерфейса, без shell-скрипта. Откройте **Sing-box**, вставьте ссылку `vless://`, `hysteria2://`, `trojan://`, `ss://` или `vmess://`, посмотрите сервер и порт, задайте имя и сохраните. Демон записывает `/opt/etc/sing-box/config.json`, хранит ссылки отдельно в `/opt/etc/keen-pbr/sing-box-links.json`, запускает `sing-box check` и добавляет outbound типа `interface` для TUN (`sbtun`, шлюз `auto`). Если проверка не проходит, предыдущий конфиг sing-box возвращается. Секреты не пишутся в журнал и не показываются в списке узлов.
+
+Подписка может быть base64-списком ссылок, обычным списком, JSON sing-box или JSON Clash. Ручные узлы остаются, узлы подписки заменяются. Режим: `direct`, `selector` или `urltest`. Обновление — кнопкой. Интервал в часах запоминается и помечается как ожидающий, когда страница открыта; фоновой загрузки при закрытом интерфейсе нет. На карточке Outbounds видны TUN и режим этого outbound.
+
+Пакет, бинарник и пути API по-прежнему называются `keen-pbr`. Методы под той же авторизацией: `GET /api/sing-box/profiles`, `POST /api/sing-box/preview`, `POST /api/sing-box/connections`, `POST /api/sing-box/connections/delete`, `POST /api/sing-box/profiles/select`, `POST /api/sing-box/subscriptions`, `POST /api/sing-box/subscriptions/refresh`.
+
 ## Documentation
 
 The shared configuration manual is still the keen-pbr documentation:

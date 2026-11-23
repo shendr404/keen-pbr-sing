@@ -314,6 +314,8 @@ set(SOURCES
   src/health/host_health_warnings.cpp
   src/health/runtime_outbound_state.cpp
   src/health/outbound_traffic.cpp
+  src/singbox/link_parser.cpp
+  src/singbox/link_store.cpp
   src/health/health_issues.cpp
   src/health/service_health.cpp
   src/health/runtime_interface_inventory.cpp
@@ -436,6 +438,7 @@ if(WITH_API)
     src/api/handler_status_events.cpp
     src/api/handler_dns_test.cpp
     src/api/handler_diagnostics.cpp
+    src/api/handler_singbox.cpp
   )
 endif()
 
