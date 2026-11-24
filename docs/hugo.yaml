@@ -1,7 +1,7 @@
 baseURL: https://shendr404.github.io/keen-pbr-sing/
 defaultContentLanguage: ru
 defaultContentLanguageInSubtitle: ""
-languageCode: en-us
+languageCode: ru-ru
 title: keen-pbr-sing
 
 languages:
@@ -61,11 +61,7 @@ params:
     tabs:
       sync: true
     contextMenu:
-      enable: true
-      links:
-        - name: Open in ChatGPT
-          icon: chatgpt
-          url: "https://chatgpt.com/?hints=search&q=I%27m+looking+at+this+documentation%3A+{url}%0AHelp+me+understand+how+to+use+it."
+      enable: false
 
 outputs:
   home: [html, llms]

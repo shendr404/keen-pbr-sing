@@ -91,11 +91,19 @@ jobs:
       - name: Build packages
         run: |
           make keenetic-packages KEENETIC_CONFIG="${{ matrix.build_env.config_name }}" KEENETIC_VERSION="${{ inputs.keenetic_version }}"
+      - name: Validate full and headless variants
+        shell: bash
+        run: |
+          set -euo pipefail
+          for package in keen-pbr keen-pbr-headless; do
+            find build/packages/keenetic -name "${package}_*.ipk" -print -quit | grep -q . || exit 1
+          done
       - name: Upload packaged artifacts
         uses: actions/upload-artifact@v6
         with:
           name: packages-keenetic-${{ matrix.build_env.config_name }}
           path: build/packages/keenetic
+          if-no-files-found: error
       - name: Upload debug symbol artifacts
         uses: actions/upload-artifact@v6
         with:

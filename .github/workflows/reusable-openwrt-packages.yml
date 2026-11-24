@@ -41,4 +41,9 @@ jobs:
           make openwrt-packages \
             OPENWRT_VERSION="${{ inputs.openwrt_version }}" \
             OPENWRT_ARCHITECTURE="${{ inputs.architecture }}"
-      
+      - name: Upload unsigned packages
+        uses: actions/upload-artifact@v6
+        with:
+          name: packages-openwrt-${{ inputs.openwrt_version }}-${{ inputs.architecture }}
+          path: build/packages/openwrt
+          if-no-files-found: error
