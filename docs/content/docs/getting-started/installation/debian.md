@@ -3,23 +3,20 @@ title: Debian
 weight: 3
 ---
 
-keen-pbr is installed on Debian from the keen-pbr APT repository. Run the commands over SSH or in the server terminal as `root` (or with `sudo`).
+This fork does not publish a Debian APT repository. Build a `.deb` and install it locally as `root` (or with `sudo`).
 
 {{% steps %}}
 
-### Add the repository
+### Get the package
 
-Open the [keen-pbr repository page](https://repo.keen-pbr.fyi/repository/stable/?lang=en), select the OS **Debian** on the left, then your release and architecture. Run the commands it shows, in order: they add the signing key and the `apt` package source.
+Build a `.deb` using [Build from Source]({{< relref "/docs/developer/build-from-source" >}}).
 
 ### Install the package
 
 ```bash {filename="bash"}
-apt update
-apt install keen-pbr
+apt install ./keen-pbr_*.deb
 
-# version without the web UI and API:
-# apt update
-# apt install keen-pbr-headless
+# Install a local keen-pbr-headless_*.deb for the headless variant
 ```
 
 The configuration is in `/etc/keen-pbr/config.json`. The service starts right away and starts at every system boot.

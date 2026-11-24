@@ -3,7 +3,7 @@ title: OpenWrt
 weight: 2
 ---
 
-keen-pbr is installed on OpenWrt from the keen-pbr package repository. You run the commands over SSH.
+This fork does not publish an OpenWrt feed. Build packages from source and install them locally over SSH.
 
 {{% steps %}}
 
@@ -17,8 +17,8 @@ A package manager is the program that installs and updates other programs. Which
 ### Install keen-pbr
 
 1. Connect to the router over SSH.
-2. Open the [keen-pbr repository page](https://repo.keen-pbr.fyi/repository/stable/?lang=en), select the OS **OpenWrt** on the left, then your version and architecture. Run the commands it shows, in order.
-3. Install the package:
+2. Build for your architecture using [Build from Source]({{< relref "/docs/developer/build-from-source" >}}).
+3. Copy the package to the router and install it locally (`opkg install ./file.ipk` or `apk add --allow-untrusted ./file.apk`). The following commands only apply if you have configured your own feed:
 
 ```bash {filename="bash"}
 # OpenWrt 25.x and newer

@@ -3,23 +3,20 @@ title: Debian
 weight: 3
 ---
 
-keen-pbr ставится на Debian из APT-репозитория keen-pbr. Команды выполняются по SSH или в терминале сервера от имени `root` (или через `sudo`).
+Этот форк не публикует APT-репозиторий Debian. Собранный пакет `.deb` можно установить локально от имени `root` (или через `sudo`).
 
 {{% steps %}}
 
-### Добавьте репозиторий
+### Получите пакет
 
-Откройте [страницу репозитория keen-pbr](https://repo.keen-pbr.fyi/repository/stable/?lang=ru), слева выберите ОС **Debian**, свой выпуск и архитектуру. Выполните показанные команды по порядку: они добавляют ключ подписи и источник пакетов `apt`.
+Соберите `.deb` по инструкции [Сборка из исходного кода]({{< relref "/docs/developer/build-from-source" >}}).
 
 ### Установите пакет
 
 ```bash {filename="bash"}
-apt update
-apt install keen-pbr
+apt install ./keen-pbr_*.deb
 
-# версия без веб-интерфейса и API:
-# apt update
-# apt install keen-pbr-headless
+# Для headless-варианта установите локальный keen-pbr-headless_*.deb
 ```
 
 Конфигурация лежит в `/etc/keen-pbr/config.json`. Сервис запускается сразу и стартует при каждой загрузке системы.
