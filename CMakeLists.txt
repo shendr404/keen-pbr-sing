@@ -316,6 +316,7 @@ set(SOURCES
   src/health/outbound_traffic.cpp
   src/singbox/link_parser.cpp
   src/singbox/link_store.cpp
+  src/singbox/link_platform.cpp
   src/health/health_issues.cpp
   src/health/service_health.cpp
   src/health/runtime_interface_inventory.cpp

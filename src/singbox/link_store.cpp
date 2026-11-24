@@ -1,7 +1,9 @@
 #include "link_store.hpp"
 
 #include <algorithm>
+#include <cerrno>
 #include <chrono>
+#include <fcntl.h>
 #include <fstream>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -43,7 +45,7 @@ nlohmann::json profile_json(const SingboxProfile& profile, bool with_secret) {
     for (const auto& connection : profile.connections) {
         connections.push_back(connection_json(connection, with_secret));
     }
-    return {
+    nlohmann::json json{
         {"id", profile.id},
         {"name", profile.name},
         {"interface", profile.interface_name},
@@ -51,12 +53,14 @@ nlohmann::json profile_json(const SingboxProfile& profile, bool with_secret) {
         {"mode", profile.mode},
         {"active", profile.active},
         {"urltest_url", profile.urltest_url},
-        {"subscription_url", profile.subscription_url},
         {"interval_hours", profile.interval_hours},
         {"last_refresh", profile.last_refresh},
         {"last_error", profile.last_error},
         {"connections", std::move(connections)},
     };
+    if (with_secret) json["subscription_url"] = profile.subscription_url;
+    else json["has_subscription"] = !profile.subscription_url.empty();
+    return json;
 }
 
 SingboxProfile profile_from_json(const nlohmann::json& json) {
@@ -99,13 +103,22 @@ void write_private(const std::string& path, const std::string& body) {
     const auto slash = path.find_last_of('/');
     if (slash != std::string::npos) mkdir_parents(path.substr(0, slash));
     const auto temp = path + ".tmp";
-    {
-        std::ofstream output(temp, std::ios::trunc);
-        if (!output) throw std::runtime_error("cannot write " + path);
-        output << body;
-        if (!output) throw std::runtime_error("cannot write " + path);
+    const int fd = ::open(temp.c_str(), O_WRONLY | O_CREAT | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK, 0600);
+    if (fd < 0) throw std::runtime_error("cannot write " + path);
+    struct stat info{};
+    bool ok = ::fstat(fd, &info) == 0 && S_ISREG(info.st_mode) && info.st_nlink == 1 &&
+              ::fchmod(fd, 0600) == 0 && ::ftruncate(fd, 0) == 0;
+    for (std::size_t offset = 0; ok && offset < body.size();) {
+        const auto count = ::write(fd, body.data() + offset, body.size() - offset);
+        if (count < 0 && errno == EINTR) continue;
+        if (count <= 0) ok = false;
+        else offset += static_cast<std::size_t>(count);
     }
-    ::chmod(temp.c_str(), 0600);
+    if (::close(fd) != 0) ok = false;
+    if (!ok) {
+        ::unlink(temp.c_str());
+        throw std::runtime_error("cannot write " + path);
+    }
     if (::rename(temp.c_str(), path.c_str()) != 0) {
         ::unlink(temp.c_str());
         throw std::runtime_error("cannot replace " + path);
@@ -114,20 +127,23 @@ void write_private(const std::string& path, const std::string& body) {
 
 std::string backup_of(const std::string& path) { return path + ".bak-keenpbr"; }
 
-void backup_file(const std::string& path) {
+bool backup_file(const std::string& path) {
     const auto body = read_file(path);
     if (!body.empty() || ::access(path.c_str(), F_OK) == 0) {
         write_private(backup_of(path), body);
+        return true;
     }
+    return false;
 }
 
-void restore_backup(const std::string& path) {
-    const auto backup = backup_of(path);
-    if (::access(backup.c_str(), F_OK) != 0) {
-        ::unlink(path.c_str());
+void restore_backup(const std::string& path, bool had_config) {
+    if (!had_config) {
+        if (::unlink(path.c_str()) != 0 && errno != ENOENT) {
+            throw std::runtime_error("cannot remove candidate sing-box config");
+        }
         return;
     }
-    const auto body = read_file(backup);
+    const auto body = read_file(backup_of(path));
     write_private(path, body);
 }
 
@@ -177,6 +193,43 @@ void require_mode(const std::string& mode) {
     if (mode != "direct" && mode != "selector" && mode != "urltest") {
         throw std::runtime_error("mode must be direct, selector, or urltest");
     }
+}
+
+constexpr std::int64_t kSubscriptionRetrySeconds = 5 * 60;
+
+std::vector<SingboxConnection> subscription_connections(const std::string& body, std::size_t& skipped) {
+    auto nodes = parse_subscription(body, &skipped);
+    std::vector<SingboxConnection> connections;
+    connections.reserve(nodes.size());
+    for (auto& node : nodes) {
+        auto& link = node.link;
+        connections.push_back({std::move(node.id), std::move(link.name), std::move(link.protocol),
+                               std::move(link.server), link.port, {}, "subscription",
+                               std::move(link.outbound)});
+    }
+    return connections;
+}
+
+bool same_subscription_nodes(const std::vector<SingboxConnection>& previous,
+                             const std::vector<SingboxConnection>& candidate) {
+    const auto sorted_nodes = [](const auto& connections) {
+        std::vector<const SingboxConnection*> nodes;
+        for (const auto& node : connections) {
+            if (node.source == "subscription") nodes.push_back(&node);
+        }
+        std::stable_sort(nodes.begin(), nodes.end(), [](auto a, auto b) { return a->id < b->id; });
+        return nodes;
+    };
+    const auto before = sorted_nodes(previous);
+    const auto after = sorted_nodes(candidate);
+    return before.size() == after.size() &&
+           std::equal(before.begin(), before.end(), after.begin(), [](auto a, auto b) {
+               return a->id == b->id && a->link == b->link && a->outbound == b->outbound;
+           });
+}
+
+std::string skipped_warning(std::size_t skipped) {
+    return skipped == 0 ? "" : std::to_string(skipped) + " subscription lines were skipped";
 }
 
 }  // namespace
@@ -292,30 +345,92 @@ void SingboxLinkService::write_store(const std::string& path, const std::vector<
 }
 
 SingboxLinkService::SingboxLinkService(SingboxPaths paths, SingboxCheck check,
-                                       KeeneticOutboundFn keenetic, SingboxReloadFn reload)
+                                       KeeneticOutboundFn keenetic, SingboxReloadFn reload,
+                                       SubscriptionDownloadFn download, SubscriptionClock clock)
     : paths_(std::move(paths)), check_(std::move(check)), keenetic_(std::move(keenetic)),
-      reload_(std::move(reload)) {}
+      reload_(std::move(reload)), download_(std::move(download)),
+      clock_(clock ? std::move(clock) : now_unix) {}
 
 std::vector<SingboxProfile> SingboxLinkService::read() const {
-    return load_profiles(paths_.store);
+    try {
+        return load_profiles(paths_.store);
+    } catch (const std::exception&) {
+        throw std::runtime_error("could not read the sing-box subscription store");
+    }
 }
 
 nlohmann::json SingboxLinkService::preview(const std::string& link) const {
     return public_proxy_fields(parse_proxy_link(link));
 }
 
-nlohmann::json SingboxLinkService::state(bool refresh_due) {
-    auto profiles = read();
-    if (!refresh_due) return public_state(profiles);
-    for (auto& profile : profiles) {
-        if (profile.subscription_url.empty() || profile.interval_hours <= 0) continue;
-        if (profile.last_refresh != 0 &&
-            now_unix() - profile.last_refresh < static_cast<std::int64_t>(profile.interval_hours) * 3600) {
-            continue;
-        }
-        profile.last_error = "subscription is due; open the page and refresh it";
+std::unique_lock<std::mutex> SingboxLinkService::begin_mutation() {
+    std::unique_lock<std::mutex> lock(mutation_mutex_, std::try_to_lock);
+    if (!lock) throw SingboxBusy();
+    return lock;
+}
+
+void SingboxLinkService::update_refresh_status(const std::string& id, RefreshStatus status) {
+    std::lock_guard<std::mutex> lock(status_mutex_);
+    if (status.last_refresh == 0 && status.retry_at == 0 && status.error.empty()) {
+        refresh_status_.erase(id);
+    } else {
+        refresh_status_[id] = std::move(status);
     }
-    return public_state(profiles);
+}
+
+SingboxLinkService::RefreshStatus SingboxLinkService::refresh_status(const SingboxProfile& profile) const {
+    std::lock_guard<std::mutex> lock(status_mutex_);
+    const auto it = refresh_status_.find(profile.id);
+    return it == refresh_status_.end() ? RefreshStatus{profile.last_refresh, 0, profile.last_error}
+                                      : it->second;
+}
+
+std::int64_t SingboxLinkService::next_refresh(const SingboxProfile& profile, const RefreshStatus& status) {
+    if (profile.subscription_url.empty() || profile.interval_hours <= 0) return 0;
+    if (status.retry_at != 0) return status.retry_at;
+    if (status.last_refresh <= 0) return 0;
+    return status.last_refresh + static_cast<std::int64_t>(profile.interval_hours) * 3600;
+}
+
+nlohmann::json SingboxLinkService::state() const {
+    nlohmann::json array = nlohmann::json::array();
+    for (const auto& profile : read()) {
+        auto json = profile_json(profile, false);
+        if (!profile.subscription_url.empty()) {
+            const auto status = refresh_status(profile);
+            const auto next = next_refresh(profile, status);
+            json["last_refresh"] = status.last_refresh;
+            json["last_error"] = status.error;
+            json["next_refresh"] = profile.interval_hours <= 0 ? nlohmann::json(nullptr)
+                                                               : nlohmann::json(next == 0 ? clock_() : next);
+        }
+        array.push_back(std::move(json));
+    }
+    return {{"profiles", std::move(array)}};
+}
+
+std::map<std::string, std::string> SingboxLinkService::subscription_errors() const {
+    std::map<std::string, std::string> errors;
+    std::lock_guard<std::mutex> lock(status_mutex_);
+    for (const auto& entry : refresh_status_) {
+        if (!entry.second.error.empty()) errors.emplace(entry.first, entry.second.error);
+    }
+    return errors;
+}
+
+bool SingboxLinkService::write_checked_config(const nlohmann::json& config) {
+    const bool had_config = backup_file(paths_.singbox_config);
+    write_private(paths_.singbox_config, config.dump(2));
+    try {
+        std::string check_error;
+        if (check_ && check_(paths_.singbox_config, &check_error) != 0) {
+            throw std::runtime_error("sing-box check failed: " + redact_error(check_error));
+        }
+    } catch (...) {
+        restore_backup(paths_.singbox_config, had_config);
+        throw;
+    }
+    return had_config;
 }
 
 SingboxApplyResult SingboxLinkService::commit(std::vector<SingboxProfile> profiles,
@@ -339,22 +454,15 @@ SingboxApplyResult SingboxLinkService::commit(std::vector<SingboxProfile> profil
         return result;
     }
     const auto rendered = render_singbox_config(profiles);
-    backup_file(paths_.singbox_config);
     backup_file(paths_.store);
     const auto previous_profiles = read();
-    write_private(paths_.singbox_config, rendered.dump(2));
-    std::string check_error;
-    const int status = check_ ? check_(paths_.singbox_config, &check_error) : 0;
-    if (status != 0) {
-        restore_backup(paths_.singbox_config);
-        throw std::runtime_error(std::string("sing-box check failed: ") + redact_error(check_error));
-    }
+    const bool had_config = write_checked_config(rendered);
     try {
         write_store(paths_.store, profiles);
         if (keenetic_) keenetic_(*changed, !changed->connections.empty());
     } catch (const std::exception&) {
         write_store(paths_.store, previous_profiles);
-        restore_backup(paths_.singbox_config);
+        restore_backup(paths_.singbox_config, had_config);
         throw;
     }
     SingboxApplyResult result;
@@ -377,8 +485,9 @@ SingboxApplyResult SingboxLinkService::save_connection(const std::string& profil
                                                        const std::string& tag,
                                                        const std::string& mode,
                                                        const std::string& connection_name,
-                                                       const std::string& link,
-                                                       const std::string& replace_id) {
+                                                        const std::string& link,
+                                                        const std::string& replace_id) {
+    const auto lock = begin_mutation();
     require_mode(mode.empty() ? "selector" : mode);
     const auto parsed = parse_proxy_link(link);
     auto profiles = read();
@@ -429,6 +538,7 @@ SingboxApplyResult SingboxLinkService::save_connection(const std::string& profil
 
 SingboxApplyResult SingboxLinkService::remove_connection(const std::string& profile_id,
                                                          const std::string& connection_id) {
+    const auto lock = begin_mutation();
     auto profiles = read();
     SingboxProfile* profile = nullptr;
     for (auto& item : profiles) {
@@ -451,14 +561,16 @@ SingboxApplyResult SingboxLinkService::remove_connection(const std::string& prof
             if (item.id != id) remaining.push_back(std::move(item));
         }
         write_store(paths_.store, remaining);
+        update_refresh_status(id, {});
         result.state = public_state(remaining);
         return result;
     }
-    return commit(std::move(profiles), profile->id);
+    return commit(std::move(profiles), profile_id);
 }
 
 SingboxApplyResult SingboxLinkService::set_mode(const std::string& profile_id, const std::string& mode,
                                                 const std::string& active) {
+    const auto lock = begin_mutation();
     require_mode(mode);
     auto profiles = read();
     SingboxProfile* profile = nullptr;
@@ -467,19 +579,36 @@ SingboxApplyResult SingboxLinkService::set_mode(const std::string& profile_id, c
     }
     if (profile == nullptr) throw std::runtime_error("sing-box profile was not found");
     profile->mode = mode;
-    if (!active.empty()) profile->active = active;
-    return commit(std::move(profiles), profile->id);
+    if (!active.empty()) {
+        if (std::none_of(profile->connections.begin(), profile->connections.end(),
+                         [&](const auto& node) { return node.id == active; })) {
+            throw std::runtime_error("sing-box connection was not found");
+        }
+        profile->active = active;
+    }
+    return commit(std::move(profiles), profile_id);
 }
 
 SingboxApplyResult SingboxLinkService::save_subscription(const std::string& profile_name,
                                                          const std::string& interface_name,
                                                          const std::string& tag, const std::string& mode,
-                                                         const std::string& url, int interval_hours,
-                                                         const std::string& body) {
+                                                          const std::string& url, int interval_hours) {
+    const auto lock = begin_mutation();
     if (url.find("://") == std::string::npos) throw std::runtime_error("subscription URL is invalid");
     require_mode(mode.empty() ? "urltest" : mode);
+    std::string body;
+    try {
+        body = download_(url, {});
+    } catch (const std::exception&) {
+        throw std::runtime_error("subscription download failed");
+    }
     std::size_t skipped = 0;
-    const auto nodes = parse_subscription(body, &skipped);
+    std::vector<SingboxConnection> nodes;
+    try {
+        nodes = subscription_connections(body, skipped);
+    } catch (const std::exception&) {
+        throw std::runtime_error("subscription did not contain usable proxy data");
+    }
     auto profiles = read();
     const auto wanted_tag = sanitize_keenetic_tag(tag.empty() ? profile_name : tag);
     const auto wanted_iface = interface_name.empty() ? "sbtun" : interface_name;
@@ -499,48 +628,114 @@ SingboxApplyResult SingboxLinkService::save_subscription(const std::string& prof
     profile->mode = mode.empty() ? "urltest" : mode;
     profile->subscription_url = url;
     profile->interval_hours = interval_hours < 0 ? 0 : interval_hours;
-    profile->last_refresh = now_unix();
-    profile->last_error = skipped == 0 ? "" : std::to_string(skipped) + " subscription lines were skipped";
+    profile->last_refresh = clock_();
+    profile->last_error = skipped_warning(skipped);
     std::vector<SingboxConnection> manual;
     for (auto& connection : profile->connections) {
         if (connection.source == "manual") manual.push_back(std::move(connection));
     }
     profile->connections = std::move(manual);
-    for (const auto& node : nodes) {
-        SingboxConnection connection;
-        connection.id = node.id;
-        connection.name = node.link.name;
-        connection.protocol = node.link.protocol;
-        connection.server = node.link.server;
-        connection.port = node.link.port;
-        connection.source = "subscription";
-        if (node.link.outbound.contains("uuid") || node.link.outbound.contains("password")) {
-            connection.outbound = node.link.outbound;
-        }
-        profile->connections.push_back(std::move(connection));
-    }
-    if (find_active(*profile) == nullptr && !profile->connections.empty()) {
-        profile->active = profile->connections.front().id;
-    }
+    for (auto& node : nodes) profile->connections.push_back(std::move(node));
     bool active_ok = false;
     for (const auto& connection : profile->connections) {
         if (connection.id == profile->active) active_ok = true;
     }
     if (!active_ok && !profile->connections.empty()) profile->active = profile->connections.front().id;
     const auto id = profile->id;
-    return commit(std::move(profiles), id);
+    auto result = commit(std::move(profiles), id);
+    update_refresh_status(id, {});
+    return result;
 }
 
-SingboxApplyResult SingboxLinkService::refresh_subscription(const std::string& profile_id,
-                                                           const std::string& body) {
-    auto profiles = read();
-    SingboxProfile* profile = nullptr;
-    for (auto& item : profiles) {
-        if (item.id == profile_id) profile = &item;
+void SingboxLinkService::refresh_one(std::vector<SingboxProfile>& profiles, std::size_t index,
+                                    const SubscriptionStopFn& stopping) {
+    auto& profile = profiles[index];
+    auto status = refresh_status(profile);
+    const char* failure = "subscription download failed";
+    try {
+        std::size_t skipped = 0;
+        auto nodes = [&] {
+            const auto body = download_(profile.subscription_url, stopping);
+            if (stopping && stopping()) return std::vector<SingboxConnection>{};
+            failure = "subscription did not contain usable proxy data; keeping the previous configuration";
+            return subscription_connections(body, skipped);
+        }();
+        if (stopping && stopping()) return;
+        for (const auto& node : profile.connections) {
+            if (node.source != "subscription") nodes.push_back(node);
+        }
+        const auto active = std::find_if(nodes.begin(), nodes.end(), [&](const auto& node) {
+            return node.id == profile.active;
+        });
+        if (!profile.active.empty() && active == nodes.end()) {
+            failure = "selected node disappeared from subscription; keeping the previous configuration";
+            throw std::runtime_error(failure);
+        }
+        const auto refreshed = clock_();
+        auto warning = skipped_warning(skipped);
+        if (!same_subscription_nodes(profile.connections, nodes)) {
+            // The Keenetic tag and interface have not changed; do not reapply routing.
+            const auto previous_active = profile.active;
+            const auto previous_refresh = profile.last_refresh;
+            auto previous_error = profile.last_error;
+            std::stable_partition(nodes.begin(), nodes.end(),
+                                  [](const auto& node) { return node.source != "subscription"; });
+            if (profile.active.empty()) profile.active = nodes.front().id;
+            profile.connections.swap(nodes);
+            profile.last_refresh = refreshed;
+            profile.last_error = warning;
+            try {
+                failure = "could not apply subscription: sing-box config write or check failed";
+                const bool had_config = write_checked_config(render_singbox_config(profiles));
+                try {
+                    failure = "could not restart sing-box; restoring the previous configuration";
+                    if (!reload_ || !reload_()) throw std::runtime_error(failure);
+                    failure = "could not save subscription; restoring the previous configuration";
+                    write_store(paths_.store, profiles);
+                } catch (...) {
+                    try {
+                        restore_backup(paths_.singbox_config, had_config);
+                        if (had_config && reload_ && !reload_()) throw std::runtime_error("restart failed");
+                    } catch (...) {
+                        failure = "subscription rollback failed; check sing-box configuration and service";
+                    }
+                    throw;
+                }
+            } catch (...) {
+                profile.connections.swap(nodes);
+                profile.active = previous_active;
+                profile.last_refresh = previous_refresh;
+                profile.last_error = std::move(previous_error);
+                throw;
+            }
+        }
+        update_refresh_status(profile.id, {refreshed, 0, std::move(warning)});
+    } catch (const std::exception&) {
+        if (stopping && stopping()) return;
+        update_refresh_status(profile.id, {status.last_refresh, clock_() + kSubscriptionRetrySeconds, failure});
     }
-    if (profile == nullptr) throw std::runtime_error("sing-box profile was not found");
-    return save_subscription(profile->name, profile->interface_name, profile->keenetic_tag, profile->mode,
-                             profile->subscription_url, profile->interval_hours, body);
+}
+
+nlohmann::json SingboxLinkService::refresh_subscriptions(const std::string& profile_id, bool due_only,
+                                                        const SubscriptionStopFn& stopping) {
+    const auto lock = begin_mutation();
+    auto profiles = read();
+    nlohmann::json results = nlohmann::json::array();
+    for (std::size_t i = 0; i < profiles.size(); ++i) {
+        if (stopping && stopping()) break;
+        const auto& profile = profiles[i];
+        if (profile.subscription_url.empty() || (!profile_id.empty() && profile.id != profile_id)) continue;
+        const auto status = refresh_status(profile);
+        if (due_only && (profile.interval_hours <= 0 || next_refresh(profile, status) > clock_())) continue;
+        refresh_one(profiles, i, stopping);
+        if (stopping && stopping()) break;
+        const auto updated = refresh_status(profile);
+        results.push_back({{"id", profile.id}, {"ok", updated.retry_at == 0}, {"message", updated.error}});
+    }
+    if (!profile_id.empty() && results.empty() && !(stopping && stopping())) {
+        throw std::runtime_error("subscription was not found");
+    }
+    return results;
 }
 
 }  // namespace keen_pbr3

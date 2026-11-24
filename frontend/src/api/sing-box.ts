@@ -16,9 +16,10 @@ export type SingboxProfile = {
   keenetic_tag: string
   mode: "direct" | "selector" | "urltest" | string
   active: string
-  subscription_url: string
+  has_subscription: boolean
   interval_hours: number
   last_refresh: number
+  next_refresh?: number | null
   last_error: string
   connections: SingboxConnection[]
 }

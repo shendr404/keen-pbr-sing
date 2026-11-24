@@ -16,10 +16,14 @@ import { getApiErrorMessage } from "@/lib/api-errors"
 
 const queryKey = ["sing-box-profiles"]
 
+function formatRefreshTime(timestamp: number | null | undefined, locale: string) {
+  return timestamp ? new Date(timestamp * 1000).toLocaleString(locale) : "—"
+}
+
 export function SingboxPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const profiles = useQuery({ queryKey, queryFn: fetchSingboxProfiles })
+  const profiles = useQuery({ queryKey, queryFn: fetchSingboxProfiles, refetchInterval: 30_000 })
   const [link, setLink] = useState("")
   const [name, setName] = useState("")
   const [tag, setTag] = useState("proxy")
@@ -136,6 +140,7 @@ export function SingboxPage() {
             await invalidate()
           }}
           onError={fail}
+          onRefreshSettled={invalidate}
           profile={profile}
         />
       ))}
@@ -147,12 +152,14 @@ function ProfileCard({
   profile,
   onChange,
   onError,
+  onRefreshSettled,
 }: {
   profile: SingboxProfile
   onChange: () => Promise<void>
   onError: (error: unknown) => void
+  onRefreshSettled: () => Promise<void>
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const select = useMutation({
     mutationFn: (body: { mode?: string; active?: string }) =>
       postSingbox("/api/sing-box/profiles/select", { profile_id: profile.id, mode: body.mode ?? profile.mode, active: body.active ?? profile.active }),
@@ -167,7 +174,10 @@ function ProfileCard({
   const refresh = useMutation({
     mutationFn: () => postSingbox("/api/sing-box/subscriptions/refresh", { profile_id: profile.id }),
     onSuccess: onChange,
-    onError,
+    onError: async (error) => {
+      onError(error)
+      await onRefreshSettled()
+    },
   })
   return (
     <section className="space-y-3 rounded-lg border p-4">
@@ -183,13 +193,22 @@ function ProfileCard({
             {mode}
           </Button>
         ))}
-        {profile.subscription_url ? (
-          <Button onClick={() => refresh.mutate()} type="button" variant="outline">
+        {profile.has_subscription ? (
+          <Button disabled={refresh.isPending} onClick={() => refresh.mutate()} type="button" variant="outline">
             {t("pages.singbox.refresh")}
           </Button>
         ) : null}
       </div>
-      {profile.last_error ? <p className="text-sm text-destructive">{profile.last_error}</p> : null}
+      {profile.has_subscription ? (
+        <dl className="grid grid-cols-[auto_1fr] gap-x-3 text-sm">
+          <dt>{t("pages.singbox.lastRefresh")}</dt>
+          <dd>{formatRefreshTime(profile.last_refresh, i18n.language)}</dd>
+          <dt>{t("pages.singbox.nextRefresh")}</dt>
+          <dd>{profile.interval_hours > 0 ? formatRefreshTime(profile.next_refresh, i18n.language) : t("pages.singbox.autoRefreshOff")}</dd>
+          <dt>{t("pages.singbox.lastError")}</dt>
+          <dd className={profile.last_error ? "text-destructive" : undefined}>{profile.last_error || "—"}</dd>
+        </dl>
+      ) : null}
       <ul className="space-y-2">
         {profile.connections.map((connection) => (
           <li className="flex flex-wrap items-center justify-between gap-2 text-sm" key={connection.id}>

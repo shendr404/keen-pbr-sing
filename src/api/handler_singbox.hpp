@@ -8,7 +8,8 @@ namespace keen_pbr3 {
 
 struct ApiContext;
 
-void register_singbox_handler(ApiServer& server, ApiContext& ctx);
+class SingboxLinkService;
+void register_singbox_handler(ApiServer& server, ApiContext& ctx, SingboxLinkService& service);
 
 }  // namespace keen_pbr3
 

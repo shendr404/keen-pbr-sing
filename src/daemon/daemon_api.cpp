@@ -886,7 +886,7 @@ void Daemon::setup_api() {
     lifecycle_operation_store_.set_publish_callback([this]() {
         if (status_stream_) status_stream_->reconcile(StatusUpdate::Service);
     });
-    register_api_handlers(*api_server_, *api_ctx_);
+    register_api_handlers(*api_server_, *api_ctx_, singbox_links_);
 
     const std::filesystem::path frontend_root(KEEN_PBR_FRONTEND_ROOT);
     const std::filesystem::path frontend_index = frontend_root / "index.html";

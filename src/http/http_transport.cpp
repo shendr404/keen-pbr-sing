@@ -67,6 +67,14 @@ int sockopt_callback(void* opaque, curl_socket_t fd, curlsocktype) {
     context->mark_errno = errno;
     return CURL_SOCKOPT_ERROR;
 }
+int transfer_progress(void* opaque, curl_off_t, curl_off_t, curl_off_t, curl_off_t) noexcept {
+    const auto* context = static_cast<const TransferContext*>(opaque);
+    try {
+        return context->request->cancelled() ? 1 : 0;
+    } catch (...) {
+        return 1;
+    }
+}
 void restrict_protocols(CURL* curl) {
 #if LIBCURL_VERSION_NUM >= 0x075500
     setopt(curl, CURLOPT_PROTOCOLS_STR, "http,https");
@@ -79,7 +87,12 @@ void restrict_protocols(CURL* curl) {
 } // namespace
 
 HttpTransportResponse LibcurlHttpTransport::perform(const HttpTransportRequest& request) {
-    std::lock_guard<std::mutex> lock(http_transport_mutex);
+    std::unique_lock<std::mutex> lock(http_transport_mutex, std::defer_lock);
+    if (request.skip_if_busy) {
+        if (!lock.try_lock()) throw HttpTransportError("HTTP transport is busy");
+    } else {
+        lock.lock();
+    }
 
     EasyHandle curl(curl_easy_init());
     if (!curl) throw HttpTransportError("Failed to initialize curl handle");
@@ -89,6 +102,11 @@ HttpTransportResponse LibcurlHttpTransport::perform(const HttpTransportRequest& 
     setopt(curl.get(), CURLOPT_URL, request.url.c_str());
     setopt(curl.get(), CURLOPT_NOSIGNAL, 1L);
     setopt(curl.get(), CURLOPT_TIMEOUT_MS, request.timeout_ms);
+    if (request.cancelled) {
+        setopt(curl.get(), CURLOPT_NOPROGRESS, 0L);
+        setopt(curl.get(), CURLOPT_XFERINFOFUNCTION, transfer_progress);
+        setopt(curl.get(), CURLOPT_XFERINFODATA, &context);
+    }
     setopt(curl.get(), CURLOPT_USERAGENT, request.user_agent.c_str());
     setopt(curl.get(), CURLOPT_FOLLOWLOCATION, 1L);
     setopt(curl.get(), CURLOPT_MAXREDIRS, request.max_redirects);

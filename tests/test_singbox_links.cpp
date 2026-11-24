@@ -3,8 +3,12 @@
 #include "../src/singbox/link_parser.hpp"
 #include "../src/singbox/link_store.hpp"
 
+#include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <future>
+#include <utility>
 
 using namespace keen_pbr3;
 
@@ -88,7 +92,7 @@ TEST_CASE("sing-box check failure restores the previous config and store") {
                                               ""),
                       "sing-box check failed: bad outbound");
     CHECK(read_file(paths.singbox_config).find("\"old\":true") != std::string::npos);
-    CHECK(service.state(false)["profiles"].empty());
+    CHECK(service.state()["profiles"].empty());
 
     const auto saved = service.save_connection(
         "Proxy", "sbtun", "proxy", "direct", "Home",
@@ -107,4 +111,178 @@ TEST_CASE("sing-box check failure restores the previous config and store") {
     CHECK(state["connections"][0]["server"] == "example.com");
     CHECK(state["connections"][0].dump().find("pw") == std::string::npos);
     std::filesystem::remove_all(root);
+}
+
+namespace {
+
+struct SubscriptionFixture {
+    const std::filesystem::path dir;
+    SingboxPaths paths;
+    std::int64_t now{1000};
+    std::string url{"https://example.test/secret-token"};
+    std::string body{"trojan://pw@a.example:443#A\ntrojan://pw@b.example:443#B"};
+    int downloads{0};
+    int checks{0};
+    int restarts{0};
+    bool download_fails{false};
+    bool check_fails{false};
+    bool restart_fails_once{false};
+    std::function<void()> on_download;
+    SingboxLinkService service;
+
+    static std::filesystem::path temp_dir() {
+        auto pattern = (std::filesystem::temp_directory_path() / "keen-pbr-subscriptions-XXXXXX").string();
+        if (!::mkdtemp(pattern.data())) throw std::runtime_error("mkdtemp failed");
+        return pattern;
+    }
+
+    SubscriptionFixture()
+        : dir(temp_dir()), paths{(dir / "links.json").string(), (dir / "config.json").string()},
+          service(paths,
+                  [this](const std::string&, std::string* output) {
+                      ++checks;
+                      *output = url;
+                      return check_fails ? 1 : 0;
+                  },
+                  {},
+                  [this] {
+                      ++restarts;
+                      return !std::exchange(restart_fails_once, false);
+                  },
+                  [this](const std::string& requested, const SubscriptionStopFn&) {
+                      ++downloads;
+                      if (on_download) on_download();
+                      if (download_fails) throw std::runtime_error(requested);
+                      return body;
+                  },
+                  [this] { return now; }) {}
+
+    ~SubscriptionFixture() { std::filesystem::remove_all(dir); }
+
+    void save(int interval = 1) {
+        REQUIRE(service.save_subscription("Proxy", "sbtun", "proxy", "direct", url, interval).singbox_reloaded);
+    }
+
+    nlohmann::json profile() { return service.state()["profiles"].at(0); }
+    nlohmann::json tick() { return service.refresh_subscriptions("", true); }
+};
+
+}  // namespace
+
+TEST_CASE("subscription scheduler honors due time without writing or restarting for identical nodes") {
+    SubscriptionFixture f;
+    f.save();
+    CHECK(f.profile()["has_subscription"] == true);
+    CHECK(f.profile().dump().find("secret-token") == std::string::npos);
+    const auto config = read_file(f.paths.singbox_config);
+    const auto store = read_file(f.paths.store);
+    const auto store_mtime = std::filesystem::last_write_time(f.paths.store);
+    const auto config_mtime = std::filesystem::last_write_time(f.paths.singbox_config);
+    CHECK(f.profile()["next_refresh"] == 4600);
+    f.now = 4599;
+    CHECK(f.tick().empty());
+    CHECK(f.downloads == 1);
+
+    f.body = "trojan://pw@b.example:443#B\ntrojan://pw@a.example:443#A";
+    f.now = 4600;
+    REQUIRE(f.tick().at(0).at("ok") == true);
+    CHECK(f.downloads == 2);
+    CHECK(f.checks == 1);
+    CHECK(f.restarts == 1);
+    CHECK(f.profile()["last_refresh"] == 4600);
+    CHECK(f.profile()["next_refresh"] == 8200);
+    CHECK(std::filesystem::last_write_time(f.paths.store) == store_mtime);
+    CHECK(std::filesystem::last_write_time(f.paths.singbox_config) == config_mtime);
+    CHECK(read_file(f.paths.store) == store);
+    CHECK(read_file(f.paths.singbox_config) == config);
+    CHECK(f.tick().empty());
+}
+
+TEST_CASE("subscription failures back off and recover without exposing the URL") {
+    SubscriptionFixture f;
+    f.save();
+    f.now = 4600;
+    f.download_fails = true;
+    REQUIRE(f.tick().at(0).at("ok") == false);
+    CHECK(f.profile()["last_refresh"] == 1000);
+    CHECK(f.profile()["next_refresh"] == 4900);
+    CHECK(f.service.subscription_errors().at("proxy") == "subscription download failed");
+    f.now = 4899;
+    CHECK(f.tick().empty());
+    CHECK(f.downloads == 2);
+
+    f.download_fails = false;
+    f.now = 4900;
+    // A change in credentials (same node ID) must still update sing-box.
+    f.body = "trojan://new@a.example:443#A";
+    REQUIRE(f.tick().at(0).at("ok") == true);
+    CHECK(f.service.subscription_errors().empty());
+    CHECK(f.profile()["next_refresh"] == 8500);
+    CHECK(f.checks == 2);
+    CHECK(f.restarts == 2);
+    CHECK(read_file(f.paths.singbox_config).find("\"password\": \"new\"") != std::string::npos);
+    CHECK(SingboxLinkService::load_profiles(f.paths.store).at(0).last_refresh == 4900);
+}
+
+TEST_CASE("forced refresh works with automatic refresh disabled and protects the selected node") {
+    SubscriptionFixture f;
+    f.save(0);
+    f.now = 4600;
+    CHECK(f.tick().empty());
+    CHECK(f.profile()["next_refresh"].is_null());
+    f.body = "trojan://pw@b.example:443#B";
+    const auto config = read_file(f.paths.singbox_config);
+    const auto store = read_file(f.paths.store);
+    REQUIRE(f.service.refresh_subscriptions("proxy", false).at(0).at("ok") == false);
+    CHECK(f.service.subscription_errors().at("proxy").find("selected node disappeared") != std::string::npos);
+    CHECK(f.checks == 1);
+    CHECK(f.restarts == 1);
+    CHECK(read_file(f.paths.singbox_config) == config);
+    CHECK(read_file(f.paths.store) == store);
+    CHECK(f.profile()["last_refresh"] == 1000);
+    CHECK_THROWS(f.service.refresh_subscriptions("unknown", false));
+}
+
+TEST_CASE("subscription check and restart failures roll back without propagating child output") {
+    SubscriptionFixture f;
+    f.save();
+    f.body = "trojan://new@a.example:443#A";
+    const auto config = read_file(f.paths.singbox_config);
+    const auto store = read_file(f.paths.store);
+    f.now = 4600;
+    f.check_fails = true;
+    REQUIRE(f.tick().at(0).at("ok") == false);
+    CHECK(f.restarts == 1);
+    CHECK(f.profile()["last_error"].dump().find("secret-token") == std::string::npos);
+    CHECK(read_file(f.paths.singbox_config) == config);
+    CHECK(read_file(f.paths.store) == store);
+
+    f.check_fails = false;
+    f.restart_fails_once = true;
+    // Manual requests bypass the retry delay.
+    REQUIRE(f.service.refresh_subscriptions("proxy", false).at(0).at("ok") == false);
+    CHECK(f.restarts == 3);
+    CHECK(read_file(f.paths.singbox_config) == config);
+    CHECK(read_file(f.paths.store) == store);
+}
+
+TEST_CASE("subscription download does not block reads and excludes concurrent updates") {
+    SubscriptionFixture f;
+    f.save();
+    f.now = 4600;
+    std::promise<void> downloading, release;
+    auto released = release.get_future();
+    f.on_download = [&] {
+        downloading.set_value();
+        released.wait_for(std::chrono::seconds{5});
+    };
+    auto background = std::async(std::launch::async, [&] {
+        return f.service.refresh_subscriptions("proxy", false);
+    });
+    downloading.get_future().wait();
+    CHECK(f.profile()["last_refresh"] == 1000);
+    CHECK_THROWS_AS(f.service.refresh_subscriptions("proxy", false), SingboxBusy);
+    CHECK_THROWS_AS(f.service.set_mode("proxy", "selector", ""), SingboxBusy);
+    release.set_value();
+    CHECK(background.get().at(0).at("ok") == true);
 }

@@ -20,7 +20,7 @@
 
 namespace keen_pbr3 {
 
-void register_api_handlers(ApiServer& server, ApiContext& ctx) {
+void register_api_handlers(ApiServer& server, ApiContext& ctx, SingboxLinkService& singbox) {
     register_health_service_handler(server, ctx);
     register_reload_handler(server, ctx);
     register_lists_refresh_handler(server, ctx);
@@ -34,7 +34,7 @@ void register_api_handlers(ApiServer& server, ApiContext& ctx) {
     register_dns_check_handler(server, ctx);
     register_diagnostics_handler(server);
     register_status_events_handler(server, ctx);
-    register_singbox_handler(server, ctx);
+    register_singbox_handler(server, ctx, singbox);
     server.get_stream("/metrics", [&ctx](const httplib::Request&, httplib::Response& response) {
         if (!ctx.get_prometheus_metrics_fn) {
             throw ApiError("Metrics are unavailable", 503);
