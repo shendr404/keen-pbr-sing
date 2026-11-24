@@ -1,4 +1,5 @@
 #include "link_store.hpp"
+#include "link_parser.hpp"
 
 #include <algorithm>
 #include <cerrno>
@@ -195,7 +196,7 @@ void require_mode(const std::string& mode) {
     }
 }
 
-constexpr std::int64_t kSubscriptionRetrySeconds = 5 * 60;
+constexpr std::int64_t kSubscriptionRetrySeconds = std::int64_t{5} * 60;
 
 std::vector<SingboxConnection> subscription_connections(const std::string& body, std::size_t& skipped) {
     auto nodes = parse_subscription(body, &skipped);

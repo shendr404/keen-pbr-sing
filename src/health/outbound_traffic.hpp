@@ -4,7 +4,6 @@
 
 #include <chrono>
 #include <cstdint>
-#include <functional>
 #include <map>
 #include <mutex>
 #include <optional>
