@@ -510,7 +510,7 @@
               W_multi_if:
                 'ipset "{n}": multiple interfaces [{ifaces}] — v3 uses one interface per outbound. Only "{first}" was used. Create separate outbounds + a urltest outbound for failover.',
               W_keenapi:
-                '"use_keenetic_api = true" is not supported in v3. A DNS server of type "keenetic" has been added as fallback. For interface health-checking, create urltest outbounds manually — see <link href="/docs/configuration/outbounds/">keen-pbr.fyi/docs/configuration/outbounds/</link>.',
+                '"use_keenetic_api = true" is not supported in v3. A DNS server of type "keenetic" has been added as fallback. For interface health-checking, create urltest outbounds manually — see <link href="/keen-pbr-sing/docs/configuration/outbounds/">shendr404.github.io/keen-pbr-sing/docs/configuration/outbounds/</link>.',
               W_keen_dns:
                 '"use_keenetic_dns" is enabled or omitted — a DNS server of type "keenetic" has been added as the first fallback resolver.',
               W_cache_def:
@@ -545,7 +545,7 @@
               I_newformat:
                 "Config converted from TOML v2 to JSON v3. Review IPv4/IPv6 gateway settings, DNS addresses, and ttl_ms values before deploying.",
               I_cbr:
-                'v3 supports urltest outbounds with circuit-breaker for interface health-checking. See <link href="/docs/configuration/outbounds/">keen-pbr.fyi/docs/configuration/outbounds/</link>.',
+                'v3 supports urltest outbounds with circuit-breaker for interface health-checking. See <link href="/keen-pbr-sing/docs/configuration/outbounds/">shendr404.github.io/keen-pbr-sing/docs/configuration/outbounds/</link>.',
               I_keen_fb:
                 'DNS server of type "keenetic" added to dns.fallback because use_keenetic_api was enabled or use_keenetic_dns was not explicitly disabled.',
               I_dns_test:
@@ -585,7 +585,7 @@
               W_multi_if:
                 'ipset "{n}": несколько интерфейсов [{ifaces}] — в v3 один интерфейс на outbound. Используется только "{first}". Создайте отдельные outbound + urltest для failover.',
               W_keenapi:
-                '"use_keenetic_api = true" не поддерживается в v3. Добавлен DNS-сервер типа "keenetic" как fallback. Для проверки доступности интерфейсов создайте urltest outbound вручную — см. <link href="/docs/configuration/outbounds/">keen-pbr.fyi/docs/configuration/outbounds/</link>.',
+                '"use_keenetic_api = true" не поддерживается в v3. Добавлен DNS-сервер типа "keenetic" как fallback. Для проверки доступности интерфейсов создайте urltest outbound вручную — см. <link href="/keen-pbr-sing/docs/configuration/outbounds/">shendr404.github.io/keen-pbr-sing/docs/configuration/outbounds/</link>.',
               W_keen_dns:
                 '"use_keenetic_dns" включён или не задан — добавлен DNS-сервер типа "keenetic" как первый fallback-резолвер.',
               W_cache_def:
@@ -621,7 +621,7 @@
               I_newformat:
                 "Конфиг конвертирован из TOML v2 в JSON v3. Проверьте настройки IPv4/IPv6 шлюзов, адреса DNS и ttl_ms перед применением.",
               I_cbr:
-                'В v3 urltest outbounds поддерживают circuit-breaker для проверки доступности интерфейсов. Подробнее: <link href="/docs/configuration/outbounds/">keen-pbr.fyi/docs/configuration/outbounds/</link>.',
+                'В v3 urltest outbounds поддерживают circuit-breaker для проверки доступности интерфейсов. Подробнее: <link href="/keen-pbr-sing/docs/configuration/outbounds/">shendr404.github.io/keen-pbr-sing/docs/configuration/outbounds/</link>.',
               I_keen_fb:
                 'DNS-сервер типа "keenetic" добавлен в dns.fallback, т.к. был включён use_keenetic_api или use_keenetic_dns не был явно отключён.',
               I_dns_test:
@@ -1222,7 +1222,7 @@
                 this.lang === "ru" && !href.startsWith("/ru/")
                   ? `/ru${href}`
                   : href;
-              return `https://keen-pbr.fyi${path}`;
+              return `https://shendr404.github.io/keen-pbr-sing${path}`;
             }
             return href;
           },
@@ -1230,10 +1230,10 @@
             if (this.lang !== "ru") return text;
             if (
               href.startsWith("/docs/") &&
-              text.startsWith("keen-pbr.fyi/docs/")
+              text.startsWith("shendr404.github.io/keen-pbr-sing/docs/")
             ) {
               return text.replace(
-                "keen-pbr.fyi/docs/",
+                "shendr404.github.io/keen-pbr-sing/docs/",
                 "keen-pbr.fyi/ru/docs/",
               );
             }

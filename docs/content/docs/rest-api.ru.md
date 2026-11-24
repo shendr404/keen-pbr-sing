@@ -66,7 +66,7 @@ keen-pbr hash-password
 
 По умолчанию API слушает `0.0.0.0:12121` (значение `api.listen`). Все маршруты доступны по этому адресу.
 
-Полная схема запросов и ответов находится в [OpenAPI-документе](https://github.com/maksimkurb/keen-pbr/blob/main/docs/openapi.yaml). Основные маршруты (outbound — канал, через который идёт трафик: VPN-интерфейс, провайдер или блокировка):
+Полная схема запросов и ответов находится в [OpenAPI-документе](https://github.com/shendr404/keen-pbr-sing/blob/main/docs/openapi.yaml). Основные маршруты (outbound — канал, через который идёт трафик: VPN-интерфейс, провайдер или блокировка):
 
 | Маршрут | Назначение |
 |---|---|
@@ -279,7 +279,7 @@ sum by (server) (rate(keen_pbr_dns_proxy_upstream_requests_total{result=~"timeou
 
 ### Дашборд Grafana и алерты
 
-Импортируйте [keen-pbr-dashboard.json](https://keen-pbr.fyi/grafana/keen-pbr-dashboard.json) в Grafana (Dashboards > New > Import). Нужен источник данных Prometheus с UID `prometheus`. В дашборде есть переменные `job` и `outbound`, обновление каждые 30 с и разделы Status, Outbounds, DNS interception, DNS proxy, Sets & lists и Errors. Интервал scrape должен быть не больше 30 с: столбчатые панели считают `increase()` по окнам в одну минуту.
+Импортируйте [keen-pbr-dashboard.json](https://shendr404.github.io/keen-pbr-sing/grafana/keen-pbr-dashboard.json) в Grafana (Dashboards > New > Import). Нужен источник данных Prometheus с UID `prometheus`. В дашборде есть переменные `job` и `outbound`, обновление каждые 30 с и разделы Status, Outbounds, DNS interception, DNS proxy, Sets & lists и Errors. Интервал scrape должен быть не больше 30 с: столбчатые панели считают `increase()` по окнам в одну минуту.
 
 Пример правил алертов:
 
