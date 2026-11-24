@@ -3,11 +3,8 @@ import { createInstance } from "i18next"
 import { I18nextProvider, initReactI18next } from "react-i18next"
 import { renderToStaticMarkup } from "react-dom/server"
 
-import {
-  formatTrafficBytes,
-  OutboundTrafficFigures,
-  type OutboundTrafficView,
-} from "../src/components/shared/outbound-traffic"
+import { OutboundTrafficFigures } from "../src/components/shared/outbound-traffic"
+import { formatTrafficBytes, type OutboundTrafficView } from "../src/components/shared/outbound-traffic-utils"
 import { enTranslation } from "../src/i18n/en"
 
 const i18n = createInstance()

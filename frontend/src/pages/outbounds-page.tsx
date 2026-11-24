@@ -40,10 +40,8 @@ import {
   RuntimeStateBadge,
 } from "@/components/shared/outbound-interface-status-list"
 import { PageHeader } from "@/components/shared/page-header"
-import {
-  OutboundTrafficFigures,
-  outboundTrafficViews,
-} from "@/components/shared/outbound-traffic"
+import { OutboundTrafficFigures } from "@/components/shared/outbound-traffic"
+import { outboundTrafficViews } from "@/components/shared/outbound-traffic-utils"
 import {
   RuntimeOutboundDetails,
   RuntimeOutboundEntry,
