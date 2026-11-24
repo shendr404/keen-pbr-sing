@@ -6,36 +6,12 @@ copyright: |-
   Netcraze® — зарегистрированный товарный знак ООО «Неткрейз».
 
 madeBy: |-
-  Автор [Максим Курбатов](https://kurb.me?utm_source=keen-pbr&utm_medium=docs-footer&utm_campaign=website) | Сайт работает на [Hextra](https://github.com/imfing/hextra)
+  Форк [shendr404](https://github.com/shendr404/keen-pbr-sing), основан на keen-pbr Максима Курбатова. Сайт на Hextra.
+
 
 docs: Документация
 donate: Поддержать проект
 
-donationIntro: keen-pbr распространяется бесплатно. Вы можете добровольно и безвозмездно поддержать разработку и сопровождение проекта любой допустимой суммой.
-donationAmountLabel: Сумма перевода
-donationAmountHint: Выберите сумму от {{ .Min }} до {{ .Max }} ₽.
-donationAmountRequired: Укажите сумму перевода.
-donationAmountIntegerError: Укажите сумму в целых рублях, без копеек.
-donationAmountMinError: Минимальная сумма перевода — {{ .Amount }} ₽.
-donationAmountMaxError: Максимальная сумма перевода — {{ .Amount }} ₽.
-donationQuickAmounts: Быстрое добавление суммы
-donationAddAmount: Добавить {{ .Amount }} рублей
-donationPaymentMethod: Способ оплаты
-donationBankCard: Банковская карта
-donationYooMoneyWallet: Кошелёк ЮMoney
-donationNicknameLabel: Отображаемое имя или GitHub username
-donationOptional: Необязательно
-donationNicknameHint: Если Вы укажете имя, мы можем опубликовать его в списке поддержавших проект. Это необязательно и не зависит от суммы перевода.
-donationModerationHint: null
-donationConsentLabel: Я разрешаю опубликовать имя в списке поддержавших.
-donationConsentHint: Согласие относится только к публикации отображаемого имени. Чтобы отозвать согласие, напишите на keen-pbr@kurb.me.
-donationConsentRequired: При указании имени необходимо согласие на публикацию.
-donationConfirmMessage: "Проверьте значения полей перед отправкой:"
-donationNoticeTitle: Добровольная безвозмездная поддержка
-donationNoticeText: Денежные средства передаются безвозмездно в порядке дарения для поддержки разработки. Это не оплата программы, лицензии, функций, технической поддержки, рекламы, товаров или услуг и не создаёт обязанности предоставить что-либо взамен.
-donationSubmit: Продолжить в ЮMoney
-donationPrivacyNote: Мы не запрашиваем и не сохраняем банковские реквизиты и номера карт. Для оплаты вы будете перенаправлены на платёжный сервис ЮMoney.
-donationSubmitting: Открываем ЮMoney…
 languageSuggestionTitle: Хотите сменить язык?
 languageSuggestionText: Эта страница также доступна на
 languageSuggestionSwitch: Перейти на

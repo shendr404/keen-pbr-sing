@@ -36,17 +36,18 @@ weight: 1
 
 ### Установите keen-pbr
 
-1. Откройте [страницу репозитория keen-pbr](https://repo.keen-pbr.fyi/repository/stable/?lang=ru).
-2. Слева выберите ОС **Keenetic / NetCraze**, версию ОС **current** (для Keenetic она одна) и архитектуру своего роутера.
-    - Архитектуру покажет команда `opkg print-architecture`, выполненная по SSH.
-3. Подключитесь к роутеру по SSH и выполните команды со страницы репозитория по порядку.
-4. Установите пакет:
-    ```bash {filename="bash"}
-    opkg install keen-pbr
+1. Определите архитектуру Entware: `opkg print-architecture`. Выберите соответствующий каталог фида из списка ниже.
+2. Подключите фид форка в конфигурации opkg, затем обновите список пакетов:
 
-    # версия без веб-интерфейса и API:
-    # opkg install keen-pbr-headless
-    ```
+   ```sh
+   echo 'src/gz keen-pbr-sing https://shendr404.github.io/keen-pbr-sing/keenetic/mipsel-3.4/' >> /opt/etc/opkg.conf
+   opkg update
+   opkg install keen-pbr
+   # Без веб-интерфейса: opkg install keen-pbr-headless
+   ```
+
+   В примере используется `mipsel-3.4`; **замените** её на свою архитектуру и версию Entware: `mipsel-3.4`, `mips-3.4`, `aarch64-3.10`, `armv7-3.2` или `x64-3.2`.
+3. Альтернатива: скачайте нужный `.ipk` со [страницы релизов](https://github.com/shendr404/keen-pbr-sing/releases) и установите локально через `opkg install ./имя_файла.ipk`.
 
 В конце установки появятся строки `Installation complete!` и адрес веб-интерфейса.
 

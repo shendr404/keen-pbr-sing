@@ -39,6 +39,14 @@ I renamed the visible title to keen-pbr-sing. I did not rename the binary, the p
 
 The page title and the header say keen-pbr-sing. `opkg`, the init script, and the command you run are still `keen-pbr`.
 
+## Документация и opkg-фид
+
+Русская документация: https://shendr404.github.io/keen-pbr-sing/
+
+Неподписанный opkg-фид Keenetic: `https://shendr404.github.io/keen-pbr-sing/keenetic/<arch>/`, где `<arch>` — `mipsel-3.4`, `mips-3.4`, `aarch64-3.10`, `armv7-3.2` или `x64-3.2`. Для установки используйте `opkg print-architecture`, добавьте соответствующий `src/gz` в `/opt/etc/opkg.conf` и выполните `opkg update && opkg install keen-pbr`. Для варианта без UI: `keen-pbr-headless`.
+
+Пакеты и `SHA256SUMS` также доступны в [GitHub Releases](https://github.com/shendr404/keen-pbr-sing/releases). Фид неподписанный: проверяйте источник и контрольные суммы.
+
 ## Install
 
 Install from this repository's releases: https://github.com/shendr404/keen-pbr-sing/releases

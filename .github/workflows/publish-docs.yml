@@ -1,37 +1,64 @@
-name: Publish docs to gh-pages
+name: Publish documentation and Keenetic opkg feed
 
 on:
   push:
-    branches:
-      - main
-      - dev-3.0
+    branches: [main]
     paths:
       - 'docs/**'
+      - 'build_scripts/prepare-pages-feed.py'
+      - 'build_scripts/ipk-make-index.py'
+      - '.github/workflows/publish-docs.yml'
+  workflow_run:
+    workflows: ['Release packages']
+    types: [completed]
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
 
 jobs:
-  publish-docs:
-    name: Build and publish docs
+  deploy:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-24.04
-
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v3
+      - uses: actions/checkout@v6
         with:
-          hugo-version: 'latest'
+          ref: main
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: docs/go.mod
+      - uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: latest
           extended: true
-
-      - name: Build docs
-        run: hugo --source docs --destination ../site
-
-      - name: Deploy to gh-pages branch
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Build Russian documentation
+        run: hugo --source docs --destination ../site --gc --minify
+      - name: Assemble feed from latest GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-ipks
+          if tag="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq '.tagName' 2>/dev/null)"; then
+            gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern '*_keenetic_*.ipk' --dir release-ipks
+            python3 build_scripts/prepare-pages-feed.py release-ipks site
+          else
+            echo "No published release yet; publishing documentation only."
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./site
-          cname: keen-pbr.fyi
+          path: site
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

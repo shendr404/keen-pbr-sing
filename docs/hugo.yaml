@@ -1,13 +1,13 @@
-baseURL: https://keen-pbr.fyi/
-defaultContentLanguage: en
+baseURL: https://shendr404.github.io/keen-pbr-sing/
+defaultContentLanguage: ru
 defaultContentLanguageInSubtitle: ""
 languageCode: en-us
-title: keen-pbr
+title: keen-pbr-sing
 
 languages:
   en:
     languageName: English
-    weight: 1
+    weight: 2
     params:
       languageSuggestion:
         title: Prefer English?
@@ -16,7 +16,7 @@ languages:
         dismiss: Close language suggestion
   ru:
     languageName: Русский
-    weight: 2
+    weight: 1
     params:
       languageSuggestion:
         title: Предпочитаете русский?
@@ -85,22 +85,8 @@ menu:
         type: search
     
     - name: GitHub
-      url: https://github.com/maksimkurb/keen-pbr
+      url: https://github.com/shendr404/keen-pbr-sing
       weight: 30
       params:
         icon: github
     
-    - name: Telegram
-      url: https://t.me/keen_pbr
-      weight: 40
-      params:
-        icon: telegram
-    
-    - name: Sponsor this project
-      identifier: donate
-      pageRef: /docs/donate
-      weight: 50
-      params:
-        type: link
-        icon: donate
-        class: donation-nav-button

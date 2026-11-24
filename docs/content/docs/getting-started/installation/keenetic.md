@@ -36,17 +36,18 @@ How to set it up: [DoH and DoT proxy servers for DNS requests encryption](https:
 
 ### Install keen-pbr
 
-1. Open the [keen-pbr repository page](https://repo.keen-pbr.fyi/repository/stable/?lang=en).
-2. On the left, select the OS **Keenetic / NetCraze**, the OS version **current** (Keenetic has only this one) and the architecture of your router.
-    - To find the architecture, run `opkg print-architecture` over SSH.
-3. Connect to the router over SSH and run the commands from the repository page, in order.
-4. Install the package:
-    ```bash {filename="bash"}
-    opkg install keen-pbr
+1. Run `opkg print-architecture` to identify the Entware architecture, and select the matching feed.
+2. Add the fork's feed and install:
 
-    # version without the web UI and API:
-    # opkg install keen-pbr-headless
-    ```
+   ```sh
+   echo 'src/gz keen-pbr-sing https://shendr404.github.io/keen-pbr-sing/keenetic/mipsel-3.4/' >> /opt/etc/opkg.conf
+   opkg update
+   opkg install keen-pbr
+   # Without Web UI: opkg install keen-pbr-headless
+   ```
+
+   Replace `mipsel-3.4` with your Entware target: `mipsel-3.4`, `mips-3.4`, `aarch64-3.10`, `armv7-3.2`, or `x64-3.2`.
+3. You can also download an `.ipk` from [Releases](https://github.com/shendr404/keen-pbr-sing/releases) and install it with `opkg install ./package.ipk`.
 
 At the end of the installation you will see `Installation complete!` and the web UI address.
 
