@@ -11,7 +11,6 @@ PKG_NAME:=keen-pbr
 PKG_VERSION:=$(KEEN_PBR_VERSION)
 PKG_RELEASE:=$(KEEN_PBR_RELEASE)
 PKG_MAINTAINER:=shendr404 <143122797+shendr404@users.noreply.github.com>
-PKG_SOURCE_URL:=https://github.com/shendr404/keen-pbr-sing
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
