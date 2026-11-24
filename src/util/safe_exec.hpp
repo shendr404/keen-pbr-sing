@@ -263,10 +263,11 @@ inline ExecCaptureResult safe_exec_capture(const std::vector<std::string>& args,
                                            size_t max_bytes,
                                            bool merge_stderr);
 inline ExecCaptureResult safe_exec_capture_with_timeouts(const std::vector<std::string>& args,
-                                                         SafeExecTimeouts timeouts,
-                                                         bool suppress_stderr,
-                                                         size_t max_bytes,
-                                                         bool merge_stderr);
+                                                          SafeExecTimeouts timeouts,
+                                                          bool suppress_stderr,
+                                                          size_t max_bytes,
+                                                          bool merge_stderr,
+                                                          bool keep_output);
 
 // Execute a command with arguments directly via fork()+execvp(), bypassing
 // the shell entirely. This prevents shell injection attacks.
@@ -415,12 +416,18 @@ inline int safe_exec_pipe_stdin(const std::vector<std::string>& args,
 // Same as safe_exec_capture, but with explicit per-call timeouts instead of
 // the process-global ones.
 inline ExecCaptureResult safe_exec_capture_with_timeouts(const std::vector<std::string>& args,
-                                                         SafeExecTimeouts timeouts,
-                                                         bool suppress_stderr = false,
-                                                         size_t max_bytes = 0,
-                                                         bool merge_stderr = false) {
+                                                          SafeExecTimeouts timeouts,
+                                                          bool suppress_stderr = false,
+                                                          size_t max_bytes = 0,
+                                                          bool merge_stderr = false,
+                                                          bool keep_output = true) {
     ExecCaptureResult result;
     if (args.empty()) return result;
+    if (!keep_output) {
+        // Do not create a stderr capture file or retain child output.
+        merge_stderr = true;
+        suppress_stderr = true;
+    }
     note_safe_exec_spawn(args);
     const std::string command = safe_exec_command_string(args);
     const auto started_at = std::chrono::steady_clock::now();
@@ -480,12 +487,21 @@ inline ExecCaptureResult safe_exec_capture_with_timeouts(const std::vector<std::
             _exit(127);
         }
         close(pipefd[0]);
-        dup2(pipefd[1], STDOUT_FILENO);
-        if (merge_stderr) {
-            dup2(pipefd[1], STDERR_FILENO);
+        if (!keep_output) {
+            // A service started by an init script can outlive the script.
+            // Do not leave it holding the capture pipe open.
+            const int devnull = open("/dev/null", O_WRONLY);
+            if (devnull < 0 || dup2(devnull, STDOUT_FILENO) < 0 ||
+                dup2(devnull, STDERR_FILENO) < 0) _exit(127);
+            if (devnull > STDERR_FILENO) close(devnull);
         } else {
-            dup2(fileno(stderr_file), STDERR_FILENO);
-            fclose(stderr_file);
+            dup2(pipefd[1], STDOUT_FILENO);
+            if (merge_stderr) {
+                dup2(pipefd[1], STDERR_FILENO);
+            } else {
+                dup2(fileno(stderr_file), STDERR_FILENO);
+                fclose(stderr_file);
+            }
         }
         close(pipefd[1]);
         execvp(argv[0], const_cast<char* const*>(argv.data()));

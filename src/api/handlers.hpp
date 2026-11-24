@@ -235,7 +235,8 @@ struct ApiContext {
 //   GET  /api/runtime/outbound-traffic - per-outbound byte, packet and connection counters
 //   GET  /api/runtime/interfaces - live system interface inventory
 //   POST /api/routing/test    - test expected/actual routing for an IP or domain
-void register_api_handlers(ApiServer& server, ApiContext& ctx);
+class SingboxLinkService;
+void register_api_handlers(ApiServer& server, ApiContext& ctx, SingboxLinkService& singbox);
 
 } // namespace keen_pbr3
 

@@ -74,6 +74,8 @@ struct CliOptions {
   bool download_reload{false};
   bool resolver_config_hash{false};
   bool run_status{false};
+  bool refresh_subscriptions{false};
+  std::string subscription_id;
   bool run_resolver_detect{false};
   bool resolver_usage_error{false};
   std::vector<std::string> detect_args;
@@ -117,6 +119,7 @@ void print_usage(const char *argv0) {
                "status and exit\n"
             << "  download                           Download all configured "
                "lists to cache and exit\n"
+            << "  subscriptions refresh [--all|<id>]  Refresh sing-box subscriptions via the daemon\n"
             << "  test-routing <ip-or-domain> [packet options]\n"
             << "                                     Test expected vs actual "
                "routing for an IP or domain\n"
@@ -226,6 +229,21 @@ CliOptions parse_args(int argc, char *argv[]) {
       }
     } else if (std::strcmp(argv[i], "download") == 0) {
       opts.download_lists = true;
+    } else if (std::strcmp(argv[i], "subscriptions") == 0) {
+      if (i + 1 >= argc || std::strcmp(argv[++i], "refresh") != 0 || argc - i > 2 ||
+          (i + 1 < argc && argv[i + 1][0] == '-' && std::strcmp(argv[i + 1], "--all") != 0)) {
+        std::cerr << "Usage: keen-pbr subscriptions refresh [--all|<id>]\n";
+        std::exit(64);
+      }
+      opts.refresh_subscriptions = true;
+      if (i + 1 < argc && std::strcmp(argv[i + 1], "--all") != 0) {
+        opts.subscription_id = argv[i + 1];
+        if (opts.subscription_id.empty()) {
+          std::cerr << "Error: subscription ID cannot be empty\n";
+          std::exit(64);
+        }
+      }
+      break;
     } else if (std::strcmp(argv[i], "--reload") == 0) {
       opts.download_reload = true;
     } else if (std::strcmp(argv[i], "resolver-config-hash") == 0) {
@@ -434,7 +452,8 @@ int main(int argc, char *argv[]) {
     if (!opts.download_lists && !opts.generate_resolver_config &&
         !opts.resolver_config_hash && !opts.run_service && !opts.run_status &&
         !opts.run_test_routing && !opts.hash_password &&
-        !opts.run_resolver_detect && !opts.resolver_usage_error) {
+        !opts.run_resolver_detect && !opts.resolver_usage_error &&
+        !opts.refresh_subscriptions) {
       print_usage(argv[0]);
       return 0;
     }
@@ -490,6 +509,33 @@ int main(int argc, char *argv[]) {
     // Deprecated no-op stub: old installs may still call it.
     if (opts.resolver_config_hash) {
       return 0;
+    }
+
+    if (opts.refresh_subscriptions) {
+      // Do not retry a timed-out mutation: the daemon may still be working.
+      const auto response = keen_pbr3::ipc::request_control(
+          KEEN_PBR_CONTROL_SOCKET,
+          {{"protocol_version", keen_pbr3::ipc::kControlProtocolVersion},
+           {"request_id", "cli-subscriptions-" + std::to_string(getpid())},
+           {"operation", "subscriptions-refresh"}, {"profile_id", opts.subscription_id}},
+          1000, 300000);
+      if (response.contains("result")) {
+        const auto& results = response.at("result");
+        if (results.empty()) std::cout << "No sing-box subscriptions\n";
+        for (const auto& result : results) {
+          auto& output = result.at("ok") == true ? std::cout : std::cerr;
+          output << result.at("id").get<std::string>() << ": "
+                 << (result.at("ok") == true ? "refreshed" : "refresh failed");
+          const auto message = result.value("message", "");
+          if (!message.empty()) output << " (" << message << ')';
+          output << '\n';
+        }
+      } else {
+        std::cerr << "keen-pbr subscriptions refresh: "
+                  << response.value("error", nlohmann::json::object())
+                         .value("message", "control request failed") << '\n';
+      }
+      return response.value("ok", false) ? 0 : 1;
     }
 
     if (opts.run_status || opts.download_lists ||

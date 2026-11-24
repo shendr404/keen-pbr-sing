@@ -22,6 +22,8 @@ void capture_response_header_line(std::string_view header,
 
 struct HttpRequestOptions {
     uint32_t fwmark{0};
+    bool skip_if_busy{false};
+    std::function<bool()> cancelled;
 };
 
 class HttpError : public std::runtime_error {

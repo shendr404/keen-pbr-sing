@@ -291,6 +291,8 @@ Daemon::Daemon(Config config, std::string config_path, DaemonOptions opts)
 Daemon::~Daemon() {
   try {
     accept_posted_control_tasks_.store(false, std::memory_order_release);
+    event_loop_active_.store(false, std::memory_order_release);
+    subscription_executor_.shutdown();
     lifecycle_executor_.shutdown();
     routing_test_executor_.shutdown();
     blocking_executor_.shutdown();
@@ -749,7 +751,18 @@ Daemon::health_issues_from(const ServiceHealthState &service,
         std::move(list.name), std::move(list.url), std::move(list.detour),
         std::move(list.error)});
   }
-  return collect_health_issues(inputs);
+  auto result = collect_health_issues(inputs);
+  for (const auto &[id, error] : singbox_links_.subscription_errors()) {
+    api::HealthIssue issue{};
+    issue.code = api::Code::HOST_WARNING;
+    issue.severity = api::Severity::WARNING;
+    issue.key = "sing-box-subscription:" + id;
+    issue.title = "Sing-box subscription: " + id;
+    issue.detail = error;
+    issue.params = {{"warning", "singbox_subscription"}};
+    result.issues.push_back(std::move(issue));
+  }
+  return result;
 }
 
 std::vector<DnsServerFailure> Daemon::dns_server_failures() {
@@ -1053,6 +1066,42 @@ bool Daemon::is_routing_health_cache_valid(const RuntimeStateSnapshot& snapshot)
          routing_health_cache_state_ == snapshot.runtime_state;
 }
 
+bool Daemon::queue_subscription_refresh(
+    std::string profile_id, bool due_only,
+    std::function<void(nlohmann::json, const char*)> completion) {
+  if (subscription_refresh_queued_.exchange(true)) return false;
+  if (subscription_executor_.try_post(
+          "sing-box-subscriptions",
+          [this, profile_id = std::move(profile_id), due_only,
+           completion = std::move(completion)] {
+            const auto stopping = [this] {
+              return !event_loop_active_.load(std::memory_order_acquire);
+            };
+            nlohmann::json results;
+            const char* error = nullptr;
+            try {
+              if (!stopping()) results = singbox_links_.refresh_subscriptions(profile_id, due_only, stopping);
+              if (stopping()) error = "daemon is shutting down";
+            } catch (const SingboxBusy&) {
+              error = "another sing-box operation is in progress";
+            } catch (const std::exception&) {
+              // Store and parser exceptions may contain secret input.
+              error = "could not refresh subscriptions; check the profile ID and subscription store";
+            }
+            subscription_refresh_queued_.store(false);
+            if (completion) completion(results, error);
+#ifdef WITH_API
+            if (!results.empty() && !stopping() && status_stream_) {
+              status_stream_->reconcile(StatusUpdate::Issues);
+            }
+#endif
+          })) {
+    return true;
+  }
+  subscription_refresh_queued_.store(false);
+  return false;
+}
+
 void Daemon::handle_ipc_control_socket() {
   while (true) {
     IpcControlRequest accepted;
@@ -1081,8 +1130,29 @@ void Daemon::handle_ipc_control_socket() {
           throw ipc::ControlProtocolError(
               "control peer is not authorized for this operation");
         }
-        if (operation != "status" && operation != "download" &&
-            operation != "test-routing") {
+        if (operation == "subscriptions-refresh") {
+          const auto id = request.value("profile_id", std::string{});
+          if (queue_subscription_refresh(
+                  id, false, [client, request](nlohmann::json results, const char* error) {
+                    nlohmann::json reply;
+                    if (error) {
+                      reply = ipc::make_error_response(request, "subscription_refresh_failed", error);
+                    } else {
+                      reply = {{"protocol_version", ipc::kControlProtocolVersion},
+                               {"request_id", request.at("request_id")},
+                               {"ok", std::all_of(results.begin(), results.end(), [](const auto& result) {
+                                  return result.at("ok") == true;
+                                })},
+                               {"result", std::move(results)}};
+                    }
+                    send_control_response_and_close(client, reply);
+                  })) {
+            continue;
+          }
+          response = ipc::make_error_response(
+              request, "busy", "another subscription refresh is in progress");
+        } else if (operation != "status" && operation != "download" &&
+                   operation != "test-routing") {
           response = ipc::make_error_response(request, "unsupported_operation",
                                               "unsupported control operation");
         } else if (operation == "test-routing") {
@@ -2017,6 +2087,10 @@ void Daemon::run() {
       std::chrono::seconds{1}, [this] { tick_intercept_rebind(); },
       "intercept-rebind");
 
+  scheduler_->schedule_repeating(
+      std::chrono::seconds{30}, [this] { queue_subscription_refresh("", true); },
+      "sing-box-subscriptions");
+
   log.info("Daemon control plane running. PID: {}", getpid());
   post_control_task([this] { begin_startup_runtime(); }, "startup-runtime");
 
@@ -2047,6 +2121,7 @@ void Daemon::run() {
   event_loop_thread_id_.store(std::thread::id{}, std::memory_order_relaxed);
   accept_posted_control_tasks_.store(false, std::memory_order_release);
   best_effort("executors", [this] {
+    subscription_executor_.shutdown();
     lifecycle_executor_.shutdown();
     routing_test_executor_.shutdown();
     blocking_executor_.shutdown();

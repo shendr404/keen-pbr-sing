@@ -29,6 +29,7 @@
 #include "../runtime/operation_coordinator.hpp"
 #include "../intercept/rebind_backoff.hpp"
 #include "../runtime/runtime_state_machine.hpp"
+#include "../singbox/link_store.hpp"
 #include "../util/blocking_executor.hpp"
 #include "../util/time_utils.hpp"
 #include "../util/traced_mutex.hpp"
@@ -188,6 +189,9 @@ private:
   void setup_ipc_control_socket();
   void run_ipc_control_acceptor() noexcept;
   void handle_ipc_control_socket();
+  bool queue_subscription_refresh(
+      std::string profile_id, bool due_only,
+      std::function<void(nlohmann::json, const char*)> completion = {});
   bool try_begin_routing_test();
   void finish_routing_test();
   // Snapshot the active config and runtime state for one routing test. The
@@ -636,6 +640,9 @@ IcmpTester icmp_tester_;
   std::atomic<bool> remote_list_refresh_inflight_{false};
   std::atomic<bool> ipc_mutation_inflight_{false};
   std::atomic<std::size_t> routing_tests_inflight_{0};
+  SingboxLinkService singbox_links_{make_singbox_link_service()};
+  std::atomic<bool> subscription_refresh_queued_{false};
+  BlockingExecutor subscription_executor_{1, 1};
 
 #ifdef WITH_API
   OutboundTrafficCollector outbound_traffic_collector_;

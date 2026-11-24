@@ -12,6 +12,7 @@ import { ListUpsertPage } from "@/pages/list-upsert-page"
 import { ListsPage } from "@/pages/lists-page"
 import { OutboundUpsertPage } from "@/pages/outbound-upsert-page"
 import { OutboundsPage } from "@/pages/outbounds-page"
+import { SingboxPage } from "@/pages/sing-box-page"
 import { OverviewPage } from "@/pages/overview-page"
 import { RoutingRuleUpsertPage } from "@/pages/routing-rule-upsert-page"
 import { RoutingRulesPage } from "@/pages/routing-rules-page"
@@ -45,6 +46,7 @@ function App() {
           )}
         </Route>
         <Route component={OutboundsPage} path="/outbounds" />
+        <Route component={SingboxPage} path="/sing-box" />
         <Route path="/dns-servers/create">
           <DnsServerUpsertPage mode="create" />
         </Route>

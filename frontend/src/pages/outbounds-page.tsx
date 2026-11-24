@@ -3,7 +3,7 @@ import type { ReactNode } from "react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useLocation } from "wouter"
 
 import type { ApiError } from "@/api/client"
@@ -24,6 +24,7 @@ import {
   useGetRuntimeOutbounds,
 } from "@/api/queries"
 import { selectConfig, selectOutbounds } from "@/api/selectors"
+import { fetchSingboxProfiles } from "@/api/sing-box"
 import { ActionButtons } from "@/components/shared/action-buttons"
 import { MobileAddFab } from "@/components/shared/mobile-add-fab"
 import { BulkSelectionToolbar } from "@/components/shared/bulk-selection-toolbar"
@@ -87,6 +88,10 @@ export function OutboundsPage() {
   const [deletePreview, setDeletePreview] = useState<typeof deleteRequest>(null)
   const configMutationPending = useConfigMutationPending()
   const configQuery = useGetConfig()
+  const singboxQuery = useQuery({
+    queryKey: ["sing-box-profiles"],
+    queryFn: fetchSingboxProfiles,
+  })
   const runtimeOutboundsQuery = useGetRuntimeOutbounds()
   const runtimeInterfacesQuery = useGetRuntimeInterfaces()
   const trafficQuery = useGetOutboundTraffic()
@@ -282,6 +287,16 @@ export function OutboundsPage() {
                 key={`${outbound.id}-summary`}
               >
                 {outbound.summary}
+                {singboxQuery.data?.profiles
+                  .filter((profile) => profile.keenetic_tag === outbound.tag)
+                  .map((profile) => (
+                    <div key={profile.id}>
+                      {t("pages.singbox.card", {
+                        mode: profile.mode,
+                        interface: profile.interface,
+                      })}
+                    </div>
+                  ))}
               </div>,
               <OutboundRuntimeCell
                 key={`${outbound.id}-runtime`}

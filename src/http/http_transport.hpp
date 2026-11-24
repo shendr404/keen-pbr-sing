@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -22,6 +23,8 @@ struct HttpTransportRequest {
     std::string body;
     bool discard_body{false};
     size_t max_response_size{size_t{8} * 1024U * 1024U};
+    bool skip_if_busy{false};
+    std::function<bool()> cancelled;
 };
 
 struct HttpTransportResponse {

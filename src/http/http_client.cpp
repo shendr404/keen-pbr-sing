@@ -15,14 +15,16 @@ std::string trim_header_value(const std::string& value) {
 }
 HttpTransportRequest request_for(const std::string& url, std::chrono::seconds timeout,
                                  const std::string& user_agent, size_t max_size,
-                                 uint32_t fwmark) {
+                                 const HttpRequestOptions& options) {
     HttpTransportRequest request;
     request.url = url;
     request.timeout_ms = static_cast<long>(timeout.count() * 1000);
     request.user_agent = user_agent;
-    request.fwmark = fwmark;
+    request.fwmark = options.fwmark;
     request.max_redirects = 5;
     request.max_response_size = max_size;
+    request.skip_if_busy = options.skip_if_busy;
+    request.cancelled = options.cancelled;
     return request;
 }
 void throw_for_status(long status) {
@@ -55,9 +57,9 @@ void HttpClient::set_max_response_size(size_t bytes) { max_response_size_ = byte
 
 std::string HttpClient::download(const std::string& url, const HttpRequestOptions& options) {
     try {
-        auto response = transport_->perform(request_for(url, timeout_, user_agent_, max_response_size_, options.fwmark));
+        auto response = transport_->perform(request_for(url, timeout_, user_agent_, max_response_size_, options));
         throw_for_status(response.status_code);
-        return response.body;
+        return std::move(response.body);
     } catch (const HttpTransportError& error) {
         throw HttpError(error.what());
     }
@@ -65,7 +67,7 @@ std::string HttpClient::download(const std::string& url, const HttpRequestOption
 
 std::string HttpClient::post_json(const std::string& url, const std::string& body,
                                   const HttpRequestOptions& options) {
-    auto request = request_for(url, timeout_, user_agent_, max_response_size_, options.fwmark);
+    auto request = request_for(url, timeout_, user_agent_, max_response_size_, options);
     request.method = "POST";
     request.body = body;
     request.headers.push_back("Content-Type: application/json");
@@ -81,7 +83,7 @@ std::string HttpClient::post_json(const std::string& url, const std::string& bod
 ConditionalDownloadResult HttpClient::download_conditional(
     const std::string& url, const std::string& if_none_match, const std::string& if_modified_since,
     const HttpRequestOptions& options) {
-    auto request = request_for(url, timeout_, user_agent_, max_response_size_, options.fwmark);
+    auto request = request_for(url, timeout_, user_agent_, max_response_size_, options);
     if (!if_none_match.empty()) request.headers.push_back("If-None-Match: " + if_none_match);
     if (!if_modified_since.empty()) request.headers.push_back("If-Modified-Since: " + if_modified_since);
     try {

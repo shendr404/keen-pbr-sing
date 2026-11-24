@@ -159,6 +159,22 @@ TEST_CASE("safe_exec_capture: stderr can be merged into bounded output") {
     CHECK_FALSE(result.truncated);
 }
 
+TEST_CASE("safe_exec_capture: private child output is not captured or journaled") {
+    TempDir temp_dir;
+    EnvironmentGuard failure_log_guard("KEEN_PBR_CMDFAIL_LOG_PATH");
+    const auto failure_log_path = temp_dir.path() / "cmdfail.log";
+    failure_log_guard.set(failure_log_path);
+    const auto script = temp_dir.path() / "check";
+    write_executable(script, "#!/bin/sh\necho private-stdout\necho private-stderr >&2\nexit 1\n");
+    const auto result = safe_exec_capture_with_timeouts(
+        {script.string()}, safe_exec_timeouts(), true, 0, true, false);
+    CHECK(result.exit_code == 1);
+    CHECK(result.stdout_output.empty());
+    const auto journal = read_file(failure_log_path);
+    CHECK(journal.find("exit_code: 1") != std::string::npos);
+    CHECK(journal.find("private-") == std::string::npos);
+}
+
 TEST_CASE("safe_exec: child process receives devnull stdin") {
     StdinGuard stdin_guard;
     REQUIRE(stdin_guard.saved_stdin >= 0);
