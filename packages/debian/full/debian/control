@@ -1,7 +1,7 @@
 Source: keen-pbr
 Section: net
 Priority: optional
-Maintainer: Maxim Kurbatov <maxim+keen-pbr@kurb.me>
+Maintainer: shendr404 <143122797+shendr404@users.noreply.github.com>
 Build-Depends: debhelper-compat (= 13), cmake, pkg-config, g++, ninja-build, libcurl4-openssl-dev | libcurl4-gnutls-dev, libnl-3-dev, libnl-route-3-dev, libfmt-dev, libunwind-dev, nlohmann-json3-dev, zlib1g-dev
 Standards-Version: 4.6.2
 Rules-Requires-Root: no

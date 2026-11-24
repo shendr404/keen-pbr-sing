@@ -10,6 +10,8 @@ include $(KEEN_PBR_VERSION_FILE)
 PKG_NAME:=keen-pbr
 PKG_VERSION:=$(KEEN_PBR_VERSION)
 PKG_RELEASE:=$(KEEN_PBR_RELEASE)
+PKG_MAINTAINER:=shendr404 <143122797+shendr404@users.noreply.github.com>
+PKG_SOURCE_URL:=https://github.com/shendr404/keen-pbr-sing
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -97,6 +99,8 @@ endif
 define Package/keen-pbr
   SECTION:=net
   CATEGORY:=Network
+  URL:=https://github.com/shendr404/keen-pbr-sing
+  MAINTAINER:=shendr404 <143122797+shendr404@users.noreply.github.com>
   TITLE:=keen-pbr-sing (full)
   VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
   DEPENDS:=+conntrack +ipset +iptables +libatomic +libcurl +libnl-core +libnl-route +libstdcpp +zlib +libzstd
@@ -158,6 +162,8 @@ endef
 define Package/keen-pbr-headless
   SECTION:=net
   CATEGORY:=Network
+  URL:=https://github.com/shendr404/keen-pbr-sing
+  MAINTAINER:=shendr404 <143122797+shendr404@users.noreply.github.com>
   TITLE:=keen-pbr-sing (headless)
   VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
   DEPENDS:=+conntrack +ipset +iptables +libatomic +libcurl +libnl-core +libnl-route +libstdcpp +zlib +libzstd

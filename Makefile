@@ -195,7 +195,6 @@ cross-deploy: cross-build ## Cross-compile and upload binary to router via SFTP 
 -include build_scripts/openwrt.mk
 -include build_scripts/keenetic.mk
 -include build_scripts/debian.mk
--include build_scripts/repository.mk
 
 ## Help ########################################################################
 
