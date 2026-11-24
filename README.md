@@ -127,10 +127,7 @@ The package, binary, and API paths stay `keen-pbr`. These routes are under the s
 
 ## Documentation
 
-The shared configuration manual is still the keen-pbr documentation:
-
-### <a href="https://keen-pbr.fyi/">&gt; Documentation in English &lt;</a>
-### <a href="https://keen-pbr.fyi/ru/">&gt; Документация на русском &lt;</a>
+[Документация на русском](https://shendr404.github.io/keen-pbr-sing/) · [GitHub Releases](https://github.com/shendr404/keen-pbr-sing/releases)
 
 ## License
 
