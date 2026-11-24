@@ -1,4 +1,4 @@
-module github.com/maksimkurb/keen-pbr/docs
+module github.com/shendr404/keen-pbr-sing/docs
 
 go 1.23.4
 

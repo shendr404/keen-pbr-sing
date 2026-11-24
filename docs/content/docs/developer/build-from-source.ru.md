@@ -40,7 +40,7 @@ aliases:
 
 ```bash {filename="bash"}
 # Клонировать репозиторий вместе с подмодулями
-git clone --recurse-submodules https://github.com/maksimkurb/keen-pbr.git
+git clone --recurse-submodules https://github.com/shendr404/keen-pbr-sing.git
 cd keen-pbr
 
 # Собрать

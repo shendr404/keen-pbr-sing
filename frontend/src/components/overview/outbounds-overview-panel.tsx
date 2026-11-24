@@ -25,7 +25,7 @@ import {
 import {
   outboundTrafficInline,
   type OutboundTrafficView,
-} from "@/components/shared/outbound-traffic"
+} from "@/components/shared/outbound-traffic-utils"
 
 import { type DotTone, Panel, PanelHeader, StatusDot } from "./overview-panel"
 

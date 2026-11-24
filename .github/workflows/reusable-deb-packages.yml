@@ -10,18 +10,6 @@ on:
         required: false
         type: string
         default: "frontend-dist-generic"
-      use_signing_secrets:
-        required: false
-        type: boolean
-        default: true
-      publish_branch:
-        required: false
-        type: boolean
-        default: false
-      source_ref_name:
-        required: false
-        type: string
-        default: ""
 
 jobs:
   generate-config:
@@ -97,50 +85,5 @@ jobs:
       - name: Upload packaged artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: staging-debian-${{ matrix.build_env.debian_version }}-${{ matrix.build_env.debian_arch }}
-          path: build/packages/debian
-
-  sign:
-    if: ${{ inputs.use_signing_secrets }}
-    name: "sign: ${{ matrix.build_env.debian_version }}-${{ matrix.build_env.debian_arch }}"
-    runs-on: ubuntu-24.04
-    needs: [generate-config, build]
-    strategy:
-      fail-fast: false
-      matrix:
-        build_env: ${{ fromJson(needs.generate-config.outputs.job-config) }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          submodules: recursive
-      - name: Download unsigned package artifacts
-        uses: actions/download-artifact@v8
-        with:
-          name: staging-debian-${{ matrix.build_env.debian_version }}-${{ matrix.build_env.debian_arch }}
-          path: build/packages/debian
-      - name: Sign Debian repository metadata
-        env:
-          DEBIAN_GPG_PRIVATE_KEY: ${{ secrets.DEBIAN_GPG_PRIVATE_KEY }}
-        run: |
-          bash ./build_scripts/sign-debian-repository.sh \
-            "$GITHUB_WORKSPACE/build/packages"
-      - name: Upload packaged artifacts
-        uses: actions/upload-artifact@v6
-        with:
           name: packages-debian-${{ matrix.build_env.debian_version }}-${{ matrix.build_env.debian_arch }}
           path: build/packages/debian
-      - name: Publish target to branch repository
-        if: ${{ inputs.publish_branch }}
-        env:
-          RSYNC_HOST: ${{ secrets.RSYNC_HOST || vars.RSYNC_HOST }}
-          RSYNC_USERNAME: ${{ secrets.RSYNC_USERNAME || vars.RSYNC_USERNAME }}
-          RSYNC_SSH_PRIVATE_KEY: ${{ secrets.RSYNC_SSH_PRIVATE_KEY || vars.RSYNC_SSH_PRIVATE_KEY }}
-          RSYNC_TARGET_ROOT: ${{ secrets.RSYNC_TARGET_ROOT || vars.RSYNC_TARGET_ROOT }}
-          RSYNC_PORT: ${{ secrets.RSYNC_PORT || vars.RSYNC_PORT || '22' }}
-        run: |
-          bash build_scripts/publish-rsync-incremental.sh \
-            "${{ inputs.source_ref_name }}" \
-            debian \
-            "${{ matrix.build_env.debian_version }}" \
-            "${{ matrix.build_env.debian_arch }}"

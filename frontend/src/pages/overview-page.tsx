@@ -17,7 +17,7 @@ import {
   useGetOutboundTraffic,
   useGetRuntimeOutbounds,
 } from "@/api/queries"
-import { outboundTrafficViews } from "@/components/shared/outbound-traffic"
+import { outboundTrafficViews } from "@/components/shared/outbound-traffic-utils"
 import { selectConfig } from "@/api/selectors"
 import { useAuth } from "@/auth/auth-context"
 import { Alert, AlertDescription } from "@/components/ui/alert"

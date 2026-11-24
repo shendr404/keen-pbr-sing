@@ -40,7 +40,7 @@ A `Makefile` wraps all build steps:
 
 ```bash {filename="bash"}
 # Clone the repository with submodules
-git clone --recurse-submodules https://github.com/maksimkurb/keen-pbr.git
+git clone --recurse-submodules https://github.com/shendr404/keen-pbr-sing.git
 cd keen-pbr
 
 # Build

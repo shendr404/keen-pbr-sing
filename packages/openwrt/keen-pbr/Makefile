@@ -10,6 +10,7 @@ include $(KEEN_PBR_VERSION_FILE)
 PKG_NAME:=keen-pbr
 PKG_VERSION:=$(KEEN_PBR_VERSION)
 PKG_RELEASE:=$(KEEN_PBR_RELEASE)
+PKG_MAINTAINER:=shendr404 <143122797+shendr404@users.noreply.github.com>
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -102,6 +103,8 @@ endif
 define Package/keen-pbr
   SECTION:=net
   CATEGORY:=Network
+  URL:=https://github.com/shendr404/keen-pbr-sing
+  MAINTAINER:=shendr404 <143122797+shendr404@users.noreply.github.com>
   TITLE:=keen-pbr-sing (full)
   VERSION:=$(if $(CONFIG_USE_APK),$(PKG_VERSION)-r$(PKG_RELEASE),$(PKG_VERSION)-$(PKG_RELEASE))
   DEPENDS:=+conntrack +kmod-nfnetlink-queue +kmod-nfnetlink-log +kmod-nft-queue +kmod-nf-conntrack-netlink +libatomic +libcurl +libnl-core +libnl-route +libstdcpp +(x86_64||aarch64||arm):libunwind +zlib +libzstd
@@ -156,6 +159,8 @@ endef
 define Package/keen-pbr-headless
   SECTION:=net
   CATEGORY:=Network
+  URL:=https://github.com/shendr404/keen-pbr-sing
+  MAINTAINER:=shendr404 <143122797+shendr404@users.noreply.github.com>
   TITLE:=keen-pbr-sing (headless)
   VERSION:=$(if $(CONFIG_USE_APK),$(PKG_VERSION)-r$(PKG_RELEASE),$(PKG_VERSION)-$(PKG_RELEASE))
   DEPENDS:=+conntrack +kmod-nfnetlink-queue +kmod-nfnetlink-log +kmod-nft-queue +kmod-nf-conntrack-netlink +libatomic +libcurl +libnl-core +libnl-route +libstdcpp +(x86_64||aarch64||arm):libunwind +zlib +libzstd

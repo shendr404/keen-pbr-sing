@@ -17,14 +17,6 @@ on:
         required: false
         type: string
         default: "frontend-dist-keenetic"
-      publish_branch:
-        required: false
-        type: boolean
-        default: false
-      source_ref_name:
-        required: false
-        type: string
-        default: ""
 
 jobs:
   generate-config:
@@ -99,28 +91,22 @@ jobs:
       - name: Build packages
         run: |
           make keenetic-packages KEENETIC_CONFIG="${{ matrix.build_env.config_name }}" KEENETIC_VERSION="${{ inputs.keenetic_version }}"
+      - name: Validate full and headless variants
+        shell: bash
+        run: |
+          set -euo pipefail
+          for package in keen-pbr keen-pbr-headless; do
+            find build/packages/keenetic -name "${package}_*.ipk" -print -quit | grep -q . || exit 1
+          done
       - name: Upload packaged artifacts
         uses: actions/upload-artifact@v6
         with:
           name: packages-keenetic-${{ matrix.build_env.config_name }}
           path: build/packages/keenetic
+          if-no-files-found: error
       - name: Upload debug symbol artifacts
         uses: actions/upload-artifact@v6
         with:
           name: debug-symbols-keenetic-${{ matrix.build_env.config_name }}
           path: build/packages/keenetic-debug
           if-no-files-found: error
-      - name: Publish target to branch repository
-        if: ${{ inputs.publish_branch }}
-        env:
-          RSYNC_HOST: ${{ secrets.RSYNC_HOST || vars.RSYNC_HOST }}
-          RSYNC_USERNAME: ${{ secrets.RSYNC_USERNAME || vars.RSYNC_USERNAME }}
-          RSYNC_SSH_PRIVATE_KEY: ${{ secrets.RSYNC_SSH_PRIVATE_KEY || vars.RSYNC_SSH_PRIVATE_KEY }}
-          RSYNC_TARGET_ROOT: ${{ secrets.RSYNC_TARGET_ROOT || vars.RSYNC_TARGET_ROOT }}
-          RSYNC_PORT: ${{ secrets.RSYNC_PORT || vars.RSYNC_PORT || '22' }}
-        run: |
-          bash build_scripts/publish-rsync-incremental.sh \
-            "${{ inputs.source_ref_name }}" \
-            keenetic \
-            "${{ inputs.keenetic_version }}" \
-            "${{ matrix.build_env.package_arch }}"
