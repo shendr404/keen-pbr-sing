@@ -1,33 +1,53 @@
 ---
-title: Sing-box profiles, nodes and subscriptions
+title: Sing-box — one interface per node
 weight: 7
 ---
 
-The **Sing-box interfaces** page treats each proxy path as a profile: a keen-pbr outbound tag, a TUN interface name, and a node policy.
+On the **Sing-box interfaces** page each proxy node is its own TUN. Switching and latency checks belong on the Outbounds page, where several interface outbounds can be members of a `urltest` or `icmptest` group.
 
-Create a profile, then add links (one per line) or attach subscriptions. The page registers an `interface` outbound **without** `gateway`. A TUN or point-to-point interface does not need one, and `auto` only produces a warning. Several of these interface outbounds can be members of a keen-pbr `urltest` or `icmptest` group.
+## Interface
 
-Modes are `direct` (one node), `selector` (manual choice; clicking a node does not change the mode) and `urltest` (sing-box picks by latency). TUN defaults are stack `gvisor` and MTU 1400. An empty interface name becomes the next free name (`sbtun`, then `sbtun2`, and so on). An empty address becomes a free `172.19.x.1/30` that does not overlap an address already used by an inbound.
+1. Install sing-box. A TUN does not have to exist beforehand: keen-pbr adds its own inbound.
+2. Open **Sing-box interfaces**.
+3. Paste one or more links, one per line, and save. Each link immediately becomes its own TUN and a keen-pbr `interface` outbound **without** a `gateway`.
+4. The tag comes from the node name in the link (`hu-1` stays `hu-1`). A tag that is already used gets a `-2` suffix. The tag can be edited.
+5. The TUN name is the next free one (`sbtun`, then `sbtun2`, …). A name already used by an unmanaged inbound is skipped. An empty address gets a free `172.19.x.1/30`. Stack and MTU are under Advanced.
+6. On the Outbounds page, point a route rule at the tag or add several of these outbounds to a group. keen-pbr does not add them to a group by itself.
 
-Supported share links are `vless://`, `vmess://`, `trojan://`, `ss://` and `hysteria2://`. sing-box 1.14 transports are `tcp`, `ws`, `grpc`, `http`, `httpupgrade` and `quic`. Lines that use `xhttp`, `splithttp` or another unknown transport are skipped, and the UI reports how many were skipped. VLESS Reality without `fp` gets `utls` fingerprint `chrome`. VLESS `encryption` is ignored.
+## Subscriptions
 
-Subscriptions may be a plain or base64 list, sing-box JSON, or Clash JSON. A profile can hold more than one. The interval is in hours; `0` is manual only. The daemon refreshes due subscriptions in the background (2 MiB, 20 seconds, five minutes between failures).
+Load the node list, tick the nodes that should become interfaces, and confirm. The list shows name, protocol, server, and skipped lines (for example `xhttp`) with the reason. The subscription stores its URL, the update interval, and the selected node identities.
+
+The interval is in **hours**. `0` means manual refresh only. The daemon checks every 30 seconds. A download is limited to 2 MiB and 20 seconds; after a failure the next attempt waits five minutes.
+
+A refresh updates only nodes that already exist. They match by name, or by server, port and protocol when the name is empty. New subscription nodes are not added automatically: the card shows how many new nodes appeared and a button that opens the selection again. If a selected node disappears, its interface stays and is marked as missing from the subscription.
+
+From SSH:
 
 ```sh
 /opt/usr/bin/keen-pbr subscriptions refresh --all
 /opt/usr/bin/keen-pbr subscriptions refresh <id>
 ```
 
-`sing-box check` errors return the FATAL/ERROR line with uuids, passwords and keys redacted. A missing binary is reported separately.
+Deleting an interface removes its TUN inbound, sing-box outbound, route rule and keen-pbr outbound. If a route rule or a `urltest`/`icmptest` group still references that outbound, deletion is refused and the error names them.
 
-## Existing `/opt/etc/sing-box/config.json`
+When `sing-box check` fails, the error contains the FATAL/ERROR line with uuids, passwords and keys redacted. A missing sing-box binary is reported separately from a configuration error.
 
-keen-pbr does not replace the file. The first edit saves `config.json.bak-keenpbr-original` once. Each later edit refreshes `config.json.bak-keenpbr` and runs `sing-box check` before keeping the new file.
+## What happens to `/opt/etc/sing-box/config.json`
 
-Only objects tagged `kpbr-` are managed (`kpbr-tun-<profile>`, `kpbr-n-…`, `kpbr-g-<profile>`, and `kpbr-direct` when the file had no outbounds of its own). `dns`, `log`, `experimental`, and every other inbound, outbound and route rule are preserved. That includes a mixed inbound on `192.168.1.1:2080`, a manual hysteria2 outbound, and an existing `sbtun` TUN with its addresses, MTU and stack.
+keen-pbr does **not** replace the file.
 
-If the profile's interface name is already used by an inbound keen-pbr does not own, the save is rejected and the file is left untouched. Pick another name, such as `sbtun2`. A working manual config used by a keen-pbr outbound such as `tun_hu` therefore survives the first save after upgrade.
+The first edit of an existing file keeps a one-time copy `config.json.bak-keenpbr-original`. Later edits refresh only `config.json.bak-keenpbr`. `sing-box check` runs before the new file is kept; a failure restores the rolling copy. If the keen-pbr outbound cannot be saved after that, the link store, the sing-box config and `config.json` are all restored.
 
-Removing the last managed node deletes only `kpbr-` objects. A file that contained nothing else is removed; a file that still has unmanaged sections is written back and reloaded.
+Managed objects use the `kpbr-` prefix:
 
-Links stay in `/opt/etc/keen-pbr/sing-box-links.json` and are not returned by the profile list.
+- inbound `kpbr-tun-<node id>`;
+- outbound `kpbr-n-<node id>`;
+- a route rule from that inbound to that outbound;
+- a fallback outbound `kpbr-direct` when the file had no outbounds of its own.
+
+`dns`, `log`, `experimental` and every other inbound, outbound and route rule are copied through unchanged.
+
+If the interface name is already an unmanaged inbound (for example a hand-written `sbtun`), the save is refused and the file is left as it was.
+
+An older `sing-box-links.json` that still contains profiles is read and converted into separate nodes. Links live in `/opt/etc/keen-pbr/sing-box-links.json` and are not part of the API profile list.

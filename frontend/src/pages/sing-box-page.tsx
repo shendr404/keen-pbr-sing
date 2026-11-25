@@ -1,69 +1,29 @@
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 
 import type { ApiError } from "@/api/client"
 import {
-  fetchSingboxProfiles,
+  fetchSingboxState,
   postSingbox,
-  type SingboxProfile,
+  previewSingboxSubscription,
+  type SingboxCatalogNode,
+  type SingboxNode,
   type SingboxState,
+  type SingboxSubscription,
 } from "@/api/sing-box"
 import { PageHeader } from "@/components/shared/page-header"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { getApiErrorMessage } from "@/lib/api-errors"
 
 const queryKey = ["sing-box-profiles"]
 
-type Draft = {
-  id: string
-  name: string
-  tag: string
-  iface: string
-  mode: string
-  urltestUrl: string
-  urltestInterval: string
-  tunStack: string
-  tunMtu: string
-  tunAddress: string
-  seeds: string
-}
-
 const nativeSelectClass =
   "h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground scheme-light dark:bg-popover dark:text-popover-foreground dark:scheme-dark"
-
-const emptyDraft = (): Draft => ({
-  id: "",
-  name: "",
-  tag: "proxy",
-  iface: "",
-  mode: "selector",
-  urltestUrl: "https://www.gstatic.com/generate_204",
-  urltestInterval: "3m",
-  tunStack: "gvisor",
-  tunMtu: "1400",
-  tunAddress: "",
-  seeds: "",
-})
-
-function draftFromProfile(profile: SingboxProfile): Draft {
-  return {
-    id: profile.id,
-    name: profile.name,
-    tag: profile.keenetic_tag,
-    iface: profile.interface,
-    mode: profile.mode,
-    urltestUrl: profile.urltest_url,
-    urltestInterval: profile.urltest_interval || "3m",
-    tunStack: profile.tun_stack || "gvisor",
-    tunMtu: String(profile.tun_mtu || 1400),
-    tunAddress: profile.tun_address || "",
-    seeds: "",
-  }
-}
 
 function formatRefreshTime(timestamp: number | null | undefined, locale: string) {
   return timestamp ? new Date(timestamp * 1000).toLocaleString(locale) : "—"
@@ -89,44 +49,88 @@ function noticeText(
   t: (key: string, options?: Record<string, unknown>) => string,
   fallback: string
 ) {
-  const parts: string[] = []
-  if (state.skipped_transports && state.skipped_transports.length > 0) {
+  const parts = [fallback]
+  if (state.warning) parts.push(localizeServerMessage(state.warning, t))
+  if (state.skipped && state.skipped_transports?.length) {
     parts.push(
       t("pages.singbox.skippedTransports", {
-        count: state.skipped ?? state.skipped_transports.length,
+        count: state.skipped,
         transports: state.skipped_transports.join(", "),
       })
     )
   }
   if (state.encryption_ignored) parts.push(t("pages.singbox.encryptionIgnored"))
-  if (state.warning) parts.push(localizeServerMessage(state.warning, t))
-  return parts.join(" ") || fallback
+  return parts.filter(Boolean).join(" ")
 }
 
-function nonNegative(value: string) {
-  const parsed = Number(value)
-  if (!Number.isFinite(parsed) || parsed < 0) return 0
-  return Math.trunc(parsed)
+function TunFields({
+  idPrefix,
+  stack,
+  mtu,
+  address,
+  onStack,
+  onMtu,
+  onAddress,
+}: {
+  idPrefix: string
+  stack: string
+  mtu: string
+  address: string
+  onStack: (value: string) => void
+  onMtu: (value: string) => void
+  onAddress: (value: string) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <details className="rounded-lg border border-border px-3 py-2">
+      <summary className="cursor-pointer text-sm font-medium">{t("pages.singbox.advanced")}</summary>
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-1.5">
+          <Label htmlFor={`${idPrefix}-stack`}>{t("pages.singbox.tunStack")}</Label>
+          <select
+            className={nativeSelectClass}
+            id={`${idPrefix}-stack`}
+            onChange={(event) => onStack(event.target.value)}
+            value={stack}
+          >
+            <option value="gvisor">gvisor</option>
+            <option value="system">system</option>
+          </select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor={`${idPrefix}-mtu`}>{t("pages.singbox.tunMtu")}</Label>
+          <Input id={`${idPrefix}-mtu`} onChange={(event) => onMtu(event.target.value)} value={mtu} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor={`${idPrefix}-address`}>{t("pages.singbox.tunAddress")}</Label>
+          <Input
+            id={`${idPrefix}-address`}
+            onChange={(event) => onAddress(event.target.value)}
+            placeholder={t("pages.singbox.addressPlaceholder")}
+            value={address}
+          />
+        </div>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">{t("pages.singbox.tunAddressHint")}</p>
+    </details>
+  )
 }
 
 export function SingboxPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
-  const profiles = useQuery({ queryKey, queryFn: fetchSingboxProfiles, refetchInterval: 30_000 })
-  const [draft, setDraft] = useState<Draft>(emptyDraft)
-  const [ifaceTouched, setIfaceTouched] = useState(false)
+  const stateQuery = useQuery({ queryKey, queryFn: fetchSingboxState, refetchInterval: 30_000 })
+  const [links, setLinks] = useState("")
+  const [stack, setStack] = useState("gvisor")
+  const [mtu, setMtu] = useState("1400")
+  const [address, setAddress] = useState("")
+  const [subUrl, setSubUrl] = useState("")
+  const [subHours, setSubHours] = useState("0")
+  const [preview, setPreview] = useState<SingboxCatalogNode[] | null>(null)
+  const [picked, setPicked] = useState<Record<string, boolean>>({})
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const [focusProfileId, setFocusProfileId] = useState<string | null>(null)
-  const createdId = useRef<string | null>(null)
-  const scrolledId = useRef<string | null>(null)
-  const suggestion = profiles.data?.suggested_interface ?? ""
-  const shownIface = ifaceTouched ? draft.iface : suggestion || draft.iface
 
-  const clearMessages = () => {
-    setError("")
-    setSuccess("")
-  }
   const invalidate = () => queryClient.invalidateQueries({ queryKey })
   const fail = (caught: unknown) => {
     const message =
@@ -136,535 +140,394 @@ export function SingboxPage() {
     setSuccess("")
     setError(localizeServerMessage(message, t))
   }
-  const succeed = (state: SingboxState, fallback: string) => {
-    setError("")
-    setSuccess(noticeText(state, t, fallback))
+  const tun = {
+    tun_stack: stack,
+    tun_mtu: Number(mtu) || 1400,
+    tun_address: address,
   }
 
-  const saveProfile = useMutation({
-    mutationFn: async () => {
-      const known = new Set((profiles.data?.profiles ?? []).map((profile) => profile.id))
-      const state = await postSingbox("/api/sing-box/profiles", {
-        id: draft.id,
-        name: draft.name,
-        tag: draft.tag,
-        interface: shownIface,
-        mode: draft.mode,
-        urltest_url: draft.urltestUrl,
-        urltest_interval: draft.urltestInterval,
-        tun_stack: draft.tunStack,
-        tun_mtu: nonNegative(draft.tunMtu) || 1400,
-        tun_address: draft.tunAddress,
-        links: draft.seeds,
-      })
-      const created = state.profiles.find((profile) => !known.has(profile.id)) ?? state.profiles.at(-1)
-      createdId.current = created?.id ?? ""
-      return state
+  const createNodes = useMutation({
+    mutationFn: () => postSingbox("/api/sing-box/nodes", { links, ...tun }),
+    onMutate: () => {
+      setError("")
+      setSuccess("")
     },
-    onMutate: clearMessages,
     onSuccess: async (state) => {
-      succeed(state, t("pages.singbox.savedProfile"))
-      setIfaceTouched(false)
-      setDraft(emptyDraft())
-      setFocusProfileId(createdId.current)
+      setSuccess(noticeText(state, t, t("pages.singbox.savedNodes")))
+      setLinks("")
       await invalidate()
     },
-    onError: async (caught) => {
-      fail(caught)
-      if (createdId.current) setFocusProfileId(createdId.current)
+    onError: fail,
+  })
+  const loadSubscription = useMutation({
+    mutationFn: () => previewSingboxSubscription(subUrl.trim()),
+    onMutate: () => {
+      setError("")
+      setSuccess("")
+    },
+    onSuccess: (result) => {
+      setPreview(result.nodes)
+      const next: Record<string, boolean> = {}
+      for (const node of result.nodes) {
+        if (!node.skipped && node.identity) next[node.identity] = false
+      }
+      setPicked(next)
+      if (result.warning) setSuccess(localizeServerMessage(result.warning, t))
+    },
+    onError: fail,
+  })
+  const confirmSubscription = useMutation({
+    mutationFn: () =>
+      postSingbox("/api/sing-box/subscriptions", {
+        url: subUrl.trim(),
+        interval_hours: Number(subHours) || 0,
+        selected: Object.entries(picked)
+          .filter(([, on]) => on)
+          .map(([identity]) => identity),
+        ...tun,
+      }),
+    onSuccess: async (state) => {
+      setSuccess(noticeText(state, t, t("pages.singbox.subscriptionSaved")))
+      setPreview(null)
+      setPicked({})
+      setSubUrl("")
       await invalidate()
     },
+    onError: fail,
   })
 
-  useEffect(() => {
-    if (!focusProfileId || scrolledId.current === focusProfileId) return
-    const node = document.getElementById(`singbox-links-${focusProfileId}`)
-    if (!node) return
-    scrolledId.current = focusProfileId
-    node.scrollIntoView({ behavior: "smooth", block: "center" })
-    node.focus()
-  }, [focusProfileId, profiles.data])
-
-  const updateDraft = (patch: Partial<Draft>) => {
-    clearMessages()
-    if ("iface" in patch) setIfaceTouched(true)
-    setDraft((current) => ({ ...current, ...patch }))
-  }
+  const nodes = stateQuery.data?.nodes ?? []
+  const subscriptions = stateQuery.data?.subscriptions ?? []
 
   return (
-    <div className="space-y-6">
+    <div className="grid gap-6">
       <PageHeader description={t("pages.singbox.description")} title={t("pages.singbox.title")} />
-      <Messages error={error} onDismiss={clearMessages} success={success} />
-      <section className="space-y-4 rounded-lg border p-4">
+      <section className="grid gap-3 rounded-xl border border-border p-4">
         <h2 className="text-base font-medium">{t("pages.singbox.create")}</h2>
-        <ProfileFields
-          draft={{ ...draft, iface: shownIface }}
-          idPrefix="create"
-          onChange={updateDraft}
+        <Label htmlFor="singbox-links">{t("pages.singbox.links")}</Label>
+        <Textarea
+          id="singbox-links"
+          onChange={(event) => setLinks(event.target.value)}
+          placeholder={t("pages.singbox.linksPlaceholder")}
+          rows={5}
+          value={links}
         />
-        <div className="space-y-1.5">
-          <Label htmlFor="create-seeds">{t("pages.singbox.seeds")}</Label>
-          <textarea
-            className="min-h-28 w-full rounded-lg border border-input bg-transparent p-2.5 font-mono text-sm"
-            id="create-seeds"
-            onChange={(event) => updateDraft({ seeds: event.target.value })}
-            placeholder={t("pages.singbox.seedsPlaceholder")}
-            value={draft.seeds}
-          />
-          <p className="text-xs text-muted-foreground">{t("pages.singbox.seedsHint")}</p>
-        </div>
-        <Button disabled={saveProfile.isPending || draft.tag.length === 0} onClick={() => saveProfile.mutate()} type="button">
-          {t("pages.singbox.saveProfile")}
+        <p className="text-xs text-muted-foreground">{t("pages.singbox.linksHint")}</p>
+        <p className="text-xs text-muted-foreground">
+          {t("pages.singbox.interfaceHint", {
+            name: stateQuery.data?.suggested_interface || "sbtun",
+          })}
+        </p>
+        <TunFields
+          address={address}
+          idPrefix="create"
+          mtu={mtu}
+          onAddress={setAddress}
+          onMtu={setMtu}
+          onStack={setStack}
+          stack={stack}
+        />
+        <Button disabled={createNodes.isPending || links.trim().length === 0} onClick={() => createNodes.mutate()}>
+          {t("pages.singbox.saveNodes")}
         </Button>
       </section>
-      {profiles.data && profiles.data.profiles.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("pages.singbox.noProfiles")}</p>
-      ) : null}
-      {profiles.data?.profiles.map((profile) => (
-        <ProfileCard
-          key={profile.id}
-          onError={fail}
-          onStart={clearMessages}
-          onSuccess={async (state, fallback) => {
-            succeed(state, fallback)
-            await invalidate()
-          }}
-          profile={profile}
-        />
-      ))}
-    </div>
-  )
-}
 
-function Messages({
-  error,
-  success,
-  onDismiss,
-}: {
-  error: string
-  success: string
-  onDismiss: () => void
-}) {
-  const { t } = useTranslation()
-  if (!error && !success) return null
-  return (
-    <div className="space-y-2">
       {error ? (
         <Alert variant="destructive">
-          <AlertDescription className="flex items-start justify-between gap-3">
-            <span>{error}</span>
-            <Button onClick={onDismiss} size="sm" type="button" variant="ghost">
-              {t("pages.singbox.dismiss")}
-            </Button>
-          </AlertDescription>
+          <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : null}
       {success ? (
         <Alert>
-          <AlertDescription className="flex items-start justify-between gap-3">
-            <span>{success}</span>
-            <Button onClick={onDismiss} size="sm" type="button" variant="ghost">
-              {t("pages.singbox.dismiss")}
-            </Button>
-          </AlertDescription>
+          <AlertDescription>{success}</AlertDescription>
         </Alert>
       ) : null}
-    </div>
-  )
-}
 
-function ProfileFields({
-  draft,
-  idPrefix,
-  onChange,
-}: {
-  draft: Draft
-  idPrefix: string
-  onChange: (patch: Partial<Draft>) => void
-}) {
-  const { t } = useTranslation()
-  const fieldId = (name: string) => `${idPrefix}-${name}`
-  return (
-    <div className="grid gap-3 md:grid-cols-2">
-      <div className="space-y-1.5">
-        <Label htmlFor={fieldId("name")}>{t("pages.singbox.name")}</Label>
-        <Input id={fieldId("name")} onChange={(event) => onChange({ name: event.target.value })} value={draft.name} />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor={fieldId("tag")}>{t("pages.singbox.tag")}</Label>
-        <Input id={fieldId("tag")} onChange={(event) => onChange({ tag: event.target.value })} value={draft.tag} />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor={fieldId("interface")}>{t("pages.singbox.interface")}</Label>
-        <Input
-          id={fieldId("interface")}
-          onChange={(event) => onChange({ iface: event.target.value })}
-          placeholder={t("pages.singbox.addressPlaceholder")}
-          value={draft.iface}
-        />
-        <p className="text-xs text-muted-foreground">{t("pages.singbox.interfaceHint")}</p>
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor={fieldId("mode")}>{t("pages.singbox.mode")}</Label>
-        <select
-          className={nativeSelectClass}
-          id={fieldId("mode")}
-          onChange={(event) => onChange({ mode: event.target.value })}
-          value={draft.mode}
-        >
-          <option value="direct">{t("pages.singbox.modes.direct")}</option>
-          <option value="selector">{t("pages.singbox.modes.selector")}</option>
-          <option value="urltest">{t("pages.singbox.modes.urltest")}</option>
-        </select>
-      </div>
-      {draft.mode === "urltest" ? (
-        <>
-          <div className="space-y-1.5">
-            <Label htmlFor={fieldId("url")}>{t("pages.singbox.urltestUrl")}</Label>
-            <Input id={fieldId("url")} onChange={(event) => onChange({ urltestUrl: event.target.value })} value={draft.urltestUrl} />
+      <section className="grid gap-3">
+        <h2 className="text-base font-medium">{t("pages.singbox.interfaces")}</h2>
+        {nodes.length === 0 ? <p className="text-sm text-muted-foreground">{t("pages.singbox.noNodes")}</p> : null}
+        {nodes.map((node) => (
+          <NodeCard
+            key={node.id}
+            node={node}
+            onError={fail}
+            onSuccess={async (state, fallback) => {
+              setError("")
+              setSuccess(noticeText(state, t, fallback))
+              await invalidate()
+            }}
+          />
+        ))}
+      </section>
+
+      <section className="grid gap-3 rounded-xl border border-border p-4">
+        <h2 className="text-base font-medium">{t("pages.singbox.subscriptions")}</h2>
+        <div className="grid gap-3 sm:grid-cols-[1fr_12rem]">
+          <div className="grid gap-1.5">
+            <Label htmlFor="sub-url">{t("pages.singbox.subscriptionUrl")}</Label>
+            <Input id="sub-url" onChange={(event) => setSubUrl(event.target.value)} value={subUrl} />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor={fieldId("probe")}>{t("pages.singbox.urltestInterval")}</Label>
-            <Input
-              id={fieldId("probe")}
-              onChange={(event) => onChange({ urltestInterval: event.target.value })}
-              value={draft.urltestInterval}
-            />
-          </div>
-        </>
-      ) : null}
-      <details className="rounded-lg border border-dashed px-3 py-2 md:col-span-2">
-        <summary className="cursor-pointer text-sm font-medium">{t("pages.singbox.advanced")}</summary>
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor={fieldId("stack")}>{t("pages.singbox.tunStack")}</Label>
-            <select
-              className={nativeSelectClass}
-              id={fieldId("stack")}
-              onChange={(event) => onChange({ tunStack: event.target.value })}
-              value={draft.tunStack}
-            >
-              <option value="gvisor">gvisor</option>
-              <option value="system">system</option>
-            </select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor={fieldId("mtu")}>{t("pages.singbox.tunMtu")}</Label>
-            <Input
-              id={fieldId("mtu")}
-              max={65535}
-              min={576}
-              onChange={(event) => onChange({ tunMtu: event.target.value })}
-              type="number"
-              value={draft.tunMtu}
-            />
-          </div>
-          <div className="space-y-1.5 md:col-span-2">
-            <Label htmlFor={fieldId("address")}>{t("pages.singbox.tunAddress")}</Label>
-            <Input
-              id={fieldId("address")}
-              onChange={(event) => onChange({ tunAddress: event.target.value })}
-              placeholder={t("pages.singbox.addressPlaceholder")}
-              value={draft.tunAddress}
-            />
-            <p className="text-xs text-muted-foreground">{t("pages.singbox.tunAddressHint")}</p>
+          <div className="grid gap-1.5">
+            <Label htmlFor="sub-hours">{t("pages.singbox.interval")}</Label>
+            <Input id="sub-hours" onChange={(event) => setSubHours(event.target.value)} value={subHours} />
           </div>
         </div>
-      </details>
+        <Button disabled={loadSubscription.isPending || subUrl.trim().length === 0} onClick={() => loadSubscription.mutate()}>
+          {t("pages.singbox.loadSubscription")}
+        </Button>
+        {preview ? (
+          <div className="grid gap-2">
+            {preview.map((node) => (
+              <label className="flex items-start gap-2 text-sm" key={node.identity || `${node.name}-${node.reason}`}>
+                <input
+                  checked={!node.skipped && !!picked[node.identity]}
+                  className="mt-1 size-4 accent-primary"
+                  disabled={node.skipped || !node.identity}
+                  onChange={(event) =>
+                    setPicked((current) => ({ ...current, [node.identity]: event.target.checked }))
+                  }
+                  type="checkbox"
+                />
+                <span>
+                  <span className="font-medium">{node.name || node.server || t("pages.singbox.unnamed")}</span>
+                  {" · "}
+                  {node.protocol || "—"}
+                  {node.server ? ` · ${node.server}${node.port ? `:${node.port}` : ""}` : ""}
+                  {node.skipped ? (
+                    <span className="text-muted-foreground"> — {node.reason}</span>
+                  ) : null}
+                </span>
+              </label>
+            ))}
+            <Button disabled={confirmSubscription.isPending} onClick={() => confirmSubscription.mutate()}>
+              {t("pages.singbox.confirmSelection")}
+            </Button>
+          </div>
+        ) : null}
+        {subscriptions.map((subscription) => (
+          <SubscriptionCard
+            createdIdentities={nodes
+              .filter((node) => node.subscription_id === subscription.id)
+              .map((node) => node.identity)}
+            key={subscription.id}
+            locale={i18n.language}
+            onError={fail}
+            onSuccess={async (state, fallback) => {
+              setError("")
+              setSuccess(noticeText(state, t, fallback))
+              await invalidate()
+            }}
+            subscription={subscription}
+            tun={tun}
+          />
+        ))}
+      </section>
     </div>
   )
 }
 
-function ProfileCard({
-  profile,
-  onStart,
+function NodeCard({
+  node,
   onSuccess,
   onError,
 }: {
-  profile: SingboxProfile
-  onStart: () => void
+  node: SingboxNode
   onSuccess: (state: SingboxState, fallback: string) => Promise<void>
-  onError: (error: unknown) => void
+  onError: (caught: unknown) => void
 }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(() => draftFromProfile(profile))
-  const [links, setLinks] = useState("")
-  const [subscriptionUrl, setSubscriptionUrl] = useState("")
-  const [intervalHours, setIntervalHours] = useState("0")
-  const subscriptions = profile.subscriptions ?? []
-  const current = profile.connections.find((connection) => connection.id === profile.urltest_now)
+  const [tag, setTag] = useState(node.tag)
+  const [iface, setIface] = useState(node.interface)
+  const [stack, setStack] = useState(node.tun_stack || "gvisor")
+  const [mtu, setMtu] = useState(String(node.tun_mtu || 1400))
+  const [address, setAddress] = useState(node.tun_address || "")
+  const save = useMutation({
+    mutationFn: () =>
+      postSingbox("/api/sing-box/nodes/update", {
+        id: node.id,
+        tag,
+        interface: iface,
+        tun_stack: stack,
+        tun_mtu: Number(mtu) || 1400,
+        tun_address: address,
+      }),
+    onSuccess: async (state) => {
+      setEditing(false)
+      await onSuccess(state, t("pages.singbox.saved"))
+    },
+    onError,
+  })
+  const remove = useMutation({
+    mutationFn: () => postSingbox("/api/sing-box/nodes/delete", { id: node.id }),
+    onSuccess: (state) => onSuccess(state, t("pages.singbox.saved")),
+    onError,
+  })
+  const source =
+    node.source === "subscription"
+      ? node.subscription_name || t("pages.singbox.subscription")
+      : t("pages.singbox.sourceLink")
+  return (
+    <article className="grid gap-2 rounded-xl border border-border p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-base font-medium">{node.tag}</h3>
+        <span className="text-sm text-muted-foreground">
+          {node.protocol} · {node.server}:{node.port} · {node.interface} · {source}
+          {node.missing ? ` · ${t("pages.singbox.missing")}` : ""}
+        </span>
+      </div>
+      <p className="text-sm text-muted-foreground">{node.name}</p>
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={() => setEditing((value) => !value)} size="sm" variant="outline">
+          {t("pages.singbox.edit")}
+        </Button>
+        <Button disabled={remove.isPending} onClick={() => remove.mutate()} size="sm" variant="outline">
+          {t("pages.singbox.deleteNode")}
+        </Button>
+      </div>
+      {editing ? (
+        <div className="grid gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor={`${node.id}-tag`}>{t("pages.singbox.tag")}</Label>
+              <Input id={`${node.id}-tag`} onChange={(event) => setTag(event.target.value)} value={tag} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor={`${node.id}-iface`}>{t("pages.singbox.interface")}</Label>
+              <Input id={`${node.id}-iface`} onChange={(event) => setIface(event.target.value)} value={iface} />
+            </div>
+          </div>
+          <TunFields
+            address={address}
+            idPrefix={node.id}
+            mtu={mtu}
+            onAddress={setAddress}
+            onMtu={setMtu}
+            onStack={setStack}
+            stack={stack}
+          />
+          <Button disabled={save.isPending} onClick={() => save.mutate()}>
+            {t("pages.singbox.save")}
+          </Button>
+        </div>
+      ) : null}
+    </article>
+  )
+}
 
-  const select = useMutation({
-    mutationFn: (active: string) =>
-      postSingbox("/api/sing-box/profiles/select", { profile_id: profile.id, mode: profile.mode, active }),
-    onMutate: onStart,
+function SubscriptionCard({
+  subscription,
+  locale,
+  tun,
+  createdIdentities,
+  onSuccess,
+  onError,
+}: {
+  subscription: SingboxSubscription
+  locale: string
+  tun: { tun_stack: string; tun_mtu: number; tun_address: string }
+  createdIdentities: string[]
+  onSuccess: (state: SingboxState, fallback: string) => Promise<void>
+  onError: (caught: unknown) => void
+}) {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const [picked, setPicked] = useState<Record<string, boolean>>({})
+  const created = new Set(createdIdentities)
+  const refresh = useMutation({
+    mutationFn: () => postSingbox("/api/sing-box/subscriptions/refresh", { subscription_id: subscription.id }),
     onSuccess: (state) => onSuccess(state, t("pages.singbox.saved")),
     onError,
   })
   const remove = useMutation({
-    mutationFn: (id: string) => postSingbox("/api/sing-box/connections/delete", { profile_id: profile.id, id }),
-    onMutate: onStart,
+    mutationFn: () => postSingbox("/api/sing-box/subscriptions/delete", { subscription_id: subscription.id }),
     onSuccess: (state) => onSuccess(state, t("pages.singbox.saved")),
     onError,
   })
-  const addLinks = useMutation({
-    mutationFn: () => postSingbox("/api/sing-box/connections", { profile_id: profile.id, links }),
-    onMutate: onStart,
-    onSuccess: async (state) => {
-      setLinks("")
-      await onSuccess(state, t("pages.singbox.proxiesSaved"))
-    },
-    onError,
-  })
-  const attach = useMutation({
+  const select = useMutation({
     mutationFn: () =>
-      postSingbox("/api/sing-box/subscriptions", {
-        profile_id: profile.id,
-        url: subscriptionUrl,
-        interval_hours: nonNegative(intervalHours),
+      postSingbox("/api/sing-box/subscriptions/select", {
+        subscription_id: subscription.id,
+        selected: Object.entries(picked)
+          .filter(([, on]) => on)
+          .map(([identity]) => identity),
+        ...tun,
       }),
-    onMutate: onStart,
     onSuccess: async (state) => {
-      setSubscriptionUrl("")
+      setOpen(false)
       await onSuccess(state, t("pages.singbox.subscriptionSaved"))
     },
     onError,
   })
-  const refresh = useMutation({
-    mutationFn: (subscriptionId: string) =>
-      postSingbox("/api/sing-box/subscriptions/refresh", {
-        profile_id: profile.id,
-        subscription_id: subscriptionId,
-      }),
-    onMutate: onStart,
-    onSuccess: (state) => onSuccess(state, t("pages.singbox.saved")),
-    onError,
-  })
-  const detach = useMutation({
-    mutationFn: (subscriptionId: string) =>
-      postSingbox("/api/sing-box/subscriptions/delete", {
-        profile_id: profile.id,
-        subscription_id: subscriptionId,
-      }),
-    onMutate: onStart,
-    onSuccess: (state) => onSuccess(state, t("pages.singbox.saved")),
-    onError,
-  })
-  const saveEdit = useMutation({
-    mutationFn: () =>
-      postSingbox("/api/sing-box/profiles", {
-        id: profile.id,
-        name: draft.name,
-        tag: draft.tag,
-        interface: draft.iface,
-        mode: draft.mode,
-        urltest_url: draft.urltestUrl,
-        urltest_interval: draft.urltestInterval,
-        tun_stack: draft.tunStack,
-        tun_mtu: nonNegative(draft.tunMtu) || 1400,
-        tun_address: draft.tunAddress,
-      }),
-    onMutate: onStart,
-    onSuccess: async (state) => {
-      setEditing(false)
-      await onSuccess(state, t("pages.singbox.savedProfile"))
-    },
-    onError,
-  })
-  const removeProfile = useMutation({
-    mutationFn: () => postSingbox("/api/sing-box/profiles/delete", { profile_id: profile.id }),
-    onMutate: onStart,
-    onSuccess: (state) => onSuccess(state, t("pages.singbox.saved")),
-    onError,
-  })
-
   return (
-    <section className="space-y-4 rounded-lg border p-4">
+    <article className="grid gap-2 rounded-lg border border-border p-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-base font-medium">{profile.name}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t("pages.singbox.mapsTo", { tag: profile.keenetic_tag, interface: profile.interface })}
-        </p>
+        <h3 className="font-medium">{subscription.name}</h3>
+        <span className="text-sm text-muted-foreground">
+          {t("pages.singbox.lastRefresh")}: {formatRefreshTime(subscription.last_refresh, locale)}
+        </span>
       </div>
       <p className="text-sm text-muted-foreground">
-        {t(`pages.singbox.modes.${profile.mode}`, { defaultValue: profile.mode })}
-        {" · "}
-        {profile.tun_stack || "gvisor"}
-        {" · MTU "}
-        {profile.tun_mtu || 1400}
+        {t("pages.singbox.interval")}: {subscription.interval_hours === 0 ? t("pages.singbox.autoRefreshOff") : subscription.interval_hours}
+        {subscription.next_refresh ? ` · ${t("pages.singbox.nextRefresh")}: ${formatRefreshTime(subscription.next_refresh, locale)}` : ""}
       </p>
-      {profile.mode === "urltest" ? (
-        <p className="text-sm">
-          {current
-            ? t("pages.singbox.urltestCurrent", { name: current.name })
-            : t("pages.singbox.urltestAuto", {
-                interval: profile.urltest_interval || "3m",
-                url: profile.urltest_url,
-              })}
-        </p>
+      {subscription.last_error ? <p className="text-sm text-destructive">{subscription.last_error}</p> : null}
+      {subscription.new_nodes > 0 ? (
+        <p className="text-sm">{t("pages.singbox.newNodes", { count: subscription.new_nodes })}</p>
       ) : null}
       <div className="flex flex-wrap gap-2">
+        <Button disabled={refresh.isPending} onClick={() => refresh.mutate()} size="sm" variant="outline">
+          {t("pages.singbox.refresh")}
+        </Button>
         <Button
           onClick={() => {
-            setDraft(draftFromProfile(profile))
-            setEditing((value) => !value)
+            const next: Record<string, boolean> = {}
+            for (const node of subscription.catalog) {
+              if (!node.skipped && node.identity) next[node.identity] = false
+            }
+            setPicked(next)
+            setOpen(true)
           }}
-          type="button"
+          size="sm"
           variant="outline"
         >
-          {t("pages.singbox.edit")}
+          {t("pages.singbox.selectNodes")}
         </Button>
-        <Button disabled={removeProfile.isPending} onClick={() => removeProfile.mutate()} type="button" variant="outline">
-          {t("pages.singbox.deleteProfile")}
+        <Button disabled={remove.isPending} onClick={() => remove.mutate()} size="sm" variant="outline">
+          {t("pages.singbox.removeSubscription")}
         </Button>
       </div>
-      {editing ? (
-        <div className="space-y-3">
-          <ProfileFields
-            draft={draft}
-            idPrefix={profile.id}
-            onChange={(patch) => {
-              onStart()
-              setDraft((currentDraft) => ({ ...currentDraft, ...patch }))
-            }}
-          />
-          <Button disabled={saveEdit.isPending} onClick={() => saveEdit.mutate()} type="button">
-            {t("pages.singbox.saveProfile")}
+      {open ? (
+        <div className="grid gap-2">
+          {subscription.catalog.map((node) => {
+            const already = created.has(node.identity)
+            return (
+              <label className="flex items-start gap-2 text-sm" key={`${node.identity}-${node.reason}`}>
+                <input
+                  checked={already || (!node.skipped && !!picked[node.identity])}
+                  className="mt-1 size-4 accent-primary"
+                  disabled={node.skipped || already}
+                  onChange={(event) =>
+                    setPicked((current) => ({ ...current, [node.identity]: event.target.checked }))
+                  }
+                  type="checkbox"
+                />
+                <span>
+                  {node.name || node.server || t("pages.singbox.unnamed")}
+                  {" · "}
+                  {node.protocol || "—"}
+                  {node.server ? ` · ${node.server}:${node.port}` : ""}
+                  {node.skipped ? <span className="text-muted-foreground"> — {node.reason}</span> : null}
+                  {already ? <span className="text-muted-foreground"> — {t("pages.singbox.alreadyAdded")}</span> : null}
+                </span>
+              </label>
+            )
+          })}
+          <Button disabled={select.isPending} onClick={() => select.mutate()} size="sm">
+            {t("pages.singbox.confirmSelection")}
           </Button>
         </div>
       ) : null}
-      <div className="space-y-3 rounded-lg bg-muted/40 p-3" id={`singbox-nodes-${profile.id}`}>
-        <div className="space-y-1">
-          <h3 className="text-base font-medium">{t("pages.singbox.nodes")}</h3>
-          <p className="text-sm text-muted-foreground">{t("pages.singbox.nodesHint")}</p>
-        </div>
-        <ul className="space-y-2">
-          {profile.connections.map((connection) => {
-            const selected =
-              profile.mode === "urltest"
-                ? profile.urltest_now === connection.id
-                : profile.active === connection.id
-            const mark =
-              profile.mode === "urltest"
-                ? selected
-                  ? t("pages.singbox.current")
-                  : ""
-                : selected
-                  ? t("pages.singbox.active")
-                  : ""
-            return (
-              <li className="flex flex-wrap items-center justify-between gap-2 text-sm" key={connection.id}>
-                {profile.mode === "urltest" ? (
-                  <div className="text-left">
-                    <span className="font-medium">{connection.name}</span>
-                    <span className="text-muted-foreground">
-                      {" "}
-                      {connection.protocol} {connection.server}:{connection.port}
-                      {mark ? ` · ${mark}` : ""}
-                    </span>
-                  </div>
-                ) : (
-                  <button
-                    className="text-left"
-                    onClick={() => select.mutate(connection.id)}
-                    type="button"
-                  >
-                    <span className="font-medium">{connection.name}</span>
-                    <span className="text-muted-foreground">
-                      {" "}
-                      {connection.protocol} {connection.server}:{connection.port}
-                      {mark ? ` · ${mark}` : ""}
-                    </span>
-                  </button>
-                )}
-                <Button onClick={() => remove.mutate(connection.id)} type="button" variant="outline">
-                  {t("common.delete")}
-                </Button>
-              </li>
-            )
-          })}
-        </ul>
-        <div className="space-y-1">
-          <Label htmlFor={`singbox-links-${profile.id}`}>{t("pages.singbox.seeds")}</Label>
-          <textarea
-            className="min-h-28 w-full rounded-lg border border-input bg-background p-2.5 font-mono text-sm"
-            id={`singbox-links-${profile.id}`}
-            onChange={(event) => {
-              onStart()
-              setLinks(event.target.value)
-            }}
-            placeholder={t("pages.singbox.seedsPlaceholder")}
-            value={links}
-          />
-        </div>
-        <Button disabled={addLinks.isPending || links.trim().length === 0} onClick={() => addLinks.mutate()} type="button">
-          {t("pages.singbox.addProxies")}
-        </Button>
-      </div>
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium">{t("pages.singbox.subscription")}</h3>
-        {subscriptions.map((subscription) => (
-          <div className="space-y-2 rounded-lg border p-3" key={subscription.id}>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-3 text-sm">
-              <dt>{t("pages.singbox.interval")}</dt>
-              <dd>{subscription.interval_hours}</dd>
-              <dt>{t("pages.singbox.lastRefresh")}</dt>
-              <dd>{formatRefreshTime(subscription.last_refresh, i18n.language)}</dd>
-              <dt>{t("pages.singbox.nextRefresh")}</dt>
-              <dd>
-                {subscription.interval_hours > 0
-                  ? formatRefreshTime(subscription.next_refresh, i18n.language)
-                  : t("pages.singbox.autoRefreshOff")}
-              </dd>
-              <dt>{t("pages.singbox.lastError")}</dt>
-              <dd className={subscription.last_error ? "text-destructive" : undefined}>
-                {subscription.last_error ? localizeServerMessage(subscription.last_error, t) : "—"}
-              </dd>
-            </dl>
-            <div className="flex flex-wrap gap-2">
-              <Button disabled={refresh.isPending} onClick={() => refresh.mutate(subscription.id)} type="button" variant="outline">
-                {t("pages.singbox.refresh")}
-              </Button>
-              <Button disabled={detach.isPending} onClick={() => detach.mutate(subscription.id)} type="button" variant="outline">
-                {t("pages.singbox.removeSubscription")}
-              </Button>
-            </div>
-          </div>
-        ))}
-        <div className="space-y-1">
-          <Label htmlFor={`${profile.id}-sub-url`}>{t("pages.singbox.subscriptionUrl")}</Label>
-          <Input
-            id={`${profile.id}-sub-url`}
-            onChange={(event) => {
-              onStart()
-              setSubscriptionUrl(event.target.value)
-            }}
-            placeholder="https://…"
-            value={subscriptionUrl}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor={`${profile.id}-sub-hours`}>{t("pages.singbox.interval")}</Label>
-          <Input
-            id={`${profile.id}-sub-hours`}
-            min={0}
-            onChange={(event) => {
-              onStart()
-              setIntervalHours(event.target.value)
-            }}
-            type="number"
-            value={intervalHours}
-          />
-        </div>
-        <Button
-          disabled={attach.isPending || subscriptionUrl.length === 0}
-          onClick={() => attach.mutate()}
-          type="button"
-        >
-          {t("pages.singbox.attachSubscription")}
-        </Button>
-      </div>
-    </section>
+    </article>
   )
 }

@@ -107,6 +107,9 @@ TEST_CASE("reality defaults utls, hysteria2 keeps obfs, and xhttp is skipped") {
     CHECK(info.skipped == 2);
     CHECK(info.unsupported_transports.at("xhttp") == 1);
     CHECK(info.unsupported_transports.at("splithttp") == 1);
+    REQUIRE(info.skipped_nodes.size() == 2);
+    CHECK(info.skipped_nodes[0].name == "Skip");
+    CHECK(info.skipped_nodes[0].reason.find("xhttp") != std::string::npos);
     CHECK(nodes[0].link.outbound.at("tls").at("utls").at("fingerprint") == "chrome");
     CHECK(nodes[1].link.protocol == "hysteria2");
     CHECK(nodes[1].link.outbound.at("obfs").at("type") == "salamander");
@@ -127,245 +130,215 @@ TEST_CASE("sing-box check errors name a missing binary and redact secrets") {
     CHECK(url.find("secret-token") == std::string::npos);
 }
 
-TEST_CASE("sing-box check failure restores the previous config and store") {
-    const auto root = std::filesystem::temp_directory_path() / "keen-pbr-singbox-links";
+
+TEST_CASE("a keen-pbr outbound referenced by a rule or group cannot be removed") {
+    const auto config = nlohmann::json::parse(R"({
+      "route": {"rules": [{"outbound": "hu-1"}, {"outbound": "other"}]},
+      "outbounds": [
+        {"type": "urltest", "tag": "proxy", "outbound_groups": [{"members": [{"outbound": "hu-1"}]}]},
+        {"type": "icmptest", "tag": "probe", "outbound_groups": [{"outbounds": ["other"]}]}
+      ]
+    })");
+    const auto message = outbound_reference_message(config, "hu-1");
+    CHECK(message.find("route rule 1") != std::string::npos);
+    CHECK(message.find("urltest proxy") != std::string::npos);
+    CHECK(outbound_reference_message(config, "other").find("icmptest probe") != std::string::npos);
+    CHECK(outbound_reference_message(config, "free").empty());
+}
+
+TEST_CASE("pasted links become separate interfaces and roll back together") {
+    const auto root = std::filesystem::temp_directory_path() / "keen-pbr-singbox-nodes";
     std::filesystem::remove_all(root);
     std::filesystem::create_directories(root);
     SingboxPaths paths;
     paths.store = (root / "links.json").string();
     paths.singbox_config = (root / "config.json").string();
-    std::ofstream(paths.singbox_config) << "{\"old\":true}";
-    int checks = 0;
-    SingboxLinkService service(
-        paths,
-        [&checks](const std::string&, std::string* error) {
-            ++checks;
-            if (error != nullptr) *error = "bad outbound";
-            return checks == 1 ? 1 : 0;
+    const char* manual = R"({"inbounds":[{"type":"tun","tag":"tun-in","interface_name":"sbtun","address":["172.19.1.1/30"]}]})";
+    std::ofstream(paths.singbox_config) << manual;
+    const auto before = read_file(paths.singbox_config);
+    int calls = 0;
+    SingboxLinkService failing(
+        paths, [](const std::string&, std::string*) { return 0; },
+        [&](const KeeneticSyncRequest&) {
+            ++calls;
+            throw std::runtime_error("invalid runtime transition: running -> running");
         },
-        [](const SingboxProfile&, bool) {},
         [] { return true; });
+    CHECK_THROWS_WITH(failing.add_links({"trojan://pw@a.example:443#hu-1"}, {}),
+                      "invalid runtime transition: running -> running");
+    CHECK(calls == 1);
+    CHECK(read_file(paths.singbox_config) == before);
+    CHECK(failing.state()["nodes"].empty());
 
-    SingboxProfileDraft draft;
-    draft.name = "Proxy";
-    draft.interface_name = "sbtun";
-    draft.keenetic_tag = "proxy";
-    draft.mode = "selector";
-    REQUIRE(service.save_profile(draft).keenetic_applied);
-    CHECK_THROWS_WITH(service.add_connections(
-                          "proxy",
-                          {"vless://11111111-1111-1111-1111-111111111111@example.com:443#Home"}, "Home"),
-                      "sing-box check failed: bad outbound");
-    CHECK(read_file(paths.singbox_config).find("\"old\":true") != std::string::npos);
-    CHECK(service.state()["profiles"][0]["connections"].empty());
-
-    draft.id = "proxy";
-    draft.mode = "direct";
-    REQUIRE(service.save_profile(draft).keenetic_applied);
-    const auto saved = service.add_connections(
-        "proxy", {"trojan://pw@example.com:443?sni=example.com#Home"}, "Home");
+    SingboxLinkService service(
+        paths, [](const std::string&, std::string*) { return 0; },
+        [](const KeeneticSyncRequest& request) {
+            if (!request.removed_tags.empty()) {
+                throw std::runtime_error("outbound hu-1 is used by route rule 1");
+            }
+            REQUIRE(request.nodes.size() == 2);
+            CHECK(request.nodes[0].tag == "hu-1");
+            CHECK(request.nodes[0].interface_name == "sbtun2");
+            CHECK(request.nodes[1].tag == "hu-1-2");
+            CHECK(request.nodes[1].interface_name == "sbtun3");
+        },
+        [] { return true; });
+    const auto saved = service.add_links(
+        {"trojan://pw@a.example:443#hu-1\ntrojan://pw@b.example:443#hu-1"}, {});
     CHECK(saved.singbox_checked);
     CHECK(saved.singbox_reloaded);
-    CHECK(saved.keenetic_applied);
     const auto config = nlohmann::json::parse(read_file(paths.singbox_config));
     CHECK(config["inbounds"][0]["interface_name"] == "sbtun");
-    CHECK(config["inbounds"][0]["auto_route"] == false);
-    CHECK(config["inbounds"][0]["stack"] == "gvisor");
-    CHECK(config["inbounds"][0]["mtu"] == 1400);
-    CHECK(config["outbounds"][0]["type"] == "trojan");
+    CHECK(config["inbounds"][1]["interface_name"] == "sbtun2");
+    CHECK(config["inbounds"][1]["address"][0] == "172.19.2.1/30");
+    CHECK(config["inbounds"][2]["interface_name"] == "sbtun3");
+    CHECK(config["inbounds"][2]["address"][0] == "172.19.3.1/30");
+    CHECK(config["route"]["rules"][0]["inbound"].get<std::string>().rfind("kpbr-tun-", 0) == 0);
     CHECK(config["route"]["rules"][0]["outbound"] == config["outbounds"][0]["tag"]);
-    CHECK(config["route"]["final"] == "kpbr-direct");
-    CHECK(config.contains("old"));
-    const auto state = saved.state["profiles"][0];
-    CHECK(state["keenetic_tag"] == "proxy");
-    CHECK(state["interface"] == "sbtun");
-    CHECK(state["connections"][0]["server"] == "example.com");
-    CHECK(state["connections"][0].dump().find("pw") == std::string::npos);
+    int trojans = 0;
+    for (const auto& outbound : config["outbounds"]) {
+        if (outbound.value("type", "") == "trojan") ++trojans;
+        CHECK(outbound.value("type", "") != "urltest");
+        CHECK(outbound.value("type", "") != "selector");
+    }
+    CHECK(trojans == 2);
+    CHECK(saved.state["nodes"].size() == 2);
+    CHECK(saved.state.dump().find("pw") == std::string::npos);
+
+    const auto id = saved.state["nodes"][0]["id"].get<std::string>();
+    CHECK_THROWS_WITH(service.remove_node(id), "outbound hu-1 is used by route rule 1");
+    CHECK(read_file(paths.singbox_config).find("sbtun2") != std::string::npos);
+    CHECK(service.state()["nodes"].size() == 2);
     std::filesystem::remove_all(root);
 }
 
-namespace {
-
-struct SubscriptionFixture {
-    const std::filesystem::path dir;
+TEST_CASE("subscription selection creates only ticked nodes and refresh keeps the rest") {
+    const auto root = std::filesystem::temp_directory_path() / "keen-pbr-singbox-sub-nodes";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
     SingboxPaths paths;
-    std::int64_t now{1000};
-    std::string url{"https://example.test/secret-token"};
-    std::string body{"trojan://pw@a.example:443#A\ntrojan://pw@b.example:443#B"};
-    int downloads{0};
-    int checks{0};
-    int restarts{0};
-    bool download_fails{false};
-    bool check_fails{false};
-    bool restart_fails_once{false};
-    std::function<void()> on_download;
-    SingboxLinkService service;
+    paths.store = (root / "links.json").string();
+    paths.singbox_config = (root / "config.json").string();
+    std::int64_t now = 1000;
+    std::string body = "trojan://pw@a.example:443#hu-1\n"
+                       "trojan://pw@b.example:443#hu-2\n"
+                       "vless://11111111-1111-1111-1111-111111111111@x.example:443?type=xhttp#skip";
+    int downloads = 0;
+    SingboxLinkService service(
+        paths, [](const std::string&, std::string*) { return 0; }, [](const KeeneticSyncRequest&) {},
+        [] { return true; },
+        [&](const std::string&, const SubscriptionStopFn&) {
+            ++downloads;
+            return body;
+        },
+        [&] { return now; });
+    const auto preview = service.preview_subscription("https://example.test/sub");
+    REQUIRE(preview["nodes"].size() == 3);
+    CHECK(preview["nodes"][2]["skipped"] == true);
+    CHECK(preview["nodes"][2]["reason"].get<std::string>().find("xhttp") != std::string::npos);
+    std::vector<std::string> selected{preview["nodes"][0]["identity"].get<std::string>()};
+    const auto saved = service.save_subscription("https://example.test/sub", 1, selected, {});
+    REQUIRE(saved.state["nodes"].size() == 1);
+    CHECK(saved.state["nodes"][0]["tag"] == "hu-1");
+    CHECK(saved.state["nodes"][0]["source"] == "subscription");
+    CHECK(saved.state["subscriptions"][0]["new_nodes"] == 1);
+    CHECK(saved.state.dump().find("https://") == std::string::npos);
+    CHECK(saved.state.dump().find("/sub") == std::string::npos);
+    const auto config_after_select = read_file(paths.singbox_config);
+    CHECK(config_after_select.find("b.example") == std::string::npos);
+    CHECK(config_after_select.find("a.example") != std::string::npos);
 
-    static std::filesystem::path temp_dir() {
-        auto pattern = (std::filesystem::temp_directory_path() / "keen-pbr-subscriptions-XXXXXX").string();
-        if (!::mkdtemp(pattern.data())) throw std::runtime_error("mkdtemp failed");
-        return pattern;
-    }
+    body = "trojan://new@a.example:8443#hu-1\ntrojan://pw@c.example:443#hu-3";
+    now = 4600;
+    REQUIRE(service.refresh_subscriptions("", true).at(0).at("ok") == true);
+    CHECK(downloads == 3);
+    const auto state = service.state();
+    CHECK(state["nodes"].size() == 1);
+    CHECK(state["nodes"][0]["server"] == "a.example");
+    CHECK(state["nodes"][0]["port"] == 8443);
+    CHECK(state["nodes"][0]["missing"] == false);
+    CHECK(state["subscriptions"][0]["new_nodes"] == 1);
+    CHECK(read_file(paths.singbox_config).find("\"password\": \"new\"") != std::string::npos);
+    CHECK(read_file(paths.singbox_config).find("c.example") == std::string::npos);
 
-    SubscriptionFixture()
-        : dir(temp_dir()), paths{(dir / "links.json").string(), (dir / "config.json").string()},
-          service(paths,
-                  [this](const std::string&, std::string* output) {
-                      ++checks;
-                      *output = url;
-                      return check_fails ? 1 : 0;
-                  },
-                  {},
-                  [this] {
-                      ++restarts;
-                      return !std::exchange(restart_fails_once, false);
-                  },
-                  [this](const std::string& requested, const SubscriptionStopFn&) {
-                      ++downloads;
-                      if (on_download) on_download();
-                      if (download_fails) throw std::runtime_error(requested);
-                      return body;
-                  },
-                  [this] { return now; }) {}
+    const auto store_before = read_file(paths.store);
+    const auto config_before = read_file(paths.singbox_config);
+    body = "trojan://pw@c.example:443#hu-3";
+    now = 8200;
+    REQUIRE(service.refresh_subscriptions(state["subscriptions"][0]["id"].get<std::string>(), false).at(0).at("ok") == true);
+    const auto missing = service.state();
+    CHECK(missing["nodes"].size() == 1);
+    CHECK(missing["nodes"][0]["missing"] == true);
+    CHECK(missing["nodes"][0]["server"] == "a.example");
+    CHECK(read_file(paths.singbox_config) == config_before);
+    CHECK(missing["subscriptions"][0]["new_nodes"] == 1);
+    CHECK(read_file(paths.store) != store_before);
 
-    ~SubscriptionFixture() { std::filesystem::remove_all(dir); }
-
-    void save(int interval = 1) {
-        SingboxProfileDraft draft;
-        draft.name = "Proxy";
-        draft.interface_name = "sbtun";
-        draft.keenetic_tag = "proxy";
-        draft.mode = "direct";
-        REQUIRE(service.save_profile(draft).keenetic_applied);
-        REQUIRE(service.save_subscription("proxy", url, interval, "").singbox_reloaded);
-    }
-
-    nlohmann::json profile() { return service.state()["profiles"].at(0); }
-    nlohmann::json tick() { return service.refresh_subscriptions("", true); }
-};
-
-}  // namespace
-
-TEST_CASE("subscription scheduler honors due time without writing or restarting for identical nodes") {
-    SubscriptionFixture f;
-    f.save();
-    CHECK(f.profile()["has_subscription"] == true);
-    CHECK(f.profile().dump().find("secret-token") == std::string::npos);
-    const auto config = read_file(f.paths.singbox_config);
-    const auto store = read_file(f.paths.store);
-    const auto store_mtime = std::filesystem::last_write_time(f.paths.store);
-    const auto config_mtime = std::filesystem::last_write_time(f.paths.singbox_config);
-    CHECK(f.profile()["next_refresh"] == 4600);
-    f.now = 4599;
-    CHECK(f.tick().empty());
-    CHECK(f.downloads == 1);
-
-    f.body = "trojan://pw@b.example:443#B\ntrojan://pw@a.example:443#A";
-    f.now = 4600;
-    REQUIRE(f.tick().at(0).at("ok") == true);
-    CHECK(f.downloads == 2);
-    CHECK(f.checks == 1);
-    CHECK(f.restarts == 1);
-    CHECK(f.profile()["last_refresh"] == 4600);
-    CHECK(f.profile()["next_refresh"] == 8200);
-    CHECK(std::filesystem::last_write_time(f.paths.store) == store_mtime);
-    CHECK(std::filesystem::last_write_time(f.paths.singbox_config) == config_mtime);
-    CHECK(read_file(f.paths.store) == store);
-    CHECK(read_file(f.paths.singbox_config) == config);
-    CHECK(f.tick().empty());
+    body = "trojan://pw@c.example:443#hu-3";
+    const auto unchanged_config = read_file(paths.singbox_config);
+    const auto unchanged_store = read_file(paths.store);
+    const auto store_mtime = std::filesystem::last_write_time(paths.store);
+    REQUIRE(service.refresh_subscriptions("", false).at(0).at("ok") == true);
+    CHECK(std::filesystem::last_write_time(paths.store) == store_mtime);
+    CHECK(read_file(paths.singbox_config) == unchanged_config);
+    CHECK(read_file(paths.store) == unchanged_store);
+    std::filesystem::remove_all(root);
 }
 
-TEST_CASE("subscription failures back off and recover without exposing the URL") {
-    SubscriptionFixture f;
-    f.save();
-    f.now = 4600;
-    f.download_fails = true;
-    REQUIRE(f.tick().at(0).at("ok") == false);
-    CHECK(f.profile()["last_refresh"] == 1000);
-    CHECK(f.profile()["next_refresh"] == 4900);
-    CHECK(f.service.subscription_errors().at("proxy") == "subscription download failed");
-    f.now = 4899;
-    CHECK(f.tick().empty());
-    CHECK(f.downloads == 2);
+TEST_CASE("subscription refresh backs off and rolls back a failed check") {
+    const auto root = std::filesystem::temp_directory_path() / "keen-pbr-singbox-sub-rollback";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    SingboxPaths paths;
+    paths.store = (root / "links.json").string();
+    paths.singbox_config = (root / "config.json").string();
+    std::int64_t now = 1000;
+    std::string body = "trojan://pw@a.example:443#hu-1";
+    bool download_fails = false;
+    bool check_fails = false;
+    int checks = 0;
+    SingboxLinkService service(
+        paths,
+        [&](const std::string&, std::string* error) {
+            ++checks;
+            if (error) *error = "https://example.test/secret-token";
+            return check_fails ? 1 : 0;
+        },
+        [](const KeeneticSyncRequest&) {}, [] { return true; },
+        [&](const std::string&, const SubscriptionStopFn&) {
+            if (download_fails) throw std::runtime_error("https://example.test/secret-token");
+            return body;
+        },
+        [&] { return now; });
+    const auto saved = service.save_subscription("https://example.test/sub", 1, {}, {});
+    const auto identity = saved.state["subscriptions"][0]["catalog"][0]["identity"].get<std::string>();
+    REQUIRE(service.select_subscription(saved.state["subscriptions"][0]["id"], {identity}, {}).state["nodes"].size() == 1);
+    const auto id = service.state()["subscriptions"][0]["id"].get<std::string>();
+    now = 4600;
+    download_fails = true;
+    REQUIRE(service.refresh_subscriptions("", true).at(0).at("ok") == false);
+    CHECK(service.subscription_errors().at(id) == "subscription download failed");
+    CHECK(service.state()["subscriptions"][0]["next_refresh"] == 4900);
+    CHECK(service.state().dump().find("secret-token") == std::string::npos);
+    now = 4899;
+    CHECK(service.refresh_subscriptions("", true).empty());
 
-    f.download_fails = false;
-    f.now = 4900;
-    // A change in credentials (same node ID) must still update sing-box.
-    f.body = "trojan://new@a.example:443#A";
-    REQUIRE(f.tick().at(0).at("ok") == true);
-    CHECK(f.service.subscription_errors().empty());
-    CHECK(f.profile()["next_refresh"] == 8500);
-    CHECK(f.checks == 2);
-    CHECK(f.restarts == 2);
-    CHECK(read_file(f.paths.singbox_config).find("\"password\": \"new\"") != std::string::npos);
-    CHECK(SingboxLinkService::load_profiles(f.paths.store).at(0).last_refresh == 4900);
+    download_fails = false;
+    check_fails = true;
+    body = "trojan://new@a.example:443#hu-1";
+    const auto config = read_file(paths.singbox_config);
+    const auto store = read_file(paths.store);
+    now = 4900;
+    REQUIRE(service.refresh_subscriptions(id, false).at(0).at("ok") == false);
+    CHECK(read_file(paths.singbox_config) == config);
+    CHECK(read_file(paths.store) == store);
+    CHECK(service.state()["nodes"][0]["port"] == 443);
+    CHECK(checks >= 2);
+    std::filesystem::remove_all(root);
 }
 
-TEST_CASE("forced refresh works with automatic refresh disabled and protects the selected node") {
-    SubscriptionFixture f;
-    f.save(0);
-    f.now = 4600;
-    CHECK(f.tick().empty());
-    CHECK(f.profile()["next_refresh"].is_null());
-    f.body = "trojan://pw@b.example:443#B";
-    const auto config = read_file(f.paths.singbox_config);
-    const auto store = read_file(f.paths.store);
-    REQUIRE(f.service.refresh_subscriptions("proxy", false).at(0).at("ok") == false);
-    CHECK(f.service.subscription_errors().at("proxy").find("selected node disappeared") != std::string::npos);
-    CHECK(f.checks == 1);
-    CHECK(f.restarts == 1);
-    CHECK(read_file(f.paths.singbox_config) == config);
-    CHECK(read_file(f.paths.store) == store);
-    CHECK(f.profile()["last_refresh"] == 1000);
-    CHECK_THROWS(f.service.refresh_subscriptions("unknown", false));
-}
-
-TEST_CASE("subscription check and restart failures roll back without propagating child output") {
-    SubscriptionFixture f;
-    f.save();
-    f.body = "trojan://new@a.example:443#A";
-    const auto config = read_file(f.paths.singbox_config);
-    const auto store = read_file(f.paths.store);
-    f.now = 4600;
-    f.check_fails = true;
-    REQUIRE(f.tick().at(0).at("ok") == false);
-    CHECK(f.restarts == 1);
-    CHECK(f.profile()["last_error"].dump().find("secret-token") == std::string::npos);
-    CHECK(read_file(f.paths.singbox_config) == config);
-    CHECK(read_file(f.paths.store) == store);
-
-    f.check_fails = false;
-    f.restart_fails_once = true;
-    // Manual requests bypass the retry delay.
-    REQUIRE(f.service.refresh_subscriptions("proxy", false).at(0).at("ok") == false);
-    CHECK(f.restarts == 3);
-    CHECK(read_file(f.paths.singbox_config) == config);
-    CHECK(read_file(f.paths.store) == store);
-}
-
-TEST_CASE("subscription download does not block reads and excludes concurrent updates") {
-    SubscriptionFixture f;
-    f.save();
-    f.now = 4600;
-    std::promise<void> downloading, release;
-    auto released = release.get_future();
-    f.on_download = [&] {
-        downloading.set_value();
-        released.wait_for(std::chrono::seconds{5});
-    };
-    auto background = std::async(std::launch::async, [&] {
-        return f.service.refresh_subscriptions("proxy", false);
-    });
-    downloading.get_future().wait();
-    CHECK(f.profile()["last_refresh"] == 1000);
-    CHECK_THROWS_AS(f.service.refresh_subscriptions("proxy", false), SingboxBusy);
-    CHECK_THROWS_AS(f.service.set_mode("proxy", "selector", ""), SingboxBusy);
-    release.set_value();
-    CHECK(background.get().at(0).at("ok") == true);
-}
-
-TEST_CASE("sing-box merge keeps unmanaged config and refuses a taken TUN name") {
-    const auto root = std::filesystem::temp_directory_path() / "keen-pbr-singbox-merge";
+TEST_CASE("sing-box merge keeps unmanaged config and an old profile store migrates") {
+    const auto root = std::filesystem::temp_directory_path() / "keen-pbr-singbox-merge-nodes";
     std::filesystem::remove_all(root);
     std::filesystem::create_directories(root);
     SingboxPaths paths;
@@ -386,164 +359,76 @@ TEST_CASE("sing-box merge keeps unmanaged config and refuses a taken TUN name") 
       "route": {"final": "direct", "rules": [{"inbound": "tun-in", "outbound": "proxy"}]}
     })";
     std::ofstream(paths.singbox_config) << manual;
+    std::ofstream(paths.store) << R"({
+      "profiles": [{
+        "id": "proxy", "name": "Proxy", "interface": "sbtun9", "keenetic_tag": "legacy",
+        "tun_stack": "system", "tun_mtu": 1280, "tun_address": "172.19.8.1/30",
+        "connections": [{
+          "id": "old", "name": "Home", "protocol": "trojan", "server": "a.example", "port": 443,
+          "link": "trojan://pw@a.example:443#Home"
+        }]
+      }]
+    })";
     const auto before = read_file(paths.singbox_config);
     SingboxLinkService service(
-        paths, [](const std::string&, std::string*) { return 0; }, [](const SingboxProfile&, bool) {}, [] { return true; });
-
-    SingboxProfileDraft taken;
-    taken.name = "Taken";
-    taken.interface_name = "sbtun";
-    taken.keenetic_tag = "taken";
-    taken.mode = "selector";
-    CHECK_THROWS_WITH(service.save_profile(taken),
+        paths, [](const std::string&, std::string*) { return 0; }, [](const KeeneticSyncRequest&) {}, [] { return true; });
+    const auto migrated = service.state();
+    REQUIRE(migrated["nodes"].size() == 1);
+    CHECK(migrated["nodes"][0]["tag"] == "legacy");
+    CHECK(migrated["nodes"][0]["interface"] == "sbtun9");
+    SingboxNodePatch patch;
+    patch.id = service.state()["nodes"][0]["id"].get<std::string>();
+    patch.interface_name = "sbtun";
+    patch.tun_stack = "system";
+    patch.tun_mtu = 1280;
+    CHECK_THROWS_WITH(service.update_node(patch),
                       "TUN interface sbtun already exists in the sing-box config and is not managed by keen-pbr. "
                       "The existing config was not changed. Choose another interface name.");
     CHECK(read_file(paths.singbox_config) == before);
-    CHECK_FALSE(std::filesystem::exists(paths.singbox_config + ".bak-keenpbr-original"));
-
-    SingboxProfileDraft draft;
-    draft.name = "Second";
-    draft.interface_name = "sbtun2";
-    draft.keenetic_tag = "proxy2";
-    draft.mode = "urltest";
-    draft.urltest_url = "https://www.gstatic.com/generate_204";
-    draft.urltest_interval = "1m";
-    draft.tun_stack = "system";
-    draft.tun_mtu = 1280;
-    draft.tun_address = "172.19.8.1/30, fdfe:dcba:9876::5/126";
-    REQUIRE(service.save_profile(draft).keenetic_applied);
-    REQUIRE(service.add_connections("proxy2", {"trojan://pw@a.example:443#A\ntrojan://pw@b.example:443#B"}, "")
-                .singbox_checked);
+    const auto added = service.add_links({"trojan://pw@b.example:443#Other"}, SingboxTunOptions{"system", 1280, "172.19.8.1/30"});
     const auto config = nlohmann::json::parse(read_file(paths.singbox_config));
     CHECK(config["dns"]["servers"][0]["tag"] == "local");
-    CHECK(config["log"]["level"] == "info");
-    CHECK(config["inbounds"][0]["tag"] == "tun-in");
-    CHECK(config["inbounds"][0]["address"][1] == "fdfe:dcba:9876::1/126");
-    CHECK(config["inbounds"][0]["mtu"] == 1400);
-    CHECK(config["inbounds"][0]["stack"] == "gvisor");
+    CHECK(config["inbounds"][0]["interface_name"] == "sbtun");
     CHECK(config["inbounds"][1]["listen"] == "192.168.1.1");
-    CHECK(config["inbounds"][2]["interface_name"] == "sbtun2");
-    CHECK(config["inbounds"][2]["stack"] == "system");
-    CHECK(config["inbounds"][2]["mtu"] == 1280);
-    CHECK(config["inbounds"][2]["address"][1] == "fdfe:dcba:9876::5/126");
-    CHECK(config["outbounds"][0]["type"] == "hysteria2");
     CHECK(config["outbounds"][0]["password"] == "keep");
-    CHECK(config["outbounds"][1]["tag"] == "direct");
     CHECK(config["route"]["final"] == "direct");
     CHECK(config["route"]["rules"][0]["outbound"] == "proxy");
-    bool saw_group = false;
-    for (const auto& outbound : config["outbounds"]) {
-        if (outbound.value("type", "") == "urltest") {
-            saw_group = true;
-            CHECK(outbound["interval"] == "1m");
-            CHECK(outbound["outbounds"].size() == 2);
-        }
-    }
-    CHECK(saw_group);
     CHECK(std::filesystem::exists(paths.singbox_config + ".bak-keenpbr-original"));
     CHECK(read_file(paths.singbox_config + ".bak-keenpbr-original") == before);
-
-    SingboxProfileDraft other;
-    other.name = "Other";
-    other.interface_name = "sbtun2";
-    other.keenetic_tag = "other";
-    CHECK_THROWS_WITH(service.save_profile(other), "TUN interface is already used");
-    other.interface_name = "sbtun3";
-    other.keenetic_tag = "proxy2";
-    CHECK_THROWS_WITH(service.save_profile(other), "keen-pbr tag is already used");
-
-    const auto removed_id = service.state()["profiles"][0]["connections"][0]["id"].get<std::string>();
-    REQUIRE(service.remove_connection("proxy2", removed_id).singbox_checked);
-    const auto still = nlohmann::json::parse(read_file(paths.singbox_config));
-    CHECK(still["outbounds"][0]["password"] == "keep");
-    CHECK(still["inbounds"][0]["interface_name"] == "sbtun");
+    CHECK(added.state["nodes"].size() == 2);
     CHECK(service.state()["suggested_interface"] == "sbtun3");
     std::filesystem::remove_all(root);
 }
 
-TEST_CASE("empty TUN name and address pick the next free values") {
-    const auto root = std::filesystem::temp_directory_path() / "keen-pbr-singbox-auto-tun";
+TEST_CASE("subscription download does not block reads and excludes concurrent updates") {
+    const auto root = std::filesystem::temp_directory_path() / "keen-pbr-singbox-sub-busy";
     std::filesystem::remove_all(root);
     std::filesystem::create_directories(root);
     SingboxPaths paths;
     paths.store = (root / "links.json").string();
     paths.singbox_config = (root / "config.json").string();
-    std::ofstream(paths.singbox_config) << R"({
-      "inbounds": [{
-        "type": "tun", "tag": "tun-in", "interface_name": "sbtun",
-        "address": ["172.19.1.1/30", "fdfe:dcba:9876::1/126"], "mtu": 1400, "stack": "gvisor"
-      }],
-      "outbounds": [{"type": "direct", "tag": "direct"}]
-    })";
+    std::promise<void> downloading, release;
+    auto released = release.get_future();
+    int downloads = 0;
     SingboxLinkService service(
-        paths, [](const std::string&, std::string*) { return 0; }, [](const SingboxProfile&, bool) {}, [] { return true; });
-    CHECK(service.state()["suggested_interface"] == "sbtun2");
-
-    SingboxProfileDraft draft;
-    draft.name = "Auto";
-    draft.keenetic_tag = "auto";
-    draft.mode = "direct";
-    REQUIRE(service.save_profile(draft).state["profiles"][0]["interface"] == "sbtun2");
-    REQUIRE(service.add_connections("auto", {"trojan://pw@a.example:443#A"}, "A").singbox_checked);
-    const auto config = nlohmann::json::parse(read_file(paths.singbox_config));
-    CHECK(config["inbounds"][0]["interface_name"] == "sbtun");
-    CHECK(config["inbounds"][0]["address"][0] == "172.19.1.1/30");
-    CHECK(config["inbounds"][1]["interface_name"] == "sbtun2");
-    CHECK(config["inbounds"][1]["address"][0] == "172.19.2.1/30");
-    CHECK(service.state()["profiles"][0]["tun_address"] == "");
-    std::filesystem::remove_all(root);
-}
-
-TEST_CASE("a profile created with a link gets a TUN and rolls back when keenetic apply fails") {
-    const auto root = std::filesystem::temp_directory_path() / "keen-pbr-singbox-one-step";
-    std::filesystem::remove_all(root);
-    std::filesystem::create_directories(root);
-    SingboxPaths paths;
-    paths.store = (root / "links.json").string();
-    paths.singbox_config = (root / "config.json").string();
-    const char* manual = R"({"inbounds":[{"type":"tun","tag":"tun-in","interface_name":"sbtun","address":["172.19.1.1/30"]}]})";
-    std::ofstream(paths.singbox_config) << manual;
-    const auto before = read_file(paths.singbox_config);
-    int keenetic_calls = 0;
-    SingboxLinkService failing(
-        paths,
-        [](const std::string&, std::string*) { return 0; },
-        [&](const SingboxProfile&, bool) {
-            ++keenetic_calls;
-            throw std::runtime_error("invalid runtime transition: running -> running");
+        paths, [](const std::string&, std::string*) { return 0; }, [](const KeeneticSyncRequest&) {},
+        [] { return true; },
+        [&](const std::string&, const SubscriptionStopFn&) {
+            if (++downloads > 1) {
+                downloading.set_value();
+                released.wait_for(std::chrono::seconds{5});
+            }
+            return std::string("trojan://pw@a.example:443#hu-1");
         },
-        [] { return true; });
-    SingboxProfileDraft draft;
-    draft.name = "Proxy";
-    draft.keenetic_tag = "proxy";
-    draft.mode = "direct";
-    CHECK_THROWS_WITH(failing.save_profile(draft, {"trojan://pw@a.example:443#A"}),
-                      "invalid runtime transition: running -> running");
-    CHECK(keenetic_calls == 1);
-    CHECK(read_file(paths.singbox_config) == before);
-    CHECK(failing.state()["profiles"].empty());
-
-    SingboxLinkService service(
-        paths, [](const std::string&, std::string*) { return 0; },
-        [](const SingboxProfile& profile, bool present) {
-            CHECK(present);
-            CHECK(profile.interface_name == "sbtun2");
-            CHECK(profile.keenetic_tag == "proxy");
-        },
-        [] { return true; });
-    const auto saved = service.save_profile(draft, {"trojan://pw@a.example:443#A"});
-    CHECK(saved.singbox_checked);
-    CHECK(saved.singbox_reloaded);
-    const auto config = nlohmann::json::parse(read_file(paths.singbox_config));
-    CHECK(config["inbounds"][0]["interface_name"] == "sbtun");
-    CHECK(config["inbounds"][1]["interface_name"] == "sbtun2");
-    CHECK(config["inbounds"][1]["tag"].get<std::string>().rfind("kpbr-tun-", 0) == 0);
-    bool saw_trojan = false;
-    for (const auto& outbound : config["outbounds"]) {
-        if (outbound.value("type", "") == "trojan") saw_trojan = true;
-    }
-    CHECK(saw_trojan);
-    REQUIRE(saved.state["profiles"].size() == 1);
-    CHECK(saved.state["profiles"][0]["connections"].size() == 1);
+        [] { return static_cast<std::int64_t>(1000); });
+    const auto saved = service.save_subscription("https://example.test/sub", 0, {"name:hu-1"}, {});
+    const auto id = saved.state["subscriptions"][0]["id"].get<std::string>();
+    auto background = std::async(std::launch::async, [&] { return service.refresh_subscriptions(id, false); });
+    downloading.get_future().wait();
+    CHECK(service.state()["nodes"].size() == 1);
+    CHECK_THROWS_AS(service.refresh_subscriptions(id, false), SingboxBusy);
+    CHECK_THROWS_AS(service.remove_node(saved.state["nodes"][0]["id"].get<std::string>()), SingboxBusy);
+    release.set_value();
+    CHECK(background.get().at(0).at("ok") == true);
     std::filesystem::remove_all(root);
 }

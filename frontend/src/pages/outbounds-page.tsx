@@ -24,7 +24,7 @@ import {
   useGetRuntimeOutbounds,
 } from "@/api/queries"
 import { selectConfig, selectOutbounds } from "@/api/selectors"
-import { fetchSingboxProfiles } from "@/api/sing-box"
+import { fetchSingboxState } from "@/api/sing-box"
 import { ActionButtons } from "@/components/shared/action-buttons"
 import { MobileAddFab } from "@/components/shared/mobile-add-fab"
 import { BulkSelectionToolbar } from "@/components/shared/bulk-selection-toolbar"
@@ -88,7 +88,7 @@ export function OutboundsPage() {
   const configQuery = useGetConfig()
   const singboxQuery = useQuery({
     queryKey: ["sing-box-profiles"],
-    queryFn: fetchSingboxProfiles,
+    queryFn: fetchSingboxState,
   })
   const runtimeOutboundsQuery = useGetRuntimeOutbounds()
   const runtimeInterfacesQuery = useGetRuntimeInterfaces()
@@ -285,15 +285,15 @@ export function OutboundsPage() {
                 key={`${outbound.id}-summary`}
               >
                 {outbound.summary}
-                {singboxQuery.data?.profiles
-                  .filter((profile) => profile.keenetic_tag === outbound.tag)
-                  .map((profile) => (
-                    <div className="mt-1 flex flex-wrap items-center gap-x-2" key={profile.id}>
+                {singboxQuery.data?.nodes
+                  .filter((node) => node.tag === outbound.tag)
+                  .map((node) => (
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2" key={node.id}>
                       <span>
                         {t("pages.singbox.card", {
-                          mode: profile.mode,
-                          interface: profile.interface,
-                          count: profile.connections.length,
+                          protocol: node.protocol,
+                          server: node.server,
+                          interface: node.interface,
                         })}
                       </span>
                       <Link className="text-primary underline-offset-4 hover:underline" href="/sing-box">

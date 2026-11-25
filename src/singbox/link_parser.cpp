@@ -450,9 +450,20 @@ ParsedProxyLink parse_proxy_link(const std::string& raw_link) {
     throw std::runtime_error("unsupported proxy scheme");
 }
 
-static void note_skip(SubscriptionParseInfo& info, const std::string& transport) {
+static void note_skip(SubscriptionParseInfo& info, const std::string& transport, SkippedSubscriptionNode node = {}) {
     ++info.skipped;
     if (!transport.empty()) ++info.unsupported_transports[transport];
+    if (node.reason.empty()) {
+        node.reason = transport.empty() ? "subscription line was skipped"
+                                        : "transport " + transport + " is not supported by sing-box";
+    }
+    info.skipped_nodes.push_back(std::move(node));
+}
+
+static std::string link_fragment(const std::string& line) {
+    const auto hash = line.rfind('#');
+    if (hash == std::string::npos) return {};
+    return percent_decode(line.substr(hash + 1));
 }
 
 static std::string transport_of(const nlohmann::json& outbound) {
@@ -473,9 +484,9 @@ std::vector<SubscriptionNode> parse_subscription(const std::string& body, Subscr
             }
             nodes.push_back(std::move(node));
         } catch (const UnsupportedProxyTransport& error) {
-            note_skip(local, error.transport());
-        } catch (const std::runtime_error&) {
-            note_skip(local, {});
+            note_skip(local, error.transport(), SkippedSubscriptionNode{link_fragment(line), {}, {}, 0, error.what()});
+        } catch (const std::runtime_error& error) {
+            note_skip(local, {}, SkippedSubscriptionNode{link_fragment(line), {}, {}, 0, error.what()});
         }
     };
     const auto trimmed = trim(body);
@@ -486,16 +497,22 @@ std::vector<SubscriptionNode> parse_subscription(const std::string& body, Subscr
                 const auto type = outbound.value("type", "");
                 if (type != "vless" && type != "vmess" && type != "trojan" &&
                     type != "shadowsocks" && type != "hysteria2") {
-                    note_skip(local, {});
+                    note_skip(local, {},
+                              SkippedSubscriptionNode{outbound.value("tag", ""), type, outbound.value("server", ""),
+                                                      outbound.value("server_port", 0), "subscription line was skipped"});
                     continue;
                 }
                 const auto transport = transport_of(outbound);
                 if (!supported_transport(transport)) {
-                    note_skip(local, transport);
+                    note_skip(local, transport,
+                              SkippedSubscriptionNode{outbound.value("tag", ""), type, outbound.value("server", ""),
+                                                      outbound.value("server_port", 0), {}});
                     continue;
                 }
                 if (!outbound.contains("server") || !outbound.contains("server_port")) {
-                    note_skip(local, {});
+                    note_skip(local, {},
+                              SkippedSubscriptionNode{outbound.value("tag", ""), type, {}, 0,
+                                                      "subscription line was skipped"});
                     continue;
                 }
                 auto copy = outbound;
@@ -517,7 +534,12 @@ std::vector<SubscriptionNode> parse_subscription(const std::string& body, Subscr
             for (const auto& proxy : doc["proxies"]) {
                 try {
                     if (!proxy.is_object() || !proxy.contains("server") || !proxy.contains("port")) {
-                        note_skip(local, {});
+                        note_skip(local, {},
+                                  SkippedSubscriptionNode{proxy.is_object() ? proxy.value("name", "") : "",
+                                                          proxy.is_object() ? proxy.value("type", "") : "",
+                                                          proxy.is_object() ? proxy.value("server", "") : "",
+                                                          proxy.is_object() ? proxy.value("port", 0) : 0,
+                                                          "subscription line was skipped"});
                         continue;
                     }
                     SubscriptionNode node;
@@ -529,9 +551,13 @@ std::vector<SubscriptionNode> parse_subscription(const std::string& body, Subscr
                     node.id = proxy_node_id(node.link);
                     nodes.push_back(std::move(node));
                 } catch (const UnsupportedProxyTransport& error) {
-                    note_skip(local, error.transport());
-                } catch (const std::exception&) {
-                    note_skip(local, {});
+                    note_skip(local, error.transport(),
+                              SkippedSubscriptionNode{proxy.value("name", ""), proxy.value("type", ""),
+                                                      proxy.value("server", ""), proxy.value("port", 0), error.what()});
+                } catch (const std::exception& error) {
+                    note_skip(local, {},
+                              SkippedSubscriptionNode{proxy.value("name", ""), proxy.value("type", ""),
+                                                      proxy.value("server", ""), proxy.value("port", 0), error.what()});
                 }
             }
         } else {

@@ -34,11 +34,20 @@ private:
     std::string transport_;
 };
 
+struct SkippedSubscriptionNode {
+    std::string name;
+    std::string protocol;
+    std::string server;
+    int port{0};
+    std::string reason;
+};
+
 struct SubscriptionParseInfo {
     std::size_t skipped{0};
     // Transport name -> number of nodes skipped because sing-box cannot use it.
     std::map<std::string, std::size_t> unsupported_transports;
     std::size_t encryption_ignored{0};
+    std::vector<SkippedSubscriptionNode> skipped_nodes;
 };
 
 struct SubscriptionNode {

@@ -9,6 +9,9 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
+#include <set>
+
 namespace keen_pbr3 {
 namespace {
 
@@ -55,21 +58,41 @@ std::vector<std::string> link_lines(const nlohmann::json& json) {
     return lines;
 }
 
-SingboxProfileDraft profile_draft(const nlohmann::json& json) {
-    SingboxProfileDraft draft;
-    draft.id = field(json, "id");
-    if (draft.id.empty()) draft.id = field(json, "profile_id");
-    draft.name = field(json, "name");
-    if (draft.name.empty()) draft.name = field(json, "profile");
-    draft.interface_name = field(json, "interface");
-    draft.keenetic_tag = field(json, "tag");
-    draft.mode = field(json, "mode");
-    draft.urltest_url = field(json, "urltest_url");
-    draft.urltest_interval = field(json, "urltest_interval");
-    draft.tun_stack = field(json, "tun_stack");
-    draft.tun_mtu = number_field(json, "tun_mtu", 0);
-    draft.tun_address = field(json, "tun_address");
-    return draft;
+SingboxTunOptions tun_options(const nlohmann::json& json) {
+    SingboxTunOptions tun;
+    tun.tun_stack = field(json, "tun_stack");
+    tun.tun_mtu = number_field(json, "tun_mtu", 0);
+    tun.tun_address = field(json, "tun_address");
+    return tun;
+}
+
+std::vector<std::string> string_list(const nlohmann::json& json, const char* key) {
+    std::vector<std::string> values;
+    if (!json.contains(key) || json.at(key).is_null()) return values;
+    if (json.at(key).is_string()) {
+        values.push_back(json.at(key).get<std::string>());
+        return values;
+    }
+    if (!json.at(key).is_array()) throw ApiError(std::string(key) + " must be a list of strings", 400);
+    for (const auto& item : json.at(key)) {
+        if (!item.is_string()) throw ApiError(std::string(key) + " must be a list of strings", 400);
+        values.push_back(item.get<std::string>());
+    }
+    return values;
+}
+
+SingboxNodePatch node_patch(const nlohmann::json& json) {
+    SingboxNodePatch patch;
+    patch.id = field(json, "id");
+    patch.tag = field(json, "tag");
+    patch.interface_name = field(json, "interface");
+    patch.tun_stack = field(json, "tun_stack");
+    patch.tun_mtu = number_field(json, "tun_mtu", 0);
+    if (json.contains("tun_address")) {
+        patch.tun_address = field(json, "tun_address");
+        patch.tun_address_set = true;
+    }
+    return patch;
 }
 
 std::string result_json(const SingboxApplyResult& result) {
@@ -84,7 +107,7 @@ std::string result_json(const SingboxApplyResult& result) {
     return json.dump();
 }
 
-void sync_keenetic_outbound(ApiContext& ctx, const SingboxProfile& profile, bool present) {
+void sync_keenetic_outbounds(ApiContext& ctx, const KeeneticSyncRequest& request) {
     if (!ctx.get_visible_config_fn || !ctx.validate_candidate_config_fn ||
         !ctx.enqueue_apply_validated_config_fn) {
         throw ApiError("config apply is unavailable", 503);
@@ -99,21 +122,42 @@ void sync_keenetic_outbound(ApiContext& ctx, const SingboxProfile& profile, bool
     } finish{&ctx, static_cast<bool>(ctx.begin_save_operation_fn)};
     nlohmann::json doc;
     api::to_json(doc, ctx.get_visible_config_fn());
+    std::string references;
+    for (const auto& tag : request.removed_tags) {
+        const auto message = outbound_reference_message(doc, tag);
+        if (message.empty()) continue;
+        if (!references.empty()) references += "; ";
+        references += message;
+    }
+    if (!references.empty()) throw std::runtime_error(references);
     if (!doc.contains("outbounds") || !doc["outbounds"].is_array()) {
         doc["outbounds"] = nlohmann::json::array();
     }
+    std::set<std::string> owned(request.owned_tags.begin(), request.owned_tags.end());
+    std::set<std::string> next_tags;
+    for (const auto& node : request.nodes) next_tags.insert(node.tag);
+    for (const auto& outbound : doc["outbounds"]) {
+        const auto tag = outbound.value("tag", "");
+        if (next_tags.count(tag) && !owned.count(tag)) {
+            throw std::runtime_error("keen-pbr tag is already used");
+        }
+    }
     nlohmann::json kept = nlohmann::json::array();
     for (const auto& outbound : doc["outbounds"]) {
-        if (outbound.value("tag", "") == profile.keenetic_tag) continue;
+        const auto tag = outbound.value("tag", "");
+        if (next_tags.count(tag) ||
+            std::find(request.removed_tags.begin(), request.removed_tags.end(), tag) != request.removed_tags.end()) {
+            continue;
+        }
         kept.push_back(outbound);
     }
-    if (present) {
+    for (const auto& node : request.nodes) {
         // TUN and point-to-point interfaces are device routes. Writing
         // gateway "auto" makes keen-pbr report that the gateway is ignored.
         kept.push_back({
             {"type", "interface"},
-            {"tag", profile.keenetic_tag},
-            {"interface", profile.interface_name},
+            {"tag", node.tag},
+            {"interface", node.interface_name},
         });
     }
     doc["outbounds"] = std::move(kept);
@@ -129,13 +173,17 @@ void sync_keenetic_outbound(ApiContext& ctx, const SingboxProfile& profile, bool
 }  // namespace
 
 void register_singbox_handler(ApiServer& server, ApiContext& ctx, SingboxLinkService& service) {
-    service.set_keenetic_callback([&ctx](const SingboxProfile& profile, bool present) {
-        sync_keenetic_outbound(ctx, profile, present);
+    service.set_keenetic_callback([&ctx](const KeeneticSyncRequest& request) {
+        sync_keenetic_outbounds(ctx, request);
     });
 
     server.post("/api/sing-box/preview", [&service](const std::string& body) {
         try {
             const auto json = require_object(body);
+            if (!field(json, "url").empty() || !field(json, "subscription_id").empty()) {
+                const auto key = field(json, "url").empty() ? field(json, "subscription_id") : field(json, "url");
+                return service.preview_subscription(key).dump();
+            }
             return service.preview(field(json, "link")).dump();
         } catch (const nlohmann::json::exception&) {
             throw ApiError("invalid JSON", 400);
@@ -143,13 +191,11 @@ void register_singbox_handler(ApiServer& server, ApiContext& ctx, SingboxLinkSer
             throw ApiError(error.what(), 400);
         }
     });
-    server.get("/api/sing-box/profiles", [&service]() {
-        return service.state().dump();
-    });
-    server.post("/api/sing-box/profiles", [&service](const std::string& body) {
+    server.get("/api/sing-box/profiles", [&service]() { return service.state().dump(); });
+    server.post("/api/sing-box/nodes", [&service](const std::string& body) {
         try {
             const auto json = require_object(body);
-            return result_json(service.save_profile(profile_draft(json), link_lines(json)));
+            return result_json(service.add_links(link_lines(json), tun_options(json)));
         } catch (const nlohmann::json::exception&) {
             throw ApiError("invalid JSON", 400);
         } catch (const SingboxBusy& error) {
@@ -158,21 +204,9 @@ void register_singbox_handler(ApiServer& server, ApiContext& ctx, SingboxLinkSer
             throw ApiError(error.what(), 400);
         }
     });
-    server.post("/api/sing-box/profiles/delete", [&service](const std::string& body) {
+    server.post("/api/sing-box/nodes/update", [&service](const std::string& body) {
         try {
-            const auto json = require_object(body);
-            return result_json(service.remove_profile(field(json, "profile_id")));
-        } catch (const SingboxBusy& error) {
-            throw ApiError(error.what(), 409);
-        } catch (const std::runtime_error& error) {
-            throw ApiError(error.what(), 400);
-        }
-    });
-    server.post("/api/sing-box/connections", [&service](const std::string& body) {
-        try {
-            const auto json = require_object(body);
-            const auto result = service.add_connections(field(json, "profile_id"), link_lines(json), field(json, "name"));
-            return result_json(result);
+            return result_json(service.update_node(node_patch(require_object(body))));
         } catch (const nlohmann::json::exception&) {
             throw ApiError("invalid JSON", 400);
         } catch (const SingboxBusy& error) {
@@ -181,21 +215,10 @@ void register_singbox_handler(ApiServer& server, ApiContext& ctx, SingboxLinkSer
             throw ApiError(error.what(), 400);
         }
     });
-    server.post("/api/sing-box/connections/delete", [&service](const std::string& body) {
+    server.post("/api/sing-box/nodes/delete", [&service](const std::string& body) {
         try {
             const auto json = require_object(body);
-            return result_json(service.remove_connection(field(json, "profile_id"), field(json, "id")));
-        } catch (const SingboxBusy& error) {
-            throw ApiError(error.what(), 409);
-        } catch (const std::runtime_error& error) {
-            throw ApiError(error.what(), 400);
-        }
-    });
-    server.post("/api/sing-box/profiles/select", [&service](const std::string& body) {
-        try {
-            const auto json = require_object(body);
-            return result_json(service.set_mode(field(json, "profile_id"), field(json, "mode"),
-                                                 field(json, "active")));
+            return result_json(service.remove_node(field(json, "id")));
         } catch (const SingboxBusy& error) {
             throw ApiError(error.what(), 409);
         } catch (const std::runtime_error& error) {
@@ -205,11 +228,22 @@ void register_singbox_handler(ApiServer& server, ApiContext& ctx, SingboxLinkSer
     server.post("/api/sing-box/subscriptions", [&service](const std::string& body) {
         try {
             const auto json = require_object(body);
-            const auto url = field(json, "url");
-            const int interval = number_field(json, "interval_hours", 0);
-            const auto profile_id = field(json, "profile_id");
-            return result_json(service.save_subscription(profile_id.empty() ? field(json, "profile") : profile_id,
-                                                         url, interval, field(json, "subscription_id")));
+            return result_json(service.save_subscription(field(json, "url"), number_field(json, "interval_hours", 0),
+                                                         string_list(json, "selected"), tun_options(json),
+                                                         field(json, "subscription_id")));
+        } catch (const nlohmann::json::exception&) {
+            throw ApiError("invalid JSON", 400);
+        } catch (const SingboxBusy& error) {
+            throw ApiError(error.what(), 409);
+        } catch (const std::runtime_error& error) {
+            throw ApiError(error.what(), 400);
+        }
+    });
+    server.post("/api/sing-box/subscriptions/select", [&service](const std::string& body) {
+        try {
+            const auto json = require_object(body);
+            return result_json(service.select_subscription(field(json, "subscription_id"), string_list(json, "selected"),
+                                                           tun_options(json)));
         } catch (const nlohmann::json::exception&) {
             throw ApiError("invalid JSON", 400);
         } catch (const SingboxBusy& error) {
@@ -221,7 +255,8 @@ void register_singbox_handler(ApiServer& server, ApiContext& ctx, SingboxLinkSer
     server.post("/api/sing-box/subscriptions/delete", [&service](const std::string& body) {
         try {
             const auto json = require_object(body);
-            return result_json(service.remove_subscription(field(json, "profile_id"), field(json, "subscription_id")));
+            const auto id = field(json, "subscription_id");
+            return result_json(service.remove_subscription(id.empty() ? field(json, "id") : id));
         } catch (const SingboxBusy& error) {
             throw ApiError(error.what(), 409);
         } catch (const std::runtime_error& error) {
@@ -231,11 +266,10 @@ void register_singbox_handler(ApiServer& server, ApiContext& ctx, SingboxLinkSer
     server.post("/api/sing-box/subscriptions/refresh", [&service, &ctx](const std::string& body) {
         try {
             const auto json = require_object(body);
-            const auto id = field(json, "profile_id");
-            if (id.empty()) throw ApiError("subscription profile_id is required", 400);
-            // cpp-httplib runs manual refreshes on an HTTP worker; the shared
-            // service never waits for an in-flight background mutation.
-            const auto outcomes = service.refresh_subscriptions(id, false, {}, field(json, "subscription_id"));
+            auto id = field(json, "subscription_id");
+            if (id.empty()) id = field(json, "profile_id");
+            if (id.empty()) throw ApiError("subscription id is required", 400);
+            const auto outcomes = service.refresh_subscriptions(id, false);
             if (outcomes.empty()) throw ApiError("subscription was not found", 404);
             std::string errors;
             for (const auto& outcome : outcomes) {

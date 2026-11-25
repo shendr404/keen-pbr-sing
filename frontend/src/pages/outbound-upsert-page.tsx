@@ -30,7 +30,7 @@ import {
   selectConfig,
   selectOutbounds,
 } from "@/api/selectors"
-import { fetchSingboxProfiles } from "@/api/sing-box"
+import { fetchSingboxState } from "@/api/sing-box"
 import {
   AdvancedSection,
   FormSection,
@@ -254,10 +254,10 @@ function OutboundForm({
 
   const singboxQuery = useQuery({
     queryKey: ["sing-box-profiles"],
-    queryFn: fetchSingboxProfiles,
+    queryFn: fetchSingboxState,
   })
   const singboxByTag = new Map(
-    (singboxQuery.data?.profiles ?? []).map((profile) => [profile.keenetic_tag, profile])
+    (singboxQuery.data?.nodes ?? []).map((node) => [node.tag, node])
   )
   const candidates: LadderCandidate[] = existingOutbounds
     .filter(
@@ -272,8 +272,8 @@ function OutboundForm({
         detail: singbox
           ? t("pages.singbox.candidate", {
               interface: item.interface,
-              mode: singbox.mode,
-              count: singbox.connections.length,
+              protocol: singbox.protocol,
+              server: singbox.server,
             })
           : item.type === "interface"
             ? item.interface
