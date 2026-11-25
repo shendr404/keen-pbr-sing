@@ -115,6 +115,47 @@ TEST_CASE("reality defaults utls, hysteria2 keeps obfs, and xhttp is skipped") {
     CHECK(nodes[1].link.outbound.at("obfs").at("type") == "salamander");
 }
 
+TEST_CASE("node names become keen-pbr tags") {
+    CHECK(sanitize_keenetic_tag("es1-3") == "es1_3");
+    CHECK(sanitize_keenetic_tag("HU 1.3 Венгрия") == "hu_1_3_vengriya");
+    CHECK(sanitize_keenetic_tag("1abc") == "n_1abc");
+    CHECK(sanitize_keenetic_tag("3") == "n_3");
+    CHECK(sanitize_keenetic_tag("___") == "n_");
+    CHECK(sanitize_keenetic_tag("") == "n_");
+    const auto first = sanitize_keenetic_tag("es1-3");
+    CHECK(first == "es1_3");
+    const auto second = first + "_2";
+    CHECK(second == "es1_3_2");
+    CHECK(sanitize_keenetic_tag(second) == "es1_3_2");
+}
+
+TEST_CASE("duplicate node names get an underscore suffix") {
+    const auto root = std::filesystem::temp_directory_path() / "keen-pbr-singbox-tags";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    SingboxPaths paths;
+    paths.store = (root / "links.json").string();
+    paths.singbox_config = (root / "config.json").string();
+    SingboxLinkService service(
+        paths, [](const std::string&, std::string*) { return 0; }, [](const KeeneticSyncRequest&) {},
+        [] { return true; });
+    const auto saved = service.add_links(
+        {"trojan://pw@a.example:443#es1-3\ntrojan://pw@b.example:443#es1-3"}, {});
+    REQUIRE(saved.state["nodes"].size() == 2);
+    CHECK(saved.state["nodes"][0]["tag"] == "es1_3");
+    CHECK(saved.state["nodes"][1]["tag"] == "es1_3_2");
+    const auto config = nlohmann::json::parse(read_file(paths.singbox_config));
+    CHECK(config["inbounds"][0]["tag"].get<std::string>().rfind("kpbr-tun-", 0) == 0);
+    CHECK(config["outbounds"][0]["tag"].get<std::string>().find('-') != std::string::npos);
+    for (const auto& outbound : config["outbounds"]) {
+        const auto tag = outbound.value("tag", "");
+        if (tag.rfind("kpbr-", 0) != 0) continue;
+        const auto token = tag.substr(tag.rfind('-') + 1);
+        CHECK(token.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_") == std::string::npos);
+    }
+    std::filesystem::remove_all(root);
+}
+
 TEST_CASE("sing-box check errors name a missing binary and redact secrets") {
     CHECK(format_singbox_check_error(127, false, "") == "sing-box binary is not available");
     CHECK(format_singbox_check_error(-1, false, "exec failed") == "sing-box binary is not available");
@@ -174,12 +215,12 @@ TEST_CASE("pasted links become separate interfaces and roll back together") {
         paths, [](const std::string&, std::string*) { return 0; },
         [](const KeeneticSyncRequest& request) {
             if (!request.removed_tags.empty()) {
-                throw std::runtime_error("outbound hu-1 is used by route rule 1");
+                throw std::runtime_error("outbound hu_1 is used by route rule 1");
             }
             REQUIRE(request.nodes.size() == 2);
-            CHECK(request.nodes[0].tag == "hu-1");
+            CHECK(request.nodes[0].tag == "hu_1");
             CHECK(request.nodes[0].interface_name == "sbtun2");
-            CHECK(request.nodes[1].tag == "hu-1-2");
+            CHECK(request.nodes[1].tag == "hu_1_2");
             CHECK(request.nodes[1].interface_name == "sbtun3");
         },
         [] { return true; });
@@ -206,7 +247,7 @@ TEST_CASE("pasted links become separate interfaces and roll back together") {
     CHECK(saved.state.dump().find("pw") == std::string::npos);
 
     const auto id = saved.state["nodes"][0]["id"].get<std::string>();
-    CHECK_THROWS_WITH(service.remove_node(id), "outbound hu-1 is used by route rule 1");
+    CHECK_THROWS_WITH(service.remove_node(id), "outbound hu_1 is used by route rule 1");
     CHECK(read_file(paths.singbox_config).find("sbtun2") != std::string::npos);
     CHECK(service.state()["nodes"].size() == 2);
     std::filesystem::remove_all(root);
@@ -239,7 +280,7 @@ TEST_CASE("subscription selection creates only ticked nodes and refresh keeps th
     std::vector<std::string> selected{preview["nodes"][0]["identity"].get<std::string>()};
     const auto saved = service.save_subscription("https://example.test/sub", 1, selected, {});
     REQUIRE(saved.state["nodes"].size() == 1);
-    CHECK(saved.state["nodes"][0]["tag"] == "hu-1");
+    CHECK(saved.state["nodes"][0]["tag"] == "hu_1");
     CHECK(saved.state["nodes"][0]["source"] == "subscription");
     CHECK(saved.state["subscriptions"][0]["new_nodes"] == 1);
     CHECK(saved.state.dump().find("https://") == std::string::npos);

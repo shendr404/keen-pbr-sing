@@ -300,6 +300,8 @@ void require_addresses(const std::string& text) {
     }
 }
 
+std::string singbox_token(const std::string& raw);
+
 std::string next_free_interface(const nlohmann::json& existing, const std::vector<SingboxNode>& nodes,
                                 const std::string& self_id) {
     std::set<std::string> used;
@@ -311,7 +313,7 @@ std::string next_free_interface(const nlohmann::json& existing, const std::vecto
         for (const auto& inbound : existing["inbounds"]) {
             if (!inbound.is_object()) continue;
             const auto tag = inbound.value("tag", "");
-            if (!self_id.empty() && tag == "kpbr-tun-" + self_id) continue;
+            if (!self_id.empty() && tag == "kpbr-tun-" + singbox_token(self_id)) continue;
             const auto iface = inbound.value("interface_name", "");
             if (!iface.empty()) used.insert(iface);
         }
@@ -341,9 +343,21 @@ std::string interface_taken_message(const std::string& iface) {
            "The existing config was not changed. Choose another interface name.";
 }
 
-std::string node_outbound_tag(const SingboxNode& node) { return "kpbr-n-" + node.id; }
+std::string singbox_token(const std::string& raw) {
+    std::string token;
+    for (unsigned char c : raw) {
+        if (c >= 'A' && c <= 'Z') token.push_back(static_cast<char>(c - 'A' + 'a'));
+        else if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) token.push_back(static_cast<char>(c));
+        else if (token.empty() || token.back() != '_') token.push_back('_');
+    }
+    while (!token.empty() && token.back() == '_') token.pop_back();
+    while (!token.empty() && token.front() == '_') token.erase(token.begin());
+    return token.empty() ? "n" : token;
+}
 
-std::string node_inbound_tag(const SingboxNode& node) { return "kpbr-tun-" + node.id; }
+std::string node_outbound_tag(const SingboxNode& node) { return "kpbr-n-" + singbox_token(node.id); }
+
+std::string node_inbound_tag(const SingboxNode& node) { return "kpbr-tun-" + singbox_token(node.id); }
 
 bool is_managed_tag(const std::string& tag) { return tag.rfind("kpbr-", 0) == 0; }
 
@@ -374,10 +388,13 @@ std::string allocate_tag(const std::string& name, const std::vector<SingboxNode>
     const auto base = sanitize_keenetic_tag(name.empty() ? "node" : name);
     if (!tag_used(nodes, base, self_id)) return base;
     for (int number = 2; number < 1000; ++number) {
-        const auto suffix = "-" + std::to_string(number);
+        const auto suffix = "_" + std::to_string(number);
         auto candidate = base;
-        if (candidate.size() + suffix.size() > 24) candidate.resize(24 - suffix.size());
-        while (!candidate.empty() && candidate.back() == '-') candidate.pop_back();
+        if (candidate.size() + suffix.size() > 24) {
+            candidate.resize(24 - suffix.size());
+            while (!candidate.empty() && candidate.back() == '_') candidate.pop_back();
+        }
+        if (candidate.empty() || candidate.front() < 'a' || candidate.front() > 'z') candidate = "n";
         candidate += suffix;
         if (!tag_used(nodes, candidate, self_id)) return candidate;
     }
@@ -961,20 +978,114 @@ bool safe_interface_name(const std::string& name) {
     return true;
 }
 
+namespace {
+
+bool next_code_point(const std::string& text, std::size_t& index, char32_t& code) {
+    if (index >= text.size()) return false;
+    const auto lead = static_cast<unsigned char>(text[index]);
+    if (lead < 0x80) {
+        code = lead;
+        ++index;
+        return true;
+    }
+    std::size_t need = 0;
+    char32_t value = 0;
+    if ((lead & 0xE0) == 0xC0) {
+        need = 1;
+        value = lead & 0x1F;
+    } else if ((lead & 0xF0) == 0xE0) {
+        need = 2;
+        value = lead & 0x0F;
+    } else if ((lead & 0xF8) == 0xF0) {
+        need = 3;
+        value = lead & 0x07;
+    } else {
+        ++index;
+        code = 0;
+        return true;
+    }
+    if (index + need >= text.size()) {
+        index = text.size();
+        code = 0;
+        return true;
+    }
+    for (std::size_t extra = 1; extra <= need; ++extra) {
+        const auto cont = static_cast<unsigned char>(text[index + extra]);
+        if ((cont & 0xC0) != 0x80) {
+            ++index;
+            code = 0;
+            return true;
+        }
+        value = (value << 6) | (cont & 0x3F);
+    }
+    index += need + 1;
+    code = value;
+    return true;
+}
+
+std::string transliterate(char32_t code) {
+    if (code >= 'A' && code <= 'Z') return std::string(1, static_cast<char>(code - 'A' + 'a'));
+    if ((code >= 'a' && code <= 'z') || (code >= '0' && code <= '9')) return std::string(1, static_cast<char>(code));
+    if (code < 128) return "_";
+    switch (code) {
+    case 0x0410: case 0x0430: return "a";
+    case 0x0411: case 0x0431: return "b";
+    case 0x0412: case 0x0432: return "v";
+    case 0x0413: case 0x0433: return "g";
+    case 0x0414: case 0x0434: return "d";
+    case 0x0415: case 0x0435: return "e";
+    case 0x0401: case 0x0451: return "yo";
+    case 0x0416: case 0x0436: return "zh";
+    case 0x0417: case 0x0437: return "z";
+    case 0x0418: case 0x0438: return "i";
+    case 0x0419: case 0x0439: return "y";
+    case 0x041A: case 0x043A: return "k";
+    case 0x041B: case 0x043B: return "l";
+    case 0x041C: case 0x043C: return "m";
+    case 0x041D: case 0x043D: return "n";
+    case 0x041E: case 0x043E: return "o";
+    case 0x041F: case 0x043F: return "p";
+    case 0x0420: case 0x0440: return "r";
+    case 0x0421: case 0x0441: return "s";
+    case 0x0422: case 0x0442: return "t";
+    case 0x0423: case 0x0443: return "u";
+    case 0x0424: case 0x0444: return "f";
+    case 0x0425: case 0x0445: return "kh";
+    case 0x0426: case 0x0446: return "ts";
+    case 0x0427: case 0x0447: return "ch";
+    case 0x0428: case 0x0448: return "sh";
+    case 0x0429: case 0x0449: return "shch";
+    case 0x042A: case 0x044A: return "";
+    case 0x042B: case 0x044B: return "y";
+    case 0x042C: case 0x044C: return "";
+    case 0x042D: case 0x044D: return "e";
+    case 0x042E: case 0x044E: return "yu";
+    case 0x042F: case 0x044F: return "ya";
+    default: return "";
+    }
+}
+
+}  // namespace
+
 std::string sanitize_keenetic_tag(const std::string& name) {
     std::string tag;
-    for (unsigned char c : name) {
-        if (c >= 'A' && c <= 'Z') tag.push_back(static_cast<char>(c - 'A' + 'a'));
-        else if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_') tag.push_back(static_cast<char>(c));
-        else if (c == ' ' || c == '.') {
-            if (!tag.empty() && tag.back() != '-') tag.push_back('-');
-        }
+    std::size_t index = 0;
+    char32_t code = 0;
+    while (next_code_point(name, index, code)) tag += transliterate(code);
+    std::string collapsed;
+    for (char c : tag) {
+        if (c == '_' && !collapsed.empty() && collapsed.back() == '_') continue;
+        collapsed.push_back(c);
     }
-    while (!tag.empty() && (tag.front() == '-' || tag.front() == '_')) tag.erase(tag.begin());
-    if (tag.empty() || !((tag.front() >= 'a' && tag.front() <= 'z'))) tag.insert(tag.begin(), 'n');
-    if (tag.size() > 24) tag.resize(24);
-    while (!tag.empty() && (tag.back() == '-' || tag.back() == '_')) tag.pop_back();
-    return tag.empty() ? "node" : tag;
+    while (!collapsed.empty() && collapsed.front() == '_') collapsed.erase(collapsed.begin());
+    while (!collapsed.empty() && collapsed.back() == '_') collapsed.pop_back();
+    if (collapsed.empty() || collapsed.front() < 'a' || collapsed.front() > 'z') collapsed.insert(0, "n_");
+    if (collapsed.size() > 24) {
+        collapsed.resize(24);
+        while (!collapsed.empty() && collapsed.back() == '_') collapsed.pop_back();
+    }
+    if (collapsed.empty() || collapsed.front() < 'a' || collapsed.front() > 'z') return "n_";
+    return collapsed;
 }
 
 std::string outbound_reference_message(const nlohmann::json& config, const std::string& tag) {

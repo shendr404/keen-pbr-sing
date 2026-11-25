@@ -10,7 +10,7 @@ On the **Sing-box interfaces** page each proxy node is its own TUN. Switching an
 1. Install sing-box. A TUN does not have to exist beforehand: keen-pbr adds its own inbound.
 2. Open **Sing-box interfaces**.
 3. Paste one or more links, one per line, and save. Each link immediately becomes its own TUN and a keen-pbr `interface` outbound **without** a `gateway`.
-4. The tag comes from the node name in the link (`hu-1` stays `hu-1`). A tag that is already used gets a `-2` suffix. The tag can be edited.
+4. The tag comes from the node name and is reduced to keen-pbr's rule: lowercase letters, digits and `_`. `es1-3` becomes `es1_3`, and non-Latin letters are transliterated. A tag that is already used gets a `_2` suffix. The form checks the tag against the same pattern.
 5. The TUN name is the next free one (`sbtun`, then `sbtun2`, …). A name already used by an unmanaged inbound is skipped. An empty address gets a free `172.19.x.1/30`. Stack and MTU are under Advanced.
 6. On the Outbounds page, point a route rule at the tag or add several of these outbounds to a group. keen-pbr does not add them to a group by itself.
 

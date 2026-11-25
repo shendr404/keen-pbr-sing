@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { getApiErrorMessage } from "@/lib/api-errors"
+import { getTagNameValidationError } from "@/lib/tag-name-validation"
 
 const queryKey = ["sing-box-profiles"]
 
@@ -342,6 +343,11 @@ function NodeCard({
   const [stack, setStack] = useState(node.tun_stack || "gvisor")
   const [mtu, setMtu] = useState(String(node.tun_mtu || 1400))
   const [address, setAddress] = useState(node.tun_address || "")
+  const tagError = getTagNameValidationError(tag, {
+    requiredError: t("common.validation.required"),
+    invalidError: t("common.validation.tagNamePattern"),
+    duplicateError: null,
+  })
   const save = useMutation({
     mutationFn: () =>
       postSingbox("/api/sing-box/nodes/update", {
@@ -390,7 +396,15 @@ function NodeCard({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label htmlFor={`${node.id}-tag`}>{t("pages.singbox.tag")}</Label>
-              <Input id={`${node.id}-tag`} onChange={(event) => setTag(event.target.value)} value={tag} />
+              <Input
+                aria-invalid={tagError ? true : undefined}
+                id={`${node.id}-tag`}
+                onChange={(event) => setTag(event.target.value)}
+                value={tag}
+              />
+              <p className={tagError ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
+                {t("common.validation.tagNamePattern")}
+              </p>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor={`${node.id}-iface`}>{t("pages.singbox.interface")}</Label>
@@ -406,7 +420,7 @@ function NodeCard({
             onStack={setStack}
             stack={stack}
           />
-          <Button disabled={save.isPending} onClick={() => save.mutate()}>
+          <Button disabled={save.isPending || Boolean(tagError)} onClick={() => save.mutate()}>
             {t("pages.singbox.save")}
           </Button>
         </div>
