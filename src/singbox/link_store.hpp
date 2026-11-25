@@ -37,6 +37,10 @@ struct SingboxNode {
     std::string subscription_id;
     std::string identity;
     bool missing{false};
+    // Set on refresh when the subscription still lists the node, but sing-box
+    // cannot carry it (VLESS Encryption). The interface is kept.
+    bool unsupported{false};
+    std::string unsupported_reason;
 };
 
 struct SingboxCatalogEntry {

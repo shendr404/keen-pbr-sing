@@ -1063,6 +1063,7 @@ export const ruTranslation = {
       newNodes_other: "новые узлы в подписке: {{count}}",
       alreadyAdded: "уже добавлен",
       missing: "нет в подписке",
+      unsupportedCore: "узел не поддерживается ядром",
       sourceLink: "ссылка",
       unnamed: "без имени",
       lastRefresh: "Последнее успешное обновление",

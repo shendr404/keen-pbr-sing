@@ -26,6 +26,8 @@ export type SingboxNode = {
   source: string
   identity: string
   missing: boolean
+  unsupported?: boolean
+  unsupported_reason?: string
 }
 
 export type SingboxSubscription = {

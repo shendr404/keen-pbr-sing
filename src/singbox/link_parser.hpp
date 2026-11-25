@@ -34,6 +34,23 @@ private:
     std::string transport_;
 };
 
+// sing-box 1.14 has no VLESS Encryption (ML-KEM). The node must not become an outbound.
+class UnsupportedVlessEncryption : public std::runtime_error {
+public:
+    UnsupportedVlessEncryption(std::string scheme, std::string name, std::string server, int port)
+        : std::runtime_error("VLESS Encryption (" + scheme + ") не поддерживается sing-box"),
+          name_(std::move(name)), server_(std::move(server)), port_(port) {}
+
+    const std::string& name() const noexcept { return name_; }
+    const std::string& server() const noexcept { return server_; }
+    int port() const noexcept { return port_; }
+
+private:
+    std::string name_;
+    std::string server_;
+    int port_;
+};
+
 struct SkippedSubscriptionNode {
     std::string name;
     std::string protocol;

@@ -22,6 +22,8 @@ The interval is in **hours**. `0` means manual refresh only. The daemon checks e
 
 A refresh updates only nodes that already exist. They match by name, or by server, port and protocol when the name is empty. New subscription nodes are not added automatically: the card shows how many new nodes appeared and a button that opens the selection again. If a selected node disappears, its interface stays and is marked as missing from the subscription.
 
+VLESS Encryption (`encryption=` other than empty or `none`, including `mlkem768x25519plus`) is not supported by sing-box 1.14. Such a link is not turned into an outbound or an interface. In the subscription list the row is disabled and shows `VLESS Encryption (mlkem768x25519plus) не поддерживается sing-box`. Pasting that single link is rejected with the same text. An interface that was created from such a node earlier is kept on refresh and marked “node is not supported by this sing-box”; it is not deleted.
+
 From SSH:
 
 ```sh

@@ -379,10 +379,14 @@ function NodeCard({
         <h3 className="text-base font-medium">{node.tag}</h3>
         <span className="text-sm text-muted-foreground">
           {node.protocol} · {node.server}:{node.port} · {node.interface} · {source}
+          {node.unsupported ? ` · ${t("pages.singbox.unsupportedCore")}` : ""}
           {node.missing ? ` · ${t("pages.singbox.missing")}` : ""}
         </span>
       </div>
       <p className="text-sm text-muted-foreground">{node.name}</p>
+      {node.unsupported && node.unsupported_reason ? (
+        <p className="text-sm text-destructive">{node.unsupported_reason}</p>
+      ) : null}
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => setEditing((value) => !value)} size="sm" variant="outline">
           {t("pages.singbox.edit")}

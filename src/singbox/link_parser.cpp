@@ -190,10 +190,18 @@ void add_transport(nlohmann::json& outbound, const std::string& query) {
     outbound["transport"] = std::move(transport);
 }
 
-void note_ignored_encryption(ParsedProxyLink& parsed, const std::string& encryption) {
-    if (!encryption.empty() && encryption != "none") {
-        parsed.warnings.push_back("vless encryption is ignored; sing-box does not support it");
-    }
+std::string encryption_scheme(const std::string& encryption) {
+    const auto dot = encryption.find('.');
+    auto scheme = dot == std::string::npos ? encryption : encryption.substr(0, dot);
+    if (scheme.empty()) scheme = encryption;
+    if (scheme.size() > 64) scheme.resize(64);
+    return scheme;
+}
+
+void reject_vless_encryption(const std::string& encryption, const std::string& name, const std::string& server,
+                             int port) {
+    if (encryption.empty() || encryption == "none") return;
+    throw UnsupportedVlessEncryption(encryption_scheme(encryption), name, server, port);
 }
 
 ParsedProxyLink finish(ParsedProxyLink parsed, const std::string& name, const std::string& fallback) {
@@ -233,7 +241,8 @@ ParsedProxyLink parse_standard(const std::string& protocol, const std::string& r
         if (security != "none") outbound["tls"] = tls_object(query, security != "none" && !security.empty() ? true : !query_value(query, "sni").empty());
         if (security == "tls" || security == "reality") outbound["tls"]["enabled"] = true;
         add_transport(outbound, query);
-        // sing-box has no vless encryption field. Drop it instead of failing check.
+        const auto node_name = name.empty() ? authority.host : name;
+        reject_vless_encryption(query_value(query, "encryption"), node_name, authority.host, authority.port);
     } else if (protocol == "trojan") {
         if (authority.user.empty()) throw std::runtime_error("trojan link has no password");
         outbound["password"] = authority.user;
@@ -257,7 +266,6 @@ ParsedProxyLink parse_standard(const std::string& protocol, const std::string& r
         throw std::runtime_error("unsupported proxy link");
     }
     parsed.outbound = std::move(outbound);
-    if (protocol == "vless") note_ignored_encryption(parsed, query_value(query, "encryption"));
     return finish(std::move(parsed), name, authority.host);
 }
 
@@ -350,6 +358,10 @@ nlohmann::json clash_proxy_to_outbound(const nlohmann::json& proxy) {
         outbound["method"] = proxy.at("cipher").get<std::string>();
         outbound["password"] = proxy.at("password").get<std::string>();
     } else if (type == "vmess" || type == "vless") {
+        if (type == "vless") {
+            reject_vless_encryption(proxy.value("encryption", ""), proxy.value("name", proxy.value("server", "")),
+                                    proxy.value("server", ""), proxy.value("port", 0));
+        }
         outbound["uuid"] = proxy.value("uuid", proxy.value("password", ""));
         if (proxy.contains("alterId")) outbound["alter_id"] = proxy["alterId"];
     } else if (type == "trojan" || type == "hysteria2") {
@@ -483,6 +495,10 @@ std::vector<SubscriptionNode> parse_subscription(const std::string& body, Subscr
                 if (warning.find("encryption") != std::string::npos) ++local.encryption_ignored;
             }
             nodes.push_back(std::move(node));
+        } catch (const UnsupportedVlessEncryption& error) {
+            auto skipped_name = error.name().empty() ? link_fragment(line) : error.name();
+            note_skip(local, {}, SkippedSubscriptionNode{std::move(skipped_name), "vless", error.server(), error.port(),
+                                                         error.what()});
         } catch (const UnsupportedProxyTransport& error) {
             note_skip(local, error.transport(), SkippedSubscriptionNode{link_fragment(line), {}, {}, 0, error.what()});
         } catch (const std::runtime_error& error) {
@@ -515,12 +531,19 @@ std::vector<SubscriptionNode> parse_subscription(const std::string& body, Subscr
                                                       "subscription line was skipped"});
                     continue;
                 }
-                auto copy = outbound;
-                if (type == "vless" && copy.contains("encryption")) {
-                    const auto encryption = copy["encryption"].is_string() ? copy["encryption"].get<std::string>() : std::string{};
-                    copy.erase("encryption");
-                    if (!encryption.empty() && encryption != "none") ++local.encryption_ignored;
+                if (type == "vless" && outbound.contains("encryption") && outbound["encryption"].is_string()) {
+                    const auto encryption = outbound["encryption"].get<std::string>();
+                    if (!encryption.empty() && encryption != "none") {
+                        note_skip(local, {},
+                                  SkippedSubscriptionNode{outbound.value("tag", ""), "vless", outbound.value("server", ""),
+                                                          outbound.value("server_port", 0),
+                                                          UnsupportedVlessEncryption(encryption_scheme(encryption), {}, {}, 0)
+                                                              .what()});
+                        continue;
+                    }
                 }
+                auto copy = outbound;
+                copy.erase("encryption");
                 SubscriptionNode node;
                 node.link.protocol = type;
                 node.link.server = copy.at("server").get<std::string>();
@@ -550,6 +573,11 @@ std::vector<SubscriptionNode> parse_subscription(const std::string& body, Subscr
                     node.link.name = proxy.value("name", node.link.server);
                     node.id = proxy_node_id(node.link);
                     nodes.push_back(std::move(node));
+                } catch (const UnsupportedVlessEncryption& error) {
+                    note_skip(local, {},
+                              SkippedSubscriptionNode{error.name().empty() ? proxy.value("name", "") : error.name(),
+                                                      "vless", error.server().empty() ? proxy.value("server", "") : error.server(),
+                                                      error.port() == 0 ? proxy.value("port", 0) : error.port(), error.what()});
                 } catch (const UnsupportedProxyTransport& error) {
                     note_skip(local, error.transport(),
                               SkippedSubscriptionNode{proxy.value("name", ""), proxy.value("type", ""),

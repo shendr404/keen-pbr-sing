@@ -1028,6 +1028,7 @@ export const enTranslation = {
       newNodes_other: "new nodes in the subscription: {{count}}",
       alreadyAdded: "already added",
       missing: "not in the subscription",
+      unsupportedCore: "node is not supported by this sing-box",
       sourceLink: "link",
       unnamed: "unnamed",
       lastRefresh: "Last successful refresh",

@@ -82,11 +82,14 @@ TEST_CASE("reality defaults utls, hysteria2 keeps obfs, and xhttp is skipped") {
         "?security=reality&pbk=abc&fp=firefox#R");
     CHECK(firefox.outbound.at("tls").at("utls").at("fingerprint") == "firefox");
 
-    const auto encrypted = parse_proxy_link(
-        "vless://11111111-1111-1111-1111-111111111111@example.com:443"
-        "?encryption=mlkem768x25519plus&security=tls&sni=example.com#E");
-    CHECK_FALSE(encrypted.outbound.contains("encryption"));
-    CHECK_FALSE(encrypted.warnings.empty());
+    CHECK_THROWS_WITH(parse_proxy_link(
+                          "vless://11111111-1111-1111-1111-111111111111@example.com:443"
+                          "?encryption=mlkem768x25519plus.native.600s&security=tls&sni=example.com#E"),
+                      "VLESS Encryption (mlkem768x25519plus) не поддерживается sing-box");
+    const auto plain = parse_proxy_link(
+        "vless://11111111-1111-1111-1111-111111111111@example.com:443?encryption=none&security=tls&sni=example.com#E");
+    CHECK(plain.protocol == "vless");
+    CHECK_FALSE(plain.outbound.contains("encryption"));
 
     const auto hy2 = parse_proxy_link("hy2://secret@10.0.0.8:443?obfs=salamander&obfs-password=obfs#fi");
     CHECK(hy2.outbound.at("obfs").at("type") == "salamander");
@@ -113,6 +116,19 @@ TEST_CASE("reality defaults utls, hysteria2 keeps obfs, and xhttp is skipped") {
     CHECK(nodes[0].link.outbound.at("tls").at("utls").at("fingerprint") == "chrome");
     CHECK(nodes[1].link.protocol == "hysteria2");
     CHECK(nodes[1].link.outbound.at("obfs").at("type") == "salamander");
+
+    info = {};
+    const auto mixed = parse_subscription(
+        "vless://11111111-1111-1111-1111-111111111111@good.example:443?security=tls&sni=good.example#Good\n"
+        "vless://11111111-1111-1111-1111-111111111111@enc.example:443?encryption=mlkem768x25519plus&security=reality&pbk=abc#Enc\n",
+        &info);
+    REQUIRE(mixed.size() == 1);
+    CHECK(mixed[0].link.server == "good.example");
+    REQUIRE(info.skipped_nodes.size() == 1);
+    CHECK(info.skipped_nodes[0].name == "Enc");
+    CHECK(info.skipped_nodes[0].protocol == "vless");
+    CHECK(info.skipped_nodes[0].server == "enc.example");
+    CHECK(info.skipped_nodes[0].reason == "VLESS Encryption (mlkem768x25519plus) не поддерживается sing-box");
 }
 
 TEST_CASE("node names become keen-pbr tags") {
@@ -438,6 +454,48 @@ TEST_CASE("sing-box merge keeps unmanaged config and an old profile store migrat
     CHECK(read_file(paths.singbox_config + ".bak-keenpbr-original") == before);
     CHECK(added.state["nodes"].size() == 2);
     CHECK(service.state()["suggested_interface"] == "sbtun3");
+    std::filesystem::remove_all(root);
+}
+
+TEST_CASE("VLESS Encryption is not imported and an existing interface is only warned") {
+    const auto root = std::filesystem::temp_directory_path() / "keen-pbr-singbox-vless-enc";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    SingboxPaths paths;
+    paths.store = (root / "links.json").string();
+    paths.singbox_config = (root / "config.json").string();
+    std::string body =
+        "vless://11111111-1111-1111-1111-111111111111@a.example:443?security=tls&sni=a.example#hu-1";
+    SingboxLinkService service(
+        paths, [](const std::string&, std::string*) { return 0; }, [](const KeeneticSyncRequest&) {},
+        [] { return true; }, [&](const std::string&, const SubscriptionStopFn&) { return body; },
+        [] { return static_cast<std::int64_t>(1000); });
+    CHECK_THROWS_WITH(service.add_links(
+                          {"vless://11111111-1111-1111-1111-111111111111@a.example:443?encryption=mlkem768x25519plus&security=reality&pbk=abc#hu-1"},
+                          {}),
+                      "VLESS Encryption (mlkem768x25519plus) не поддерживается sing-box");
+    CHECK(service.state()["nodes"].empty());
+
+    const auto saved = service.save_subscription("https://example.test/sub", 0, {"name:hu-1"}, {});
+    REQUIRE(saved.state["nodes"].size() == 1);
+    const auto config = read_file(paths.singbox_config);
+    body = "vless://11111111-1111-1111-1111-111111111111@a.example:443?encryption=mlkem768x25519plus.native&security=reality&pbk=abc#hu-1";
+    REQUIRE(service.refresh_subscriptions(saved.state["subscriptions"][0]["id"].get<std::string>(), false).at(0).at("ok") == true);
+    const auto after = service.state();
+    REQUIRE(after["nodes"].size() == 1);
+    CHECK(after["nodes"][0]["unsupported"] == true);
+    CHECK(after["nodes"][0]["missing"] == false);
+    CHECK(after["nodes"][0]["unsupported_reason"] == "VLESS Encryption (mlkem768x25519plus) не поддерживается sing-box");
+    CHECK(read_file(paths.singbox_config) == config);
+    const auto preview = service.preview_subscription("https://example.test/sub");
+    bool saw_disabled = false;
+    for (const auto& node : preview["nodes"]) {
+        if (node.value("skipped", false)) {
+            saw_disabled = true;
+            CHECK(node["reason"] == "VLESS Encryption (mlkem768x25519plus) не поддерживается sing-box");
+        }
+    }
+    CHECK(saw_disabled);
     std::filesystem::remove_all(root);
 }
 

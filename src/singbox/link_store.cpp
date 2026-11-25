@@ -687,6 +687,8 @@ nlohmann::json node_json(const SingboxNode& node, bool with_secret) {
                         {"subscription_id", node.subscription_id},
                         {"identity", node.identity},
                         {"missing", node.missing},
+                        {"unsupported", node.unsupported},
+                        {"unsupported_reason", node.unsupported_reason},
                         {"source", node.subscription_id.empty() ? "link" : "subscription"}};
     if (with_secret) {
         if (!node.link.empty()) json["link"] = node.link;
@@ -710,6 +712,8 @@ SingboxNode node_from_json(const nlohmann::json& json) {
     node.subscription_id = json.value("subscription_id", "");
     node.identity = json.value("identity", "");
     node.missing = json.value("missing", false);
+    node.unsupported = json.value("unsupported", false);
+    node.unsupported_reason = json.value("unsupported_reason", "");
     node.link = json.value("link", "");
     if (json.contains("outbound")) node.outbound = json["outbound"];
     if (node.identity.empty()) {
@@ -1376,6 +1380,7 @@ SingboxApplyResult SingboxLinkService::add_links(const std::vector<std::string>&
     auto store = read();
     const auto previous = store;
     SubscriptionParseInfo info;
+    std::string encryption_rejection;
     std::size_t added = 0;
     const auto existing = read_config_object();
     for (const auto& line : lines) {
@@ -1397,6 +1402,9 @@ SingboxApplyResult SingboxLinkService::add_links(const std::vector<std::string>&
                                                      : name_identity(node.name);
             store.nodes.push_back(std::move(node));
             ++added;
+        } catch (const UnsupportedVlessEncryption& error) {
+            ++info.skipped;
+            if (encryption_rejection.empty()) encryption_rejection = error.what();
         } catch (const UnsupportedProxyTransport& error) {
             ++info.skipped;
             ++info.unsupported_transports[error.transport()];
@@ -1405,6 +1413,7 @@ SingboxApplyResult SingboxLinkService::add_links(const std::vector<std::string>&
         }
     }
     if (added == 0) {
+        if (lines.size() == 1 && !encryption_rejection.empty()) throw std::runtime_error(encryption_rejection);
         auto message = subscription_warning(info);
         if (message.empty()) message = "proxy link could not be parsed";
         throw std::runtime_error(message);
@@ -1638,10 +1647,31 @@ bool SingboxLinkService::refresh_one(SingboxStore& store, std::size_t index, con
             if (node.subscription_id != updated.id) continue;
             const auto* match = match_fresh(node, fetched.nodes, used);
             if (match == nullptr) {
+                const SingboxCatalogEntry* rejected = nullptr;
+                for (const auto& entry : fetched.catalog) {
+                    if (!entry.skipped || entry.reason.find("VLESS Encryption (") != 0) continue;
+                    const bool same_name = !trim(node.name).empty() && lower_copy(trim(entry.name)) == lower_copy(trim(node.name));
+                    const bool same_endpoint = lower_copy(entry.protocol) == lower_copy(node.protocol) &&
+                                               lower_copy(entry.server) == lower_copy(node.server) && entry.port == node.port;
+                    if (same_name || same_endpoint) {
+                        rejected = &entry;
+                        break;
+                    }
+                }
+                if (rejected != nullptr) {
+                    node.missing = false;
+                    node.unsupported = true;
+                    node.unsupported_reason = rejected->reason;
+                    continue;
+                }
                 node.missing = true;
+                node.unsupported = false;
+                node.unsupported_reason.clear();
                 continue;
             }
             node.missing = false;
+            node.unsupported = false;
+            node.unsupported_reason.clear();
             if (!proxy_equal(node, *match)) {
                 node.name = match->name;
                 node.protocol = match->protocol;
