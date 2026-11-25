@@ -67,7 +67,8 @@ struct SingboxProfile {
 struct SingboxProfileDraft {
     std::string id;
     std::string name;
-    std::string interface_name{"sbtun"};
+    // Empty on create means "pick the next free name".
+    std::string interface_name;
     std::string keenetic_tag;
     std::string mode{"selector"};
     std::string urltest_url{"https://www.gstatic.com/generate_204"};

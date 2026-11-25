@@ -1003,6 +1003,12 @@ export const enTranslation = {
       name: "Name",
       tag: "keen-pbr outbound tag",
       interface: "TUN interface",
+      interfaceHint: "Leave empty to use the next free name (sbtun, sbtun2, …).",
+      seeds: "Links / subscription",
+      seedsHint:
+        "Optional. One proxy link or subscription URL per line. Nodes show up on the profile card.",
+      seedsPlaceholder: "vless://…\nhttps://…/sub",
+      advanced: "Advanced",
       mode: "Mode",
       modes: {
         direct: "direct — one node",
@@ -1014,8 +1020,11 @@ export const enTranslation = {
       tunStack: "TUN stack",
       tunMtu: "MTU",
       tunAddress: "TUN addresses",
-      tunAddressHint: "Empty uses the default 172.19.x.1/30. Separate several CIDRs with commas.",
+      tunAddressHint:
+        "Empty assigns a free 172.19.x.1/30 that does not overlap an address already in use. Enter your own CIDRs, separated by commas, to override that.",
+      addressPlaceholder: "auto",
       nodes: "Nodes",
+      nodesHint: "Paste proxy links and subscription URLs here, one per line.",
       links: "Proxies, one link per line",
       addProxies: "Add more proxies",
       proxiesSaved: "Proxies added.",
@@ -1047,7 +1056,7 @@ export const enTranslation = {
       skippedTransports_other:
         "Skipped {{count}} nodes: transport {{transports}} is not supported by sing-box",
       encryptionIgnored: "VLESS encryption was ignored; sing-box does not support it.",
-      noProfiles: "No profiles yet. Create an interface, then add nodes.",
+      noProfiles: "No profiles yet. Paste links in the form above and save the profile.",
     },
     security: {
       title: "Security",

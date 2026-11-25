@@ -42,6 +42,7 @@ export type SingboxProfile = {
 
 export type SingboxState = {
   profiles: SingboxProfile[]
+  suggested_interface?: string
   warning?: string
   skipped?: number
   skipped_transports?: string[]

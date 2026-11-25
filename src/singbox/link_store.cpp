@@ -436,6 +436,68 @@ bool safe_cidr(const std::string& cidr) {
     return slashes == 1;
 }
 
+int tun_subnet_octet(const std::string& cidr) {
+    const std::string prefix = "172.19.";
+    if (cidr.rfind(prefix, 0) != 0) return 0;
+    int octet = 0;
+    std::size_t index = prefix.size();
+    if (index >= cidr.size() || !std::isdigit(static_cast<unsigned char>(cidr[index]))) return 0;
+    while (index < cidr.size() && std::isdigit(static_cast<unsigned char>(cidr[index]))) {
+        octet = octet * 10 + (cidr[index] - '0');
+        if (octet > 255) return 0;
+        ++index;
+    }
+    return octet >= 1 && octet <= 200 ? octet : 0;
+}
+
+void note_tun_address(std::set<int>& used, const nlohmann::json& address) {
+    if (address.is_string()) {
+        const int octet = tun_subnet_octet(address.get<std::string>());
+        if (octet > 0) used.insert(octet);
+    } else if (address.is_array()) {
+        for (const auto& item : address) {
+            if (!item.is_string()) continue;
+            const int octet = tun_subnet_octet(item.get<std::string>());
+            if (octet > 0) used.insert(octet);
+        }
+    }
+}
+
+std::string next_free_interface(const nlohmann::json& existing, const std::vector<SingboxProfile>& profiles,
+                                const std::string& self_id) {
+    std::set<std::string> used;
+    for (const auto& profile : profiles) {
+        if (profile.id == self_id || profile.interface_name.empty()) continue;
+        used.insert(profile.interface_name);
+    }
+    if (existing.contains("inbounds") && existing["inbounds"].is_array()) {
+        for (const auto& inbound : existing["inbounds"]) {
+            if (!inbound.is_object()) continue;
+            const auto tag = inbound.value("tag", "");
+            if (!self_id.empty() && (tag == "kpbr-tun-" + self_id || tag == "tun_" + self_id)) continue;
+            const auto iface = inbound.value("interface_name", "");
+            if (!iface.empty()) used.insert(iface);
+        }
+    }
+    if (!used.count("sbtun")) return "sbtun";
+    for (int number = 2; number < 1000; ++number) {
+        const auto name = "sbtun" + std::to_string(number);
+        if (name.size() > 15) break;
+        if (!used.count(name)) return name;
+    }
+    throw std::runtime_error("no free TUN interface name");
+}
+
+int next_free_tun_octet(std::set<int>& used) {
+    for (int octet = 1; octet <= 200; ++octet) {
+        if (!used.count(octet)) {
+            used.insert(octet);
+            return octet;
+        }
+    }
+    throw std::runtime_error("no free TUN address in 172.19.0.0/16");
+}
+
 std::vector<std::string> split_addresses(const std::string& text) {
     std::vector<std::string> out;
     std::string token;
@@ -667,7 +729,16 @@ nlohmann::json merge_singbox_config(const nlohmann::json& existing, const std::v
 
     nlohmann::json managed_inbounds = nlohmann::json::array();
     nlohmann::json managed_outbounds = nlohmann::json::array();
-    int index = 0;
+    std::set<int> used_octets;
+    for (const auto& inbound : kept_inbounds) {
+        if (inbound.is_object() && inbound.contains("address")) note_tun_address(used_octets, inbound["address"]);
+    }
+    for (const auto& profile : live) {
+        for (const auto& cidr : split_addresses(profile.tun_address)) {
+            const int octet = tun_subnet_octet(cidr);
+            if (octet > 0) used_octets.insert(octet);
+        }
+    }
     bool live_nodes = false;
     for (const auto& profile : live) {
         if (profile.connections.empty()) continue;
@@ -704,7 +775,7 @@ nlohmann::json merge_singbox_config(const nlohmann::json& existing, const std::v
         auto addresses = split_addresses(profile.tun_address);
         nlohmann::json address_json = nlohmann::json::array();
         if (addresses.empty()) {
-            const int octet = 1 + (index % 200);
+            const int octet = next_free_tun_octet(used_octets);
             address_json.push_back("172.19." + std::to_string(octet) + ".1/30");
         } else {
             for (const auto& cidr : addresses) address_json.push_back(cidr);
@@ -720,7 +791,6 @@ nlohmann::json merge_singbox_config(const nlohmann::json& existing, const std::v
             {"strict_route", false},
             {"stack", profile.tun_stack == "system" ? "system" : "gvisor"},
         });
-        ++index;
     }
 
     if (remove_file != nullptr) *remove_file = !live_nodes && !unmanaged_remains(existing, tags);
@@ -793,8 +863,9 @@ void apply_draft(SingboxProfile& profile, const SingboxProfileDraft& draft, bool
     require_mode(mode);
     const auto tag_source = !draft.keenetic_tag.empty() ? draft.keenetic_tag : draft.name;
     if (create && tag_source.empty()) throw std::runtime_error("keen-pbr tag is required");
-    const auto iface = draft.interface_name.empty() ? (create ? "sbtun" : profile.interface_name) : draft.interface_name;
-    if (!safe_interface_name(iface)) throw std::runtime_error("interface name is invalid");
+    const auto iface = draft.interface_name.empty() ? (create ? std::string{} : profile.interface_name)
+                                                     : draft.interface_name;
+    if (!iface.empty() && !safe_interface_name(iface)) throw std::runtime_error("interface name is invalid");
     const auto stack = draft.tun_stack.empty() ? (create ? "gvisor" : profile.tun_stack) : draft.tun_stack;
     require_stack(stack);
     const int mtu = draft.tun_mtu == 0 ? (create ? 1400 : profile.tun_mtu) : draft.tun_mtu;
@@ -976,8 +1047,15 @@ std::int64_t SingboxLinkService::next_refresh(const SingboxSubscription& subscri
 }
 
 nlohmann::json SingboxLinkService::state() const {
+    const auto profiles = read();
+    nlohmann::json existing = nlohmann::json::object();
+    try {
+        existing = read_config_object();
+    } catch (const std::exception&) {
+        existing = nlohmann::json::object();
+    }
     nlohmann::json array = nlohmann::json::array();
-    for (const auto& profile : read()) {
+    for (const auto& profile : profiles) {
         auto json = profile_json(profile, false);
         if (json.contains("subscriptions") && json["subscriptions"].is_array()) {
             for (std::size_t i = 0; i < profile.subscriptions.size() && i < json["subscriptions"].size(); ++i) {
@@ -1009,7 +1087,8 @@ nlohmann::json SingboxLinkService::state() const {
         }
         array.push_back(std::move(json));
     }
-    return {{"profiles", std::move(array)}};
+    return {{"profiles", std::move(array)},
+            {"suggested_interface", next_free_interface(existing, profiles, "")}};
 }
 
 std::map<std::string, std::string> SingboxLinkService::subscription_errors() const {
@@ -1114,8 +1193,12 @@ SingboxApplyResult SingboxLinkService::save_profile(const SingboxProfileDraft& d
         previous_tag = profile->keenetic_tag;
         apply_draft(*profile, draft, false);
     }
-    validate_unique(profiles);
     const auto existing = read_config_object();
+    if (profile->interface_name.empty()) {
+        profile->interface_name = next_free_interface(existing, profiles, profile->id);
+    }
+    if (!safe_interface_name(profile->interface_name)) throw std::runtime_error("interface name is invalid");
+    validate_unique(profiles);
     assert_interfaces_available(existing, profiles);
     const auto id = profile->id;
     const bool has_nodes = !profile->connections.empty();

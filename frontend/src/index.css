@@ -5,6 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  color-scheme: light;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -74,6 +75,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -219,5 +221,19 @@
     position: relative;
     @apply bg-background text-foreground antialiased;
     overflow-x: clip;
+  }
+
+  /* Native menus follow the page theme. Without color-scheme, a dark page
+     paints option text white on the browser's white popup. */
+  select {
+    color-scheme: inherit;
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  select option,
+  select optgroup {
+    background-color: var(--popover);
+    color: var(--popover-foreground);
   }
 }

@@ -7,7 +7,7 @@ The **Sing-box interfaces** page treats each proxy path as a profile: a keen-pbr
 
 Create a profile, then add links (one per line) or attach subscriptions. The page registers an `interface` outbound **without** `gateway`. A TUN or point-to-point interface does not need one, and `auto` only produces a warning. Several of these interface outbounds can be members of a keen-pbr `urltest` or `icmptest` group.
 
-Modes are `direct` (one node), `selector` (manual choice; clicking a node does not change the mode) and `urltest` (sing-box picks by latency). TUN defaults are stack `gvisor`, MTU 1400, and address `172.19.x.1/30`.
+Modes are `direct` (one node), `selector` (manual choice; clicking a node does not change the mode) and `urltest` (sing-box picks by latency). TUN defaults are stack `gvisor` and MTU 1400. An empty interface name becomes the next free name (`sbtun`, then `sbtun2`, and so on). An empty address becomes a free `172.19.x.1/30` that does not overlap an address already used by an inbound.
 
 Supported share links are `vless://`, `vmess://`, `trojan://`, `ss://` and `hysteria2://`. sing-box 1.14 transports are `tcp`, `ws`, `grpc`, `http`, `httpupgrade` and `quic`. Lines that use `xhttp`, `splithttp` or another unknown transport are skipped, and the UI reports how many were skipped. VLESS Reality without `fp` gets `utls` fingerprint `chrome`. VLESS `encryption` is ignored.
 

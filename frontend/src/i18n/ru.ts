@@ -1036,6 +1036,12 @@ export const ruTranslation = {
       name: "Название",
       tag: "Тег outbound keen-pbr",
       interface: "Интерфейс TUN",
+      interfaceHint: "Пустое поле — следующее свободное имя (sbtun, sbtun2, …).",
+      seeds: "Ссылки / подписка",
+      seedsHint:
+        "Необязательно. По одной записи в строке: ссылка прокси или URL подписки. Узлы появятся в карточке профиля.",
+      seedsPlaceholder: "vless://…\nhttps://…/sub",
+      advanced: "Дополнительно",
       mode: "Режим",
       modes: {
         direct: "direct — один узел",
@@ -1047,8 +1053,11 @@ export const ruTranslation = {
       tunStack: "Стек TUN",
       tunMtu: "MTU",
       tunAddress: "Адреса TUN",
-      tunAddressHint: "Пусто — адрес по умолчанию 172.19.x.1/30. Несколько CIDR через запятую.",
+      tunAddressHint:
+        "Пусто — свободный адрес 172.19.x.1/30 без пересечения с уже занятыми. Свой адрес можно указать через запятую, если их несколько.",
+      addressPlaceholder: "авто",
       nodes: "Узлы",
+      nodesHint: "Сюда вставляются ссылки прокси и URL подписок, по одной в строке.",
       links: "Прокси, по одной ссылке в строке",
       addProxies: "Добавить ещё прокси",
       proxiesSaved: "Прокси добавлены.",
@@ -1085,7 +1094,7 @@ export const ruTranslation = {
         "Пропущено {{count}} узлов: транспорт {{transports}} не поддерживается sing-box",
       encryptionIgnored:
         "Параметр encryption у VLESS проигнорирован: sing-box его не поддерживает.",
-      noProfiles: "Профилей пока нет. Создайте интерфейс, затем добавьте узлы.",
+      noProfiles: "Профилей пока нет. Вставьте ссылки в форму выше и сохраните профиль.",
     },
     security: {
       title: "Безопасность",

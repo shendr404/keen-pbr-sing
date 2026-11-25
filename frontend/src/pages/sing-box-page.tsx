@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 
@@ -29,20 +29,36 @@ type Draft = {
   tunStack: string
   tunMtu: string
   tunAddress: string
+  seeds: string
 }
+
+const nativeSelectClass =
+  "h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground scheme-light dark:bg-popover dark:text-popover-foreground dark:scheme-dark"
 
 const emptyDraft = (): Draft => ({
   id: "",
   name: "",
   tag: "proxy",
-  iface: "sbtun",
+  iface: "",
   mode: "selector",
   urltestUrl: "https://www.gstatic.com/generate_204",
   urltestInterval: "3m",
   tunStack: "gvisor",
   tunMtu: "1400",
   tunAddress: "",
+  seeds: "",
 })
+
+function isSubscriptionUrl(line: string) {
+  return /^https?:\/\//i.test(line)
+}
+
+function splitSeedLines(text: string) {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+}
 
 function draftFromProfile(profile: SingboxProfile): Draft {
   return {
@@ -56,6 +72,7 @@ function draftFromProfile(profile: SingboxProfile): Draft {
     tunStack: profile.tun_stack || "gvisor",
     tunMtu: String(profile.tun_mtu || 1400),
     tunAddress: profile.tun_address || "",
+    seeds: "",
   }
 }
 
@@ -108,8 +125,14 @@ export function SingboxPage() {
   const queryClient = useQueryClient()
   const profiles = useQuery({ queryKey, queryFn: fetchSingboxProfiles, refetchInterval: 30_000 })
   const [draft, setDraft] = useState<Draft>(emptyDraft)
+  const [ifaceTouched, setIfaceTouched] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [focusProfileId, setFocusProfileId] = useState<string | null>(null)
+  const createdId = useRef<string | null>(null)
+  const scrolledId = useRef<string | null>(null)
+  const suggestion = profiles.data?.suggested_interface ?? ""
+  const shownIface = ifaceTouched ? draft.iface : suggestion || draft.iface
 
   const clearMessages = () => {
     setError("")
@@ -130,30 +153,66 @@ export function SingboxPage() {
   }
 
   const saveProfile = useMutation({
-    mutationFn: () =>
-      postSingbox("/api/sing-box/profiles", {
+    mutationFn: async () => {
+      const known = new Set((profiles.data?.profiles ?? []).map((profile) => profile.id))
+      let state = await postSingbox("/api/sing-box/profiles", {
         id: draft.id,
         name: draft.name,
         tag: draft.tag,
-        interface: draft.iface,
+        interface: shownIface,
         mode: draft.mode,
         urltest_url: draft.urltestUrl,
         urltest_interval: draft.urltestInterval,
         tun_stack: draft.tunStack,
         tun_mtu: nonNegative(draft.tunMtu) || 1400,
         tun_address: draft.tunAddress,
-      }),
+      })
+      const created = state.profiles.find((profile) => !known.has(profile.id)) ?? state.profiles.at(-1)
+      const profileId = created?.id ?? ""
+      createdId.current = profileId
+      const lines = splitSeedLines(draft.seeds)
+      const links = lines.filter((line) => !isSubscriptionUrl(line))
+      const subscriptions = lines.filter(isSubscriptionUrl)
+      if (profileId && links.length > 0) {
+        state = await postSingbox("/api/sing-box/connections", { profile_id: profileId, links: links.join("\n") })
+      }
+      for (const url of subscriptions) {
+        if (!profileId) break
+        state = await postSingbox("/api/sing-box/subscriptions", {
+          profile_id: profileId,
+          url,
+          interval_hours: 0,
+        })
+      }
+      return state
+    },
     onMutate: clearMessages,
     onSuccess: async (state) => {
       succeed(state, t("pages.singbox.savedProfile"))
+      setIfaceTouched(false)
       setDraft(emptyDraft())
+      setFocusProfileId(createdId.current)
       await invalidate()
     },
-    onError: fail,
+    onError: async (caught) => {
+      fail(caught)
+      if (createdId.current) setFocusProfileId(createdId.current)
+      await invalidate()
+    },
   })
+
+  useEffect(() => {
+    if (!focusProfileId || scrolledId.current === focusProfileId) return
+    const node = document.getElementById(`singbox-links-${focusProfileId}`)
+    if (!node) return
+    scrolledId.current = focusProfileId
+    node.scrollIntoView({ behavior: "smooth", block: "center" })
+    node.focus()
+  }, [focusProfileId, profiles.data])
 
   const updateDraft = (patch: Partial<Draft>) => {
     clearMessages()
+    if ("iface" in patch) setIfaceTouched(true)
     setDraft((current) => ({ ...current, ...patch }))
   }
 
@@ -163,7 +222,22 @@ export function SingboxPage() {
       <Messages error={error} onDismiss={clearMessages} success={success} />
       <section className="space-y-4 rounded-lg border p-4">
         <h2 className="text-base font-medium">{t("pages.singbox.create")}</h2>
-        <ProfileFields draft={draft} idPrefix="create" onChange={updateDraft} />
+        <ProfileFields
+          draft={{ ...draft, iface: shownIface }}
+          idPrefix="create"
+          onChange={updateDraft}
+        />
+        <div className="space-y-1.5">
+          <Label htmlFor="create-seeds">{t("pages.singbox.seeds")}</Label>
+          <textarea
+            className="min-h-28 w-full rounded-lg border border-input bg-transparent p-2.5 font-mono text-sm"
+            id="create-seeds"
+            onChange={(event) => updateDraft({ seeds: event.target.value })}
+            placeholder={t("pages.singbox.seedsPlaceholder")}
+            value={draft.seeds}
+          />
+          <p className="text-xs text-muted-foreground">{t("pages.singbox.seedsHint")}</p>
+        </div>
         <Button disabled={saveProfile.isPending || draft.tag.length === 0} onClick={() => saveProfile.mutate()} type="button">
           {t("pages.singbox.saveProfile")}
         </Button>
@@ -237,22 +311,28 @@ function ProfileFields({
   const fieldId = (name: string) => `${idPrefix}-${name}`
   return (
     <div className="grid gap-3 md:grid-cols-2">
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <Label htmlFor={fieldId("name")}>{t("pages.singbox.name")}</Label>
         <Input id={fieldId("name")} onChange={(event) => onChange({ name: event.target.value })} value={draft.name} />
       </div>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <Label htmlFor={fieldId("tag")}>{t("pages.singbox.tag")}</Label>
         <Input id={fieldId("tag")} onChange={(event) => onChange({ tag: event.target.value })} value={draft.tag} />
       </div>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <Label htmlFor={fieldId("interface")}>{t("pages.singbox.interface")}</Label>
-        <Input id={fieldId("interface")} onChange={(event) => onChange({ iface: event.target.value })} value={draft.iface} />
+        <Input
+          id={fieldId("interface")}
+          onChange={(event) => onChange({ iface: event.target.value })}
+          placeholder={t("pages.singbox.addressPlaceholder")}
+          value={draft.iface}
+        />
+        <p className="text-xs text-muted-foreground">{t("pages.singbox.interfaceHint")}</p>
       </div>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <Label htmlFor={fieldId("mode")}>{t("pages.singbox.mode")}</Label>
         <select
-          className="h-8 w-full rounded-lg border bg-transparent px-2 text-sm"
+          className={nativeSelectClass}
           id={fieldId("mode")}
           onChange={(event) => onChange({ mode: event.target.value })}
           value={draft.mode}
@@ -264,11 +344,11 @@ function ProfileFields({
       </div>
       {draft.mode === "urltest" ? (
         <>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label htmlFor={fieldId("url")}>{t("pages.singbox.urltestUrl")}</Label>
             <Input id={fieldId("url")} onChange={(event) => onChange({ urltestUrl: event.target.value })} value={draft.urltestUrl} />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label htmlFor={fieldId("probe")}>{t("pages.singbox.urltestInterval")}</Label>
             <Input
               id={fieldId("probe")}
@@ -278,39 +358,44 @@ function ProfileFields({
           </div>
         </>
       ) : null}
-      <div className="space-y-1">
-        <Label htmlFor={fieldId("stack")}>{t("pages.singbox.tunStack")}</Label>
-        <select
-          className="h-8 w-full rounded-lg border bg-transparent px-2 text-sm"
-          id={fieldId("stack")}
-          onChange={(event) => onChange({ tunStack: event.target.value })}
-          value={draft.tunStack}
-        >
-          <option value="gvisor">gvisor</option>
-          <option value="system">system</option>
-        </select>
-      </div>
-      <div className="space-y-1">
-        <Label htmlFor={fieldId("mtu")}>{t("pages.singbox.tunMtu")}</Label>
-        <Input
-          id={fieldId("mtu")}
-          min={576}
-          max={65535}
-          onChange={(event) => onChange({ tunMtu: event.target.value })}
-          type="number"
-          value={draft.tunMtu}
-        />
-      </div>
-      <div className="space-y-1 md:col-span-2">
-        <Label htmlFor={fieldId("address")}>{t("pages.singbox.tunAddress")}</Label>
-        <Input
-          id={fieldId("address")}
-          onChange={(event) => onChange({ tunAddress: event.target.value })}
-          placeholder="172.19.1.1/30"
-          value={draft.tunAddress}
-        />
-        <p className="text-xs text-muted-foreground">{t("pages.singbox.tunAddressHint")}</p>
-      </div>
+      <details className="rounded-lg border border-dashed px-3 py-2 md:col-span-2">
+        <summary className="cursor-pointer text-sm font-medium">{t("pages.singbox.advanced")}</summary>
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor={fieldId("stack")}>{t("pages.singbox.tunStack")}</Label>
+            <select
+              className={nativeSelectClass}
+              id={fieldId("stack")}
+              onChange={(event) => onChange({ tunStack: event.target.value })}
+              value={draft.tunStack}
+            >
+              <option value="gvisor">gvisor</option>
+              <option value="system">system</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={fieldId("mtu")}>{t("pages.singbox.tunMtu")}</Label>
+            <Input
+              id={fieldId("mtu")}
+              max={65535}
+              min={576}
+              onChange={(event) => onChange({ tunMtu: event.target.value })}
+              type="number"
+              value={draft.tunMtu}
+            />
+          </div>
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor={fieldId("address")}>{t("pages.singbox.tunAddress")}</Label>
+            <Input
+              id={fieldId("address")}
+              onChange={(event) => onChange({ tunAddress: event.target.value })}
+              placeholder={t("pages.singbox.addressPlaceholder")}
+              value={draft.tunAddress}
+            />
+            <p className="text-xs text-muted-foreground">{t("pages.singbox.tunAddressHint")}</p>
+          </div>
+        </div>
+      </details>
     </div>
   )
 }
@@ -474,8 +559,11 @@ function ProfileCard({
           </Button>
         </div>
       ) : null}
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium">{t("pages.singbox.nodes")}</h3>
+      <div className="space-y-3 rounded-lg bg-muted/40 p-3" id={`singbox-nodes-${profile.id}`}>
+        <div className="space-y-1">
+          <h3 className="text-base font-medium">{t("pages.singbox.nodes")}</h3>
+          <p className="text-sm text-muted-foreground">{t("pages.singbox.nodesHint")}</p>
+        </div>
         <ul className="space-y-2">
           {profile.connections.map((connection) => {
             const selected =
@@ -523,15 +611,15 @@ function ProfileCard({
           })}
         </ul>
         <div className="space-y-1">
-          <Label htmlFor={`${profile.id}-links`}>{t("pages.singbox.links")}</Label>
+          <Label htmlFor={`singbox-links-${profile.id}`}>{t("pages.singbox.seeds")}</Label>
           <textarea
-            className="min-h-20 w-full rounded-lg border bg-transparent p-2 text-sm"
-            id={`${profile.id}-links`}
+            className="min-h-28 w-full rounded-lg border border-input bg-background p-2.5 font-mono text-sm"
+            id={`singbox-links-${profile.id}`}
             onChange={(event) => {
               onStart()
               setLinks(event.target.value)
             }}
-            placeholder="vless://…&#10;hysteria2://…"
+            placeholder={t("pages.singbox.seedsPlaceholder")}
             value={links}
           />
         </div>

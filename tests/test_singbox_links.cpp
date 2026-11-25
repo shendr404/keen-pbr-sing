@@ -457,5 +457,39 @@ TEST_CASE("sing-box merge keeps unmanaged config and refuses a taken TUN name") 
     const auto still = nlohmann::json::parse(read_file(paths.singbox_config));
     CHECK(still["outbounds"][0]["password"] == "keep");
     CHECK(still["inbounds"][0]["interface_name"] == "sbtun");
+    CHECK(service.state()["suggested_interface"] == "sbtun3");
+    std::filesystem::remove_all(root);
+}
+
+TEST_CASE("empty TUN name and address pick the next free values") {
+    const auto root = std::filesystem::temp_directory_path() / "keen-pbr-singbox-auto-tun";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    SingboxPaths paths;
+    paths.store = (root / "links.json").string();
+    paths.singbox_config = (root / "config.json").string();
+    std::ofstream(paths.singbox_config) << R"({
+      "inbounds": [{
+        "type": "tun", "tag": "tun-in", "interface_name": "sbtun",
+        "address": ["172.19.1.1/30", "fdfe:dcba:9876::1/126"], "mtu": 1400, "stack": "gvisor"
+      }],
+      "outbounds": [{"type": "direct", "tag": "direct"}]
+    })";
+    SingboxLinkService service(
+        paths, [](const std::string&, std::string*) { return 0; }, [](const SingboxProfile&, bool) {}, [] { return true; });
+    CHECK(service.state()["suggested_interface"] == "sbtun2");
+
+    SingboxProfileDraft draft;
+    draft.name = "Auto";
+    draft.keenetic_tag = "auto";
+    draft.mode = "direct";
+    REQUIRE(service.save_profile(draft).state["profiles"][0]["interface"] == "sbtun2");
+    REQUIRE(service.add_connections("auto", {"trojan://pw@a.example:443#A"}, "A").singbox_checked);
+    const auto config = nlohmann::json::parse(read_file(paths.singbox_config));
+    CHECK(config["inbounds"][0]["interface_name"] == "sbtun");
+    CHECK(config["inbounds"][0]["address"][0] == "172.19.1.1/30");
+    CHECK(config["inbounds"][1]["interface_name"] == "sbtun2");
+    CHECK(config["inbounds"][1]["address"][0] == "172.19.2.1/30");
+    CHECK(service.state()["profiles"][0]["tun_address"] == "");
     std::filesystem::remove_all(root);
 }
