@@ -260,7 +260,7 @@ nslookup google.com 127.0.0.1
 
 Если вы видите `Connection refused`, резолвер не запущен или не слушает `127.0.0.1:53`. Проверьте его сервис и журнал: {{< term "Entware" >}} `dnsmasq` на Keenetic, `dnsmasq` на OpenWrt и Debian или встроенный DNS-прокси Keenetic.
 
-На Keenetic, если DNS-запросы клиентов не доходят до Entware `dnsmasq`, проверьте настройку `opkg dns-override`. Команды `opkg dns-override` и `system configuration save` выполняются в веб-консоли роутера `http://my.keenetic.net/a`, а не в SSH. Подробности есть в [установке на Keenetic]({{< relref "/docs/getting-started/installation/keenetic" >}}).
+На Keenetic, если DNS-запросы клиентов не доходят до Entware `dnsmasq`, проверьте настройку `opkg dns-override`. Команды `opkg dns-override` и `system configuration save` выполняются в веб-консоли роутера `http://my.keenetic.net/a`, а не в SSH. То же самое, если dnsmasq пишет `bind 172.19.0.1:53: Address already in use`: порт 53 держит ndnproxy, потому что `dns-override` выключен. keen-pbr об этом сообщает и настройку сам не меняет. Подробности есть в [установке на Keenetic]({{< relref "/docs/getting-started/installation/keenetic" >}}).
 
 {{% details title="После обновления со старой версии keen-pbr" closed="true" %}}
 После обновления управление dnsmasq остаётся включённым, подробности в разделе [Ломающие изменения в 3.4.0]({{< relref "/docs/changelog#upgrading-from-33x" >}}). Если dnsmasq не запускается после того, как вы удалили keen-pbr вручную, убедитесь, что в его конфигурации не осталось строки `conf-script=...keen-pbr...`.

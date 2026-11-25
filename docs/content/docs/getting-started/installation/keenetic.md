@@ -154,6 +154,10 @@ keen-pbr does not need dnsmasq for routing. Install it only if you want to send 
 4. Reboot the router. **This is required:** without a reboot LAN clients keep using the built-in DNS proxy, and dnsmasq does not get their queries.
 5. In the Web UI, open **General** > **Settings** > **Local DNS server management** and turn on **Manage dnsmasq configuration**. The DNS servers and DNS rules pages become available.
 
+`opkg upgrade` and `opkg install --force-reinstall keen-pbr` do not unhook dnsmasq and do not leave the fallback upstream block. Only `opkg remove` does that. After an install or reinstall, the package puts the managed block back, restarts dnsmasq when it was running or enabled, and starts keen-pbr outside the opkg session so the install cannot kill it.
+
+If dnsmasq then reports `bind 172.19.0.1:53: Address already in use`, ndnproxy still owns port 53 because `opkg dns-override` is off. keen-pbr does not change that setting. In the router web console (http://my.keenetic.net/a) run `opkg dns-override` and `system configuration save`, then restart dnsmasq.
+
 ### Return to how it was {#dnsmasq-rollback}
 
 Do the steps in this order, so the LAN keeps DNS all the time:

@@ -578,10 +578,38 @@ test_keenetic_uninstall() {
     cmp -s "$DNSMASQ_CONF" "$kroot/conf.before" || fail "keenetic uninstall: changed a config without the block"
     [ "$(restarts)" = 0 ] || fail "keenetic uninstall: restarted without a change"
 
-    # The fallback block left behind does not stop a later install.
+    # The fallback block left behind does not stop a later install, and does not stay.
     printf 'no-resolv\n\n%s\n' "$fb_block" > "$DNSMASQ_CONF"
     run apply entware:default || fail "keenetic uninstall: reinstall failed"
     grep -q 'BEGIN keen-pbr managed block' "$DNSMASQ_CONF" || fail "keenetic uninstall: reinstall did not add the block"
+    ! grep -q 'fallback upstream' "$DNSMASQ_CONF" || fail "keenetic uninstall: reinstall left the fallback block"
+
+    # A fallback already in the file is not duplicated next to a new one.
+    printf 'no-resolv\n\n%s\n\n%s\n%s\n' "$fb_block" "$block_text" "$fb_block" > "$DNSMASQ_CONF"
+    reset_restarts
+    run uninstall || fail "keenetic uninstall: duplicate fallback run failed"
+    [ "$(grep -c 'BEGIN keen-pbr fallback' "$DNSMASQ_CONF")" = 1 ] || fail "keenetic uninstall: fallback block duplicated"
+    ! grep -q 'managed block' "$DNSMASQ_CONF" || fail "keenetic uninstall: managed block left beside fallback"
+
+    # reinstall-hook restores the managed block and does not restart by itself.
+    reset_restarts
+    run reinstall-hook || fail "keenetic reinstall-hook failed"
+    grep -q 'BEGIN keen-pbr managed block' "$DNSMASQ_CONF" || fail "keenetic reinstall-hook: managed block missing"
+    ! grep -q 'fallback upstream' "$DNSMASQ_CONF" || fail "keenetic reinstall-hook: fallback left"
+    [ "$(restarts)" = 0 ] || fail "keenetic reinstall-hook: restarted dnsmasq"
+    run reinstall-hook || fail "keenetic reinstall-hook: second run failed"
+    [ "$(grep -c 'BEGIN keen-pbr managed block' "$DNSMASQ_CONF")" = 1 ] || fail "keenetic reinstall-hook: duplicated the block"
+
+    # status keeps its one-line result and warns on stderr when ndnproxy holds :53.
+    [ "$(run status)" = installed ] || fail "keenetic status: stdout changed"
+    hint=$(NDNPROXY_HOLDS_53=1 DNS_OVERRIDE=off run port53-hint) || fail "keenetic port53-hint: should report the conflict"
+    case "$hint" in
+        *ndnproxy*port\ 53*dns-override*system\ configuration\ save*) ;;
+        *) fail "keenetic port53-hint: unexpected text: $hint" ;;
+    esac
+    NDNPROXY_HOLDS_53=1 DNS_OVERRIDE=on run port53-hint && fail "keenetic port53-hint: warned although dns-override is on"
+    err=$(NDNPROXY_HOLDS_53=1 DNS_OVERRIDE=off run status 2>&1 >/dev/null || true)
+    case "$err" in *ndnproxy*) ;; *) fail "keenetic status: hint missing on stderr: $err" ;; esac
 }
 
 test_keenetic_recommended() {

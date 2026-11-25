@@ -2,20 +2,42 @@
 # Never runs keen-pbr itself (a broken binary or config must not block or
 # break the removal) and never fails: every step is best effort.
 
-echo "Stopping keen-pbr service..."
-/opt/etc/init.d/S80keen-pbr stop || true
-
-# On an upgrade the conf-script entry stays and the new daemon re-applies its
-# firewall state, so only the service is stopped.
-if [ "$PKG_UPGRADE" = 1 ] || [ "$1" = upgrade ]; then
-    exit 0
+PKG_LIB="${KEEN_PBR_PKG_LIB:-/opt/usr/lib/keen-pbr/pkg.sh}"
+_have_pkg=0
+# shellcheck disable=SC1090
+if [ -f "$PKG_LIB" ]; then
+    . "$PKG_LIB"
+    _have_pkg=1
 fi
 
-# Remove keen-pbr from dnsmasq's config and keep dnsmasq resolving.
-/opt/usr/lib/keen-pbr/dnsmasq-hook.sh uninstall >/dev/null 2>&1 || true
+echo "Stopping keen-pbr service..."
+"${KEEN_PBR_INIT:-/opt/etc/init.d/S80keen-pbr}" stop || true
 
-# Remove firewall rules a crashed daemon may have left behind.
-/opt/usr/lib/keen-pbr/interface-forward.sh remove >/dev/null 2>&1 || true
-/opt/usr/lib/keen-pbr/cleanup-firewall.sh >/dev/null 2>&1 || true
+# Captured before uninstall, which restarts (and may stop) dnsmasq.
+[ "$_have_pkg" = 1 ] && record_dnsmasq_state
+
+# Upgrade and `opkg install --force-reinstall` must not unhook dnsmasq.
+# opkg passes "upgrade <version>" and Entware sets PKG_UPGRADE=1 on an
+# upgrade. A reinstall can look like "remove" while the binary will remain;
+# real_removal covers that too.
+if [ "$_have_pkg" = 1 ]; then
+    real_removal "$@" && _remove=1 || _remove=0
+else
+    case "${1:-}" in
+        upgrade|reinstall) _remove=0 ;;
+        *)
+            case "${PKG_UPGRADE:-}" in
+                1|yes|true) _remove=0 ;;
+                *) _remove=1 ;;
+            esac
+            ;;
+    esac
+fi
+
+if [ "$_remove" = 1 ]; then
+    "${KEEN_PBR_HOOK:-/opt/usr/lib/keen-pbr/dnsmasq-hook.sh}" uninstall >/dev/null 2>&1 || true
+    /opt/usr/lib/keen-pbr/interface-forward.sh remove >/dev/null 2>&1 || true
+    /opt/usr/lib/keen-pbr/cleanup-firewall.sh >/dev/null 2>&1 || true
+fi
 
 exit 0

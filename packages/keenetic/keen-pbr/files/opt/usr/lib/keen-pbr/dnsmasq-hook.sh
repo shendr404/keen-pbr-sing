@@ -104,7 +104,7 @@ acquire_lock() {
 }
 
 usage() {
-    echo "usage: $0 inspect | apply <selector> | remove <selector> | uninstall | install-recommended-config | status | alive [<selector>]" >&2
+    echo "usage: $0 inspect | apply <selector> | remove <selector> | uninstall | reinstall-hook | install-recommended-config | status | port53-hint | alive [<selector>]" >&2
     exit 64
 }
 
@@ -201,9 +201,23 @@ do_apply() {
         die 2 "dnsmasq is not installed (opkg install dnsmasq-full)"
     fi
     acquire_lock
+    remove_fallback_blocks
     ensure_block
     do_restart
     log "applied"
+}
+
+# Package install and reinstall. Restores the managed block, drops a fallback
+# block left by removal, and does not restart dnsmasq: the caller restarts it
+# only when dnsmasq was running or enabled.
+do_reinstall_hook() {
+    if [ ! -f "$DNSMASQ_CONF" ]; then
+        die 2 "dnsmasq is not installed (opkg install dnsmasq-full)"
+    fi
+    acquire_lock
+    remove_fallback_blocks
+    ensure_block
+    log "reinstalled the managed block"
 }
 
 do_remove() {
@@ -215,14 +229,39 @@ do_remove() {
     log "removed"
 }
 
-# Prints dnsmasq.conf without the managed block.  When $1 is non-empty it is
-# printed in the block's place (lines separated by a backslash and "n").
-strip_block() {
-    awk -v b="$BEGIN_MARK" -v e="$END_MARK" -v repl="$1" '
+# Prints a file without one marked span.  When $3 is non-empty it is printed
+# in the span's place (lines separated by a backslash and "n").
+strip_span() {
+    _file="${4:-$DNSMASQ_CONF}"
+    awk -v b="$1" -v e="$2" -v repl="$3" '
         $0 == b { skip = 1; if (repl != "") print repl; next }
         skip && $0 == e { skip = 0; next }
         !skip { print }
-    ' "$DNSMASQ_CONF"
+    ' "$_file"
+}
+
+# Prints dnsmasq.conf without the managed block.  When $1 is non-empty it is
+# printed in the block's place (lines separated by a backslash and "n").
+strip_block() {
+    strip_span "$BEGIN_MARK" "$END_MARK" "$1" "${2:-$DNSMASQ_CONF}"
+}
+
+# One fallback block. Never call this twice on the same file.
+fallback_block_text() {
+    _servers="$(grep '^[[:space:]]*server=' "$FALLBACK_CONF" 2>/dev/null || true)"
+    [ -n "$_servers" ] || _servers="$DEFAULT_FALLBACK_SERVERS"
+    printf '%s\n%s\n%s\n' "$FALLBACK_BEGIN_MARK" "$_servers" "$FALLBACK_END_MARK"
+}
+
+# Drops every fallback span. A reinstall must not leave the removal block behind.
+remove_fallback_blocks() {
+    [ -f "$DNSMASQ_CONF" ] || return 0
+    grep -qxF "$FALLBACK_BEGIN_MARK" "$DNSMASQ_CONF" || return 0
+    _tmp="$DNSMASQ_CONF.keen-pbr.tmp"
+    strip_span "$FALLBACK_BEGIN_MARK" "$FALLBACK_END_MARK" "" "$DNSMASQ_CONF" > "$_tmp" || return 1
+    cat "$_tmp" > "$DNSMASQ_CONF" || { rm -f "$_tmp"; return 1; }
+    rm -f "$_tmp"
+    log "removed the fallback upstream block from $DNSMASQ_CONF"
 }
 
 # no-resolv is set and nothing gives dnsmasq an upstream: no unscoped server=
@@ -240,19 +279,23 @@ do_uninstall() {
     take_lock "$UNINSTALL_LOCK_TRIES" || log "uninstall: the lock is held; continuing without it"
     status=0
     if [ -f "$DNSMASQ_CONF" ] && grep -qxF "$BEGIN_MARK" "$DNSMASQ_CONF"; then
-        stripped="$(strip_block "")"
+        # Drop any fallback already in the file before inserting one, so a
+        # repeated removal cannot stack the block.
+        bare="$DNSMASQ_CONF.keen-pbr.bare"
+        strip_span "$FALLBACK_BEGIN_MARK" "$FALLBACK_END_MARK" "" "$DNSMASQ_CONF" > "$bare" || status=1
+        stripped="$(strip_block "" "$bare")"
         repl=""
         if needs_fallback_upstream "$stripped"; then
+            # awk -v turns "\n" into a newline. One block, never a second copy.
+            repl="$FALLBACK_BEGIN_MARK"
             servers="$(grep '^[[:space:]]*server=' "$FALLBACK_CONF" 2>/dev/null || true)"
             [ -n "$servers" ] || servers="$DEFAULT_FALLBACK_SERVERS"
-            # awk -v turns "\n" into a newline.
-            repl="$FALLBACK_BEGIN_MARK"
             for srv in $servers; do repl="$repl\\n$srv"; done
             repl="$repl\\n$FALLBACK_END_MARK"
             log "dnsmasq has no upstream of its own; leaving the fallback servers in $DNSMASQ_CONF"
         fi
         tmp="$DNSMASQ_CONF.keen-pbr.tmp"
-        if strip_block "$repl" > "$tmp" && cat "$tmp" > "$DNSMASQ_CONF"; then
+        if strip_block "$repl" "$bare" > "$tmp" && cat "$tmp" > "$DNSMASQ_CONF"; then
             log "removed the managed block from $DNSMASQ_CONF"
             if [ -f "$INIT_SCRIPT" ]; then
                 eval "$RESTART_CMD" >/dev/null 2>&1 || { log "uninstall: failed to restart dnsmasq"; status=1; }
@@ -261,10 +304,60 @@ do_uninstall() {
             log "uninstall: cannot update $DNSMASQ_CONF"
             status=1
         fi
-        rm -f "$tmp"
+        rm -f "$tmp" "$bare"
+    elif [ -f "$DNSMASQ_CONF" ]; then
+        # No managed block. Collapse a duplicated fallback to a single copy
+        # and otherwise leave the file alone.
+        _count="$(grep -cF "$FALLBACK_BEGIN_MARK" "$DNSMASQ_CONF" || true)"
+        if [ "${_count:-0}" -gt 1 ]; then
+            bare="$DNSMASQ_CONF.keen-pbr.bare"
+            strip_span "$FALLBACK_BEGIN_MARK" "$FALLBACK_END_MARK" "" "$DNSMASQ_CONF" > "$bare" || status=1
+            {
+                cat "$bare"
+                printf '\n'
+                fallback_block_text
+            } > "$DNSMASQ_CONF.keen-pbr.tmp" && cat "$DNSMASQ_CONF.keen-pbr.tmp" > "$DNSMASQ_CONF" || status=1
+            rm -f "$bare" "$DNSMASQ_CONF.keen-pbr.tmp"
+            log "collapsed duplicate fallback blocks in $DNSMASQ_CONF"
+        fi
     fi
     log "uninstalled"
     return "$status"
+}
+
+# ndnproxy owns :53 when dns-override is off, and dnsmasq's bind-dynamic then
+# fails with "Address already in use". Report it; never change the setting.
+port53_conflict() {
+    if [ -n "${NDNPROXY_HOLDS_53+x}" ]; then
+        [ "$NDNPROXY_HOLDS_53" = 1 ] || return 1
+    else
+        _held=1
+        if command -v netstat >/dev/null 2>&1; then
+            netstat -lnp 2>/dev/null | grep -E '[:.]53[[:space:]]' | grep -q ndnproxy || _held=0
+        else
+            _held=0
+        fi
+        [ "$_held" = 1 ] || return 1
+    fi
+    if [ -n "${DNS_OVERRIDE+x}" ]; then
+        [ "$DNS_OVERRIDE" = on ] && return 1
+        return 0
+    fi
+    if command -v ndmc >/dev/null 2>&1; then
+        ndmc -c 'show running-config' 2>/dev/null | awk '
+            /^opkg$/ { in_opkg = 1; next }
+            in_opkg && /^[^[:space:]]/ { in_opkg = 0 }
+            in_opkg && $1 == "dns-override" { found = 1 }
+            END { exit found ? 0 : 1 }
+        ' && return 1
+    fi
+    return 0
+}
+
+do_port53_hint() {
+    port53_conflict || return 1
+    printf '%s\n' "ndnproxy is using port 53 and opkg dns-override is off, so dnsmasq cannot bind 172.19.0.1:53 (Address already in use, bind-dynamic). In the router web console (http://my.keenetic.net/a) run: opkg dns-override ; system configuration save. keen-pbr does not change this setting."
+    return 0
 }
 
 # Replaces dnsmasq.conf with the recommended one.  Nothing changes unless
@@ -325,6 +418,7 @@ case "${1:-}" in
     apply) do_apply "${2:-}" ;;
     remove) do_remove "${2:-}" ;;
     uninstall) do_uninstall ;;
+    reinstall-hook) do_reinstall_hook ;;
     install-recommended-config) do_install_recommended ;;
     status)
         if block_present "$DNSMASQ_CONF"; then
@@ -332,7 +426,9 @@ case "${1:-}" in
         else
             echo not-installed
         fi
+        do_port53_hint >&2 || true
         ;;
+    port53-hint) do_port53_hint ;;
     alive) do_alive ;;
     *) usage ;;
 esac

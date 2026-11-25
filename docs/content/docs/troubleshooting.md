@@ -260,7 +260,7 @@ nslookup google.com 127.0.0.1
 
 If you see `Connection refused`, the resolver is not running or is not listening on `127.0.0.1:53`. Check its service and log: {{< term "Entware" >}} `dnsmasq` on Keenetic, `dnsmasq` on OpenWrt and Debian, or the built-in Keenetic DNS proxy.
 
-On Keenetic, if client DNS queries do not reach Entware `dnsmasq`, check the `opkg dns-override` setting. The commands `opkg dns-override` and `system configuration save` are run in the router's web console at `http://my.keenetic.net/a`, not over SSH. Details are in [installing on Keenetic]({{< relref "/docs/getting-started/installation/keenetic" >}}).
+On Keenetic, if client DNS queries do not reach Entware `dnsmasq`, check the `opkg dns-override` setting. The commands `opkg dns-override` and `system configuration save` are run in the router's web console at `http://my.keenetic.net/a`, not over SSH. The same applies when dnsmasq logs `bind 172.19.0.1:53: Address already in use`: ndnproxy still holds port 53 because `dns-override` is off. keen-pbr reports that and does not change the setting. Details are in [installing on Keenetic]({{< relref "/docs/getting-started/installation/keenetic" >}}).
 
 {{% details title="After upgrading from an older keen-pbr version" closed="true" %}}
 After the upgrade, dnsmasq management stays enabled; see [Breaking Changes in 3.4.0]({{< relref "/docs/changelog#upgrading-from-33x" >}}). If dnsmasq does not start after you removed keen-pbr manually, make sure its configuration has no leftover `conf-script=...keen-pbr...` line.
