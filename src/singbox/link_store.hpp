@@ -27,8 +27,18 @@ struct SingboxConnection {
     int port{0};
     std::string link;
     std::string source{"manual"};
+    // Set for nodes imported from a subscription. Empty for manual nodes.
+    std::string subscription_id;
     // Set when the node came from JSON and has no share link to re-parse.
     nlohmann::json outbound = nullptr;
+};
+
+struct SingboxSubscription {
+    std::string id;
+    std::string url;
+    int interval_hours{0};
+    std::int64_t last_refresh{0};
+    std::string last_error;
 };
 
 struct SingboxProfile {
@@ -39,11 +49,32 @@ struct SingboxProfile {
     std::string mode{"selector"};
     std::string active;
     std::string urltest_url{"https://www.gstatic.com/generate_204"};
+    std::string urltest_interval{"3m"};
+    // sing-box TUN stack. gvisor is the default; system is the other accepted value.
+    std::string tun_stack{"gvisor"};
+    int tun_mtu{1400};
+    // Empty means the default 172.19.x.1/30 address. Several CIDRs may be comma-separated.
+    std::string tun_address;
+    // Mirrors of subscriptions.front(), kept so older store files still load.
     std::string subscription_url;
     int interval_hours{0};
     std::int64_t last_refresh{0};
     std::string last_error;
+    std::vector<SingboxSubscription> subscriptions;
     std::vector<SingboxConnection> connections;
+};
+
+struct SingboxProfileDraft {
+    std::string id;
+    std::string name;
+    std::string interface_name{"sbtun"};
+    std::string keenetic_tag;
+    std::string mode{"selector"};
+    std::string urltest_url{"https://www.gstatic.com/generate_204"};
+    std::string urltest_interval{"3m"};
+    std::string tun_stack{"gvisor"};
+    int tun_mtu{1400};
+    std::string tun_address;
 };
 
 struct SingboxApplyResult {
@@ -51,6 +82,9 @@ struct SingboxApplyResult {
     bool singbox_reloaded{false};
     bool keenetic_applied{false};
     std::string warning;
+    std::size_t skipped{0};
+    std::vector<std::string> skipped_transports;
+    bool encryption_ignored{false};
     nlohmann::json state;
 };
 
@@ -60,6 +94,8 @@ using SingboxReloadFn = std::function<bool()>;
 using SubscriptionStopFn = std::function<bool()>;
 using SubscriptionDownloadFn = std::function<std::string(const std::string&, const SubscriptionStopFn&)>;
 using SubscriptionClock = std::function<std::int64_t()>;
+// Returns the sing-box outbound tag currently selected for a urltest group, or empty.
+using UrltestNowFn = std::function<std::string(const std::string& group_tag)>;
 
 class SingboxBusy : public std::runtime_error {
 public:
@@ -70,32 +106,31 @@ class SingboxLinkService {
 public:
     SingboxLinkService(SingboxPaths paths, SingboxCheck check, KeeneticOutboundFn keenetic,
                        SingboxReloadFn reload, SubscriptionDownloadFn download = {},
-                       SubscriptionClock clock = {});
+                       SubscriptionClock clock = {}, UrltestNowFn urltest_now = {});
 
     // Set once before starting the API or the refresh worker.
     void set_keenetic_callback(KeeneticOutboundFn keenetic) { keenetic_ = std::move(keenetic); }
     nlohmann::json preview(const std::string& link) const;
     nlohmann::json state() const;
     std::map<std::string, std::string> subscription_errors() const;
-    SingboxApplyResult save_connection(const std::string& profile_name,
-                                       const std::string& interface_name,
-                                       const std::string& tag,
-                                       const std::string& mode,
-                                       const std::string& connection_name,
-                                       const std::string& link,
-                                       const std::string& replace_id);
+    SingboxApplyResult save_profile(const SingboxProfileDraft& draft);
+    SingboxApplyResult remove_profile(const std::string& profile_id);
+    // Adds every link to the profile identified by profile_id. Does not create or merge profiles.
+    SingboxApplyResult add_connections(const std::string& profile_id,
+                                       const std::vector<std::string>& links,
+                                       const std::string& connection_name);
     SingboxApplyResult remove_connection(const std::string& profile_id, const std::string& connection_id);
     SingboxApplyResult set_mode(const std::string& profile_id, const std::string& mode,
                                 const std::string& active);
-    SingboxApplyResult save_subscription(const std::string& profile_name,
-                                         const std::string& interface_name,
-                                         const std::string& tag,
-                                          const std::string& mode,
-                                          const std::string& url,
-                                          int interval_hours);
-    // Empty ID means all subscriptions. Forced refreshes ignore interval and backoff.
+    // Attaches or replaces one subscription. Does not change the profile mode.
+    SingboxApplyResult save_subscription(const std::string& profile_id, const std::string& url,
+                                         int interval_hours, const std::string& subscription_id);
+    SingboxApplyResult remove_subscription(const std::string& profile_id,
+                                           const std::string& subscription_id);
+    // Empty profile id means all subscriptions. Forced refreshes ignore interval and backoff.
     nlohmann::json refresh_subscriptions(const std::string& profile_id, bool due_only,
-                                         const SubscriptionStopFn& stopping = {});
+                                         const SubscriptionStopFn& stopping = {},
+                                         const std::string& subscription_id = {});
 
     static nlohmann::json render_singbox_config(const std::vector<SingboxProfile>& profiles);
     static std::vector<SingboxProfile> load_profiles(const std::string& path);
@@ -107,15 +142,23 @@ private:
         std::int64_t retry_at{0};
         std::string error;
     };
+    struct ConfigWrite {
+        bool had_config{false};
+        bool removed{false};
+    };
 
     std::unique_lock<std::mutex> begin_mutation();
     void update_refresh_status(const std::string& id, RefreshStatus status);
-    RefreshStatus refresh_status(const SingboxProfile& profile) const;
-    static std::int64_t next_refresh(const SingboxProfile& profile, const RefreshStatus& status);
-    void refresh_one(std::vector<SingboxProfile>& profiles, std::size_t index,
-                     const SubscriptionStopFn& stopping);
-    bool write_checked_config(const nlohmann::json& config);
-    SingboxApplyResult commit(std::vector<SingboxProfile> profiles, const std::string& changed_id);
+    void clear_profile_status(const std::string& profile_id);
+    RefreshStatus refresh_status(const SingboxProfile& profile, const SingboxSubscription& subscription) const;
+    static std::string status_key(const SingboxProfile& profile, const SingboxSubscription& subscription);
+    static std::int64_t next_refresh(const SingboxSubscription& subscription, const RefreshStatus& status);
+    void refresh_one(std::vector<SingboxProfile>& profiles, std::size_t profile_index,
+                     std::size_t subscription_index, const SubscriptionStopFn& stopping);
+    ConfigWrite write_checked_config(const nlohmann::json& config);
+    nlohmann::json read_config_object() const;
+    SingboxApplyResult commit(std::vector<SingboxProfile> profiles, const std::string& changed_id,
+                              const std::string& previous_tag);
     std::vector<SingboxProfile> read() const;
     static void write_store(const std::string& path, const std::vector<SingboxProfile>& profiles);
 
@@ -125,6 +168,7 @@ private:
     SingboxReloadFn reload_;
     SubscriptionDownloadFn download_;
     SubscriptionClock clock_;
+    UrltestNowFn urltest_now_;
     std::mutex mutation_mutex_;
     mutable std::mutex status_mutex_;
     std::map<std::string, RefreshStatus> refresh_status_;
@@ -133,5 +177,7 @@ private:
 SingboxLinkService make_singbox_link_service();
 std::string sanitize_keenetic_tag(const std::string& name);
 bool safe_interface_name(const std::string& name);
+// User-facing sing-box check failure. Redacts uuids, passwords and keys.
+std::string format_singbox_check_error(int exit_code, bool timed_out, const std::string& output);
 
 }  // namespace keen_pbr3

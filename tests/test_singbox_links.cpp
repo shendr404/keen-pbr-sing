@@ -49,8 +49,8 @@ TEST_CASE("proxy links parse without putting secrets in the public preview") {
 
 TEST_CASE("subscriptions accept a base64 list and clash JSON") {
     const auto encoded = "dmxlc3M6Ly8xMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTFAc2VydmVyLmV4YW1wbGU6NDQzI0EK";
-    std::size_t skipped = 0;
-    const auto nodes = parse_subscription(encoded, &skipped);
+    SubscriptionParseInfo info;
+    const auto nodes = parse_subscription(encoded, &info);
     REQUIRE(nodes.size() == 1);
     CHECK(nodes[0].link.protocol == "vless");
     CHECK(nodes[0].link.server == "server.example");
@@ -61,11 +61,70 @@ TEST_CASE("subscriptions accept a base64 list and clash JSON") {
         {"name":"skip","type":"wireguard","server":"w.example","port":1}
       ]
     })";
-    skipped = 0;
-    const auto parsed = parse_subscription(clash, &skipped);
+    info = {};
+    const auto parsed = parse_subscription(clash, &info);
     REQUIRE(parsed.size() == 1);
     CHECK(parsed[0].link.protocol == "trojan");
-    CHECK(skipped == 1);
+    CHECK(info.skipped == 1);
+}
+
+TEST_CASE("reality defaults utls, hysteria2 keeps obfs, and xhttp is skipped") {
+    const auto reality = parse_proxy_link(
+        "vless://11111111-1111-1111-1111-111111111111@example.com:443"
+        "?security=reality&pbk=abc&sid=abcd&sni=www.example.com#R");
+    CHECK(reality.outbound.at("tls").at("reality").at("enabled") == true);
+    CHECK(reality.outbound.at("tls").at("utls").at("enabled") == true);
+    CHECK(reality.outbound.at("tls").at("utls").at("fingerprint") == "chrome");
+    CHECK_FALSE(reality.outbound.contains("transport"));
+
+    const auto firefox = parse_proxy_link(
+        "vless://11111111-1111-1111-1111-111111111111@example.com:443"
+        "?security=reality&pbk=abc&fp=firefox#R");
+    CHECK(firefox.outbound.at("tls").at("utls").at("fingerprint") == "firefox");
+
+    const auto encrypted = parse_proxy_link(
+        "vless://11111111-1111-1111-1111-111111111111@example.com:443"
+        "?encryption=mlkem768x25519plus&security=tls&sni=example.com#E");
+    CHECK_FALSE(encrypted.outbound.contains("encryption"));
+    CHECK_FALSE(encrypted.warnings.empty());
+
+    const auto hy2 = parse_proxy_link("hy2://secret@10.0.0.8:443?obfs=salamander&obfs-password=obfs#fi");
+    CHECK(hy2.outbound.at("obfs").at("type") == "salamander");
+    CHECK(hy2.outbound.at("obfs").at("password") == "obfs");
+
+    CHECK_THROWS_AS(parse_proxy_link(
+                        "vless://11111111-1111-1111-1111-111111111111@example.com:443?type=xhttp#X"),
+                    UnsupportedProxyTransport);
+
+    SubscriptionParseInfo info;
+    const auto nodes = parse_subscription(
+        "vless://11111111-1111-1111-1111-111111111111@good.example:443?security=reality&pbk=abc&sni=www.example.com#Good\n"
+        "vless://11111111-1111-1111-1111-111111111111@xhttp.example:443?type=xhttp#Skip\n"
+        "vless://11111111-1111-1111-1111-111111111111@split.example:443?type=splithttp#Skip2\n"
+        "hysteria2://secret@hy.example:443?obfs=salamander&obfs-password=obfs#Hy\n",
+        &info);
+    REQUIRE(nodes.size() == 2);
+    CHECK(info.skipped == 2);
+    CHECK(info.unsupported_transports.at("xhttp") == 1);
+    CHECK(info.unsupported_transports.at("splithttp") == 1);
+    CHECK(nodes[0].link.outbound.at("tls").at("utls").at("fingerprint") == "chrome");
+    CHECK(nodes[1].link.protocol == "hysteria2");
+    CHECK(nodes[1].link.outbound.at("obfs").at("type") == "salamander");
+}
+
+TEST_CASE("sing-box check errors name a missing binary and redact secrets") {
+    CHECK(format_singbox_check_error(127, false, "") == "sing-box binary is not available");
+    CHECK(format_singbox_check_error(-1, false, "exec failed") == "sing-box binary is not available");
+    CHECK(format_singbox_check_error(1, true, "FATAL ignored") == "sing-box check failed: timed out");
+    const auto message = format_singbox_check_error(
+        1, false,
+        "FATAL[0000] decode config: password=supersecret uuid 11111111-1111-1111-1111-111111111111\n");
+    CHECK(message.find("FATAL") != std::string::npos);
+    CHECK(message.find("supersecret") == std::string::npos);
+    CHECK(message.find("11111111") == std::string::npos);
+    CHECK(message.find("https://example.test/secret-token") == std::string::npos);
+    const auto url = format_singbox_check_error(1, false, "https://example.test/secret-token\n");
+    CHECK(url.find("secret-token") == std::string::npos);
 }
 
 TEST_CASE("sing-box check failure restores the previous config and store") {
@@ -87,24 +146,36 @@ TEST_CASE("sing-box check failure restores the previous config and store") {
         [](const SingboxProfile&, bool) {},
         [] { return true; });
 
-    CHECK_THROWS_WITH(service.save_connection("Proxy", "sbtun", "proxy", "selector", "Home",
-                                              "vless://11111111-1111-1111-1111-111111111111@example.com:443#Home",
-                                              ""),
+    SingboxProfileDraft draft;
+    draft.name = "Proxy";
+    draft.interface_name = "sbtun";
+    draft.keenetic_tag = "proxy";
+    draft.mode = "selector";
+    REQUIRE(service.save_profile(draft).keenetic_applied);
+    CHECK_THROWS_WITH(service.add_connections(
+                          "proxy",
+                          {"vless://11111111-1111-1111-1111-111111111111@example.com:443#Home"}, "Home"),
                       "sing-box check failed: bad outbound");
     CHECK(read_file(paths.singbox_config).find("\"old\":true") != std::string::npos);
-    CHECK(service.state()["profiles"].empty());
+    CHECK(service.state()["profiles"][0]["connections"].empty());
 
-    const auto saved = service.save_connection(
-        "Proxy", "sbtun", "proxy", "direct", "Home",
-        "trojan://pw@example.com:443?sni=example.com#Home", "");
+    draft.id = "proxy";
+    draft.mode = "direct";
+    REQUIRE(service.save_profile(draft).keenetic_applied);
+    const auto saved = service.add_connections(
+        "proxy", {"trojan://pw@example.com:443?sni=example.com#Home"}, "Home");
     CHECK(saved.singbox_checked);
     CHECK(saved.singbox_reloaded);
     CHECK(saved.keenetic_applied);
     const auto config = nlohmann::json::parse(read_file(paths.singbox_config));
     CHECK(config["inbounds"][0]["interface_name"] == "sbtun");
     CHECK(config["inbounds"][0]["auto_route"] == false);
+    CHECK(config["inbounds"][0]["stack"] == "gvisor");
+    CHECK(config["inbounds"][0]["mtu"] == 1400);
     CHECK(config["outbounds"][0]["type"] == "trojan");
-    CHECK(config["route"]["final"] == config["outbounds"][0]["tag"]);
+    CHECK(config["route"]["rules"][0]["outbound"] == config["outbounds"][0]["tag"]);
+    CHECK(config["route"]["final"] == "kpbr-direct");
+    CHECK(config.contains("old"));
     const auto state = saved.state["profiles"][0];
     CHECK(state["keenetic_tag"] == "proxy");
     CHECK(state["interface"] == "sbtun");
@@ -160,7 +231,13 @@ struct SubscriptionFixture {
     ~SubscriptionFixture() { std::filesystem::remove_all(dir); }
 
     void save(int interval = 1) {
-        REQUIRE(service.save_subscription("Proxy", "sbtun", "proxy", "direct", url, interval).singbox_reloaded);
+        SingboxProfileDraft draft;
+        draft.name = "Proxy";
+        draft.interface_name = "sbtun";
+        draft.keenetic_tag = "proxy";
+        draft.mode = "direct";
+        REQUIRE(service.save_profile(draft).keenetic_applied);
+        REQUIRE(service.save_subscription("proxy", url, interval, "").singbox_reloaded);
     }
 
     nlohmann::json profile() { return service.state()["profiles"].at(0); }
@@ -285,4 +362,100 @@ TEST_CASE("subscription download does not block reads and excludes concurrent up
     CHECK_THROWS_AS(f.service.set_mode("proxy", "selector", ""), SingboxBusy);
     release.set_value();
     CHECK(background.get().at(0).at("ok") == true);
+}
+
+TEST_CASE("sing-box merge keeps unmanaged config and refuses a taken TUN name") {
+    const auto root = std::filesystem::temp_directory_path() / "keen-pbr-singbox-merge";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    SingboxPaths paths;
+    paths.store = (root / "links.json").string();
+    paths.singbox_config = (root / "config.json").string();
+    const char* manual = R"({
+      "log": {"level": "info"},
+      "dns": {"servers": [{"tag": "local", "address": "local"}]},
+      "inbounds": [
+        {"type": "tun", "tag": "tun-in", "interface_name": "sbtun",
+         "address": ["172.19.0.1/30", "fdfe:dcba:9876::1/126"], "mtu": 1400, "stack": "gvisor"},
+        {"type": "mixed", "tag": "mixed-in", "listen": "192.168.1.1", "listen_port": 2080}
+      ],
+      "outbounds": [
+        {"type": "hysteria2", "tag": "proxy", "server": "hy.example", "server_port": 443, "password": "keep"},
+        {"type": "direct", "tag": "direct"}
+      ],
+      "route": {"final": "direct", "rules": [{"inbound": "tun-in", "outbound": "proxy"}]}
+    })";
+    std::ofstream(paths.singbox_config) << manual;
+    const auto before = read_file(paths.singbox_config);
+    SingboxLinkService service(
+        paths, [](const std::string&, std::string*) { return 0; }, [](const SingboxProfile&, bool) {}, [] { return true; });
+
+    SingboxProfileDraft taken;
+    taken.name = "Taken";
+    taken.interface_name = "sbtun";
+    taken.keenetic_tag = "taken";
+    taken.mode = "selector";
+    CHECK_THROWS_WITH(service.save_profile(taken),
+                      "TUN interface sbtun already exists in the sing-box config and is not managed by keen-pbr. "
+                      "The existing config was not changed. Choose another interface name.");
+    CHECK(read_file(paths.singbox_config) == before);
+    CHECK_FALSE(std::filesystem::exists(paths.singbox_config + ".bak-keenpbr-original"));
+
+    SingboxProfileDraft draft;
+    draft.name = "Second";
+    draft.interface_name = "sbtun2";
+    draft.keenetic_tag = "proxy2";
+    draft.mode = "urltest";
+    draft.urltest_url = "https://www.gstatic.com/generate_204";
+    draft.urltest_interval = "1m";
+    draft.tun_stack = "system";
+    draft.tun_mtu = 1280;
+    draft.tun_address = "172.19.8.1/30, fdfe:dcba:9876::5/126";
+    REQUIRE(service.save_profile(draft).keenetic_applied);
+    REQUIRE(service.add_connections("proxy2", {"trojan://pw@a.example:443#A\ntrojan://pw@b.example:443#B"}, "")
+                .singbox_checked);
+    const auto config = nlohmann::json::parse(read_file(paths.singbox_config));
+    CHECK(config["dns"]["servers"][0]["tag"] == "local");
+    CHECK(config["log"]["level"] == "info");
+    CHECK(config["inbounds"][0]["tag"] == "tun-in");
+    CHECK(config["inbounds"][0]["address"][1] == "fdfe:dcba:9876::1/126");
+    CHECK(config["inbounds"][0]["mtu"] == 1400);
+    CHECK(config["inbounds"][0]["stack"] == "gvisor");
+    CHECK(config["inbounds"][1]["listen"] == "192.168.1.1");
+    CHECK(config["inbounds"][2]["interface_name"] == "sbtun2");
+    CHECK(config["inbounds"][2]["stack"] == "system");
+    CHECK(config["inbounds"][2]["mtu"] == 1280);
+    CHECK(config["inbounds"][2]["address"][1] == "fdfe:dcba:9876::5/126");
+    CHECK(config["outbounds"][0]["type"] == "hysteria2");
+    CHECK(config["outbounds"][0]["password"] == "keep");
+    CHECK(config["outbounds"][1]["tag"] == "direct");
+    CHECK(config["route"]["final"] == "direct");
+    CHECK(config["route"]["rules"][0]["outbound"] == "proxy");
+    bool saw_group = false;
+    for (const auto& outbound : config["outbounds"]) {
+        if (outbound.value("type", "") == "urltest") {
+            saw_group = true;
+            CHECK(outbound["interval"] == "1m");
+            CHECK(outbound["outbounds"].size() == 2);
+        }
+    }
+    CHECK(saw_group);
+    CHECK(std::filesystem::exists(paths.singbox_config + ".bak-keenpbr-original"));
+    CHECK(read_file(paths.singbox_config + ".bak-keenpbr-original") == before);
+
+    SingboxProfileDraft other;
+    other.name = "Other";
+    other.interface_name = "sbtun2";
+    other.keenetic_tag = "other";
+    CHECK_THROWS_WITH(service.save_profile(other), "TUN interface is already used");
+    other.interface_name = "sbtun3";
+    other.keenetic_tag = "proxy2";
+    CHECK_THROWS_WITH(service.save_profile(other), "keen-pbr tag is already used");
+
+    const auto removed_id = service.state()["profiles"][0]["connections"][0]["id"].get<std::string>();
+    REQUIRE(service.remove_connection("proxy2", removed_id).singbox_checked);
+    const auto still = nlohmann::json::parse(read_file(paths.singbox_config));
+    CHECK(still["outbounds"][0]["password"] == "keep");
+    CHECK(still["inbounds"][0]["interface_name"] == "sbtun");
+    std::filesystem::remove_all(root);
 }

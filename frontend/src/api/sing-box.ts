@@ -7,6 +7,15 @@ export type SingboxConnection = {
   server: string
   port: number
   source: string
+  subscription_id?: string
+}
+
+export type SingboxSubscription = {
+  id: string
+  interval_hours: number
+  last_refresh: number
+  next_refresh?: number | null
+  last_error: string
 }
 
 export type SingboxProfile = {
@@ -16,17 +25,27 @@ export type SingboxProfile = {
   keenetic_tag: string
   mode: "direct" | "selector" | "urltest" | string
   active: string
+  urltest_url: string
+  urltest_interval: string
+  tun_stack: string
+  tun_mtu: number
+  tun_address: string
+  urltest_now?: string
   has_subscription: boolean
   interval_hours: number
   last_refresh: number
   next_refresh?: number | null
   last_error: string
   connections: SingboxConnection[]
+  subscriptions: SingboxSubscription[]
 }
 
 export type SingboxState = {
   profiles: SingboxProfile[]
   warning?: string
+  skipped?: number
+  skipped_transports?: string[]
+  encryption_ignored?: boolean
   singbox_checked?: boolean
   singbox_reloaded?: boolean
   keenetic_applied?: boolean

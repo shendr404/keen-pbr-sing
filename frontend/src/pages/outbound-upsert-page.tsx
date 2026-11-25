@@ -12,7 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
-import { useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Redirect, useLocation } from "wouter"
 
 import type { ApiError } from "@/api/client"
@@ -30,6 +30,7 @@ import {
   selectConfig,
   selectOutbounds,
 } from "@/api/selectors"
+import { fetchSingboxProfiles } from "@/api/sing-box"
 import {
   AdvancedSection,
   FormSection,
@@ -251,20 +252,35 @@ function OutboundForm({
     ) ?? []
   )
 
+  const singboxQuery = useQuery({
+    queryKey: ["sing-box-profiles"],
+    queryFn: fetchSingboxProfiles,
+  })
+  const singboxByTag = new Map(
+    (singboxQuery.data?.profiles ?? []).map((profile) => [profile.keenetic_tag, profile])
+  )
   const candidates: LadderCandidate[] = existingOutbounds
     .filter(
       (item) =>
         (item.type === "interface" || item.type === "table") &&
         item.tag !== draft.tag
     )
-    .map((item) => ({
-      tag: item.tag,
-      detail:
-        item.type === "interface"
-          ? item.interface
-          : t("overview.routing.tableLabel", { value: item.table }),
-      runtime: runtimeByTag.get(item.tag),
-    }))
+    .map((item) => {
+      const singbox = item.type === "interface" ? singboxByTag.get(item.tag) : undefined
+      return {
+        tag: item.tag,
+        detail: singbox
+          ? t("pages.singbox.candidate", {
+              interface: item.interface,
+              mode: singbox.mode,
+              count: singbox.connections.length,
+            })
+          : item.type === "interface"
+            ? item.interface
+            : t("overview.routing.tableLabel", { value: item.table }),
+        runtime: runtimeByTag.get(item.tag),
+      }
+    })
 
   const existingTag = mode === "edit" ? outboundId : undefined
   // Index the outbound has in the array that is sent (new ones are appended).

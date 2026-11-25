@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useLocation } from "wouter"
+import { Link, useLocation } from "wouter"
 
 import type { ApiError } from "@/api/client"
 import type { ConfigObject } from "@/api/generated/model/configObject"
@@ -288,11 +288,17 @@ export function OutboundsPage() {
                 {singboxQuery.data?.profiles
                   .filter((profile) => profile.keenetic_tag === outbound.tag)
                   .map((profile) => (
-                    <div key={profile.id}>
-                      {t("pages.singbox.card", {
-                        mode: profile.mode,
-                        interface: profile.interface,
-                      })}
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2" key={profile.id}>
+                      <span>
+                        {t("pages.singbox.card", {
+                          mode: profile.mode,
+                          interface: profile.interface,
+                          count: profile.connections.length,
+                        })}
+                      </span>
+                      <Link className="text-primary underline-offset-4 hover:underline" href="/sing-box">
+                        {t("pages.singbox.manage")}
+                      </Link>
                     </div>
                   ))}
               </div>,

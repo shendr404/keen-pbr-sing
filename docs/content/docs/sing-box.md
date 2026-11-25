@@ -1,19 +1,33 @@
 ---
-title: Sing-box connections and subscriptions
+title: Sing-box profiles, nodes and subscriptions
 weight: 7
 ---
 
-keen-pbr-sing integrates sing-box TUN routing with Keenetic policy routing.
+The **Sing-box interfaces** page treats each proxy path as a profile: a keen-pbr outbound tag, a TUN interface name, and a node policy.
 
-Use the **Sing-box** Web UI page to preview and add `vless://`, `hysteria2://`, `trojan://`, `ss://` or `vmess://` connections. Configure an `interface` outbound for `sbtun` with gateway `auto`.
+Create a profile, then add links (one per line) or attach subscriptions. The page registers an `interface` outbound **without** `gateway`. A TUN or point-to-point interface does not need one, and `auto` only produces a warning. Several of these interface outbounds can be members of a keen-pbr `urltest` or `icmptest` group.
 
-Subscription sources can contain plain or base64-encoded links, sing-box JSON, or Clash JSON. Set a refresh interval in hours; `0` disables automatic refresh. The daemon refreshes due subscriptions in the background, limiting downloads to 2 MiB with a 20-second timeout and retrying failures after five minutes.
+Modes are `direct` (one node), `selector` (manual choice; clicking a node does not change the mode) and `urltest` (sing-box picks by latency). TUN defaults are stack `gvisor`, MTU 1400, and address `172.19.x.1/30`.
 
-To manually refresh:
+Supported share links are `vless://`, `vmess://`, `trojan://`, `ss://` and `hysteria2://`. sing-box 1.14 transports are `tcp`, `ws`, `grpc`, `http`, `httpupgrade` and `quic`. Lines that use `xhttp`, `splithttp` or another unknown transport are skipped, and the UI reports how many were skipped. VLESS Reality without `fp` gets `utls` fingerprint `chrome`. VLESS `encryption` is ignored.
+
+Subscriptions may be a plain or base64 list, sing-box JSON, or Clash JSON. A profile can hold more than one. The interval is in hours; `0` is manual only. The daemon refreshes due subscriptions in the background (2 MiB, 20 seconds, five minutes between failures).
 
 ```sh
 /opt/usr/bin/keen-pbr subscriptions refresh --all
 /opt/usr/bin/keen-pbr subscriptions refresh <id>
 ```
 
-Before applying changed nodes, the existing sing-box config is backed up and checked using `sing-box check`. Invalid changes are rolled back. Links remain private in `/opt/etc/keen-pbr/sing-box-links.json`.
+`sing-box check` errors return the FATAL/ERROR line with uuids, passwords and keys redacted. A missing binary is reported separately.
+
+## Existing `/opt/etc/sing-box/config.json`
+
+keen-pbr does not replace the file. The first edit saves `config.json.bak-keenpbr-original` once. Each later edit refreshes `config.json.bak-keenpbr` and runs `sing-box check` before keeping the new file.
+
+Only objects tagged `kpbr-` are managed (`kpbr-tun-<profile>`, `kpbr-n-…`, `kpbr-g-<profile>`, and `kpbr-direct` when the file had no outbounds of its own). `dns`, `log`, `experimental`, and every other inbound, outbound and route rule are preserved. That includes a mixed inbound on `192.168.1.1:2080`, a manual hysteria2 outbound, and an existing `sbtun` TUN with its addresses, MTU and stack.
+
+If the profile's interface name is already used by an inbound keen-pbr does not own, the save is rejected and the file is left untouched. Pick another name, such as `sbtun2`. A working manual config used by a keen-pbr outbound such as `tun_hu` therefore survives the first save after upgrade.
+
+Removing the last managed node deletes only `kpbr-` objects. A file that contained nothing else is removed; a file that still has unmanaged sections is written back and reloaded.
+
+Links stay in `/opt/etc/keen-pbr/sing-box-links.json` and are not returned by the profile list.
