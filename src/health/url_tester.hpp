@@ -43,12 +43,16 @@ public:
     // Uses CURLOPT_MARK to route test traffic via the correct routing table.
     // Retries up to retry.attempts times with retry.interval_ms delay between attempts.
     // Returns the result with latency_ms from the fastest successful attempt.
+    // When ipv6_enabled is false, every attempt is IPv4. When it is true, an
+    // attempt starts on either family and, after a timeout, connect, or TLS
+    // failure, retries once on IPv4 inside the same attempt.
     URLTestResult test(const std::string& url, uint32_t fwmark,
-                       uint32_t timeout_ms, const RetryConfig& retry);
+                       uint32_t timeout_ms, const RetryConfig& retry,
+                       bool ipv6_enabled = true);
 
 private:
     URLTestResult test_once(const std::string& url, uint32_t fwmark,
-                            uint32_t timeout_ms);
+                            uint32_t timeout_ms, HttpIpResolve ip_resolve);
     std::shared_ptr<HttpTransport> transport_;
 };
 

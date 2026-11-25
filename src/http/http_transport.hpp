@@ -12,6 +12,13 @@
 
 namespace keen_pbr3 {
 
+// Values match libcurl CURLOPT_IPRESOLVE (WHATEVER=0, V4=1, V6=2).
+enum class HttpIpResolve : long {
+    whatever = 0,
+    v4 = 1,
+    v6 = 2,
+};
+
 struct HttpTransportRequest {
     std::string url;
     long timeout_ms{0};
@@ -25,6 +32,7 @@ struct HttpTransportRequest {
     size_t max_response_size{size_t{8} * 1024U * 1024U};
     bool skip_if_busy{false};
     std::function<bool()> cancelled;
+    HttpIpResolve ip_resolve{HttpIpResolve::whatever};
 };
 
 struct HttpTransportResponse {

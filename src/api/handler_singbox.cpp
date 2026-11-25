@@ -89,6 +89,14 @@ void sync_keenetic_outbound(ApiContext& ctx, const SingboxProfile& profile, bool
         !ctx.enqueue_apply_validated_config_fn) {
         throw ApiError("config apply is unavailable", 503);
     }
+    if (ctx.begin_save_operation_fn) ctx.begin_save_operation_fn();
+    struct FinishSave {
+        ApiContext* context;
+        bool active;
+        ~FinishSave() {
+            if (active && context->finish_config_operation_fn) context->finish_config_operation_fn();
+        }
+    } finish{&ctx, static_cast<bool>(ctx.begin_save_operation_fn)};
     nlohmann::json doc;
     api::to_json(doc, ctx.get_visible_config_fn());
     if (!doc.contains("outbounds") || !doc["outbounds"].is_array()) {
@@ -140,7 +148,8 @@ void register_singbox_handler(ApiServer& server, ApiContext& ctx, SingboxLinkSer
     });
     server.post("/api/sing-box/profiles", [&service](const std::string& body) {
         try {
-            return result_json(service.save_profile(profile_draft(require_object(body))));
+            const auto json = require_object(body);
+            return result_json(service.save_profile(profile_draft(json), link_lines(json)));
         } catch (const nlohmann::json::exception&) {
             throw ApiError("invalid JSON", 400);
         } catch (const SingboxBusy& error) {

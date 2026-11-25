@@ -724,6 +724,9 @@ bool is_interface_outbound_family_reachable(
 }
 
 bool interface_has_routed_ipv6(const DumpedInterface& interface) {
+    // Unique-local addresses (fc00::/7) still count. A site can route them on
+    // purpose, and this also decides whether a normal interface gets an IPv6
+    // default. A probe that hangs on a ULA-only TUN is retried over IPv4.
     return std::any_of(
         interface.ipv6_addresses.begin(), interface.ipv6_addresses.end(),
         [](const std::string& cidr) {

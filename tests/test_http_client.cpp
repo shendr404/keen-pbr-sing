@@ -133,7 +133,68 @@ TEST_CASE("url tester uses discard transport probes and retry policy") {
     CHECK(result.latency_ms == 12);
     CHECK(result.latency_us.value_or(0) == 12345);
     CHECK(transport->request.discard_body);
-    CHECK(transport->request.timeout_ms == 456);
+    // IPv6 is enabled, so the first try keeps half the budget for an IPv4 retry.
+    CHECK(transport->request.timeout_ms == 228);
+    CHECK(transport->request.ip_resolve == keen_pbr3::HttpIpResolve::whatever);
     CHECK(transport->request.fwmark == 77);
     CHECK(transport->request.max_redirects == 3);
+}
+
+TEST_CASE("url tester falls back to IPv4 after a dual-stack timeout") {
+    class ScriptedTransport final : public keen_pbr3::HttpTransport {
+    public:
+        std::vector<keen_pbr3::HttpTransportRequest> requests;
+        keen_pbr3::HttpTransportResponse perform(const keen_pbr3::HttpTransportRequest& value) override {
+            requests.push_back(value);
+            if (value.ip_resolve == keen_pbr3::HttpIpResolve::whatever) {
+                throw keen_pbr3::HttpTransportError(
+                    "HTTP request failed: Connection timed out after 2500 milliseconds");
+            }
+            return {204, {}, {}, std::chrono::microseconds(700000)};
+        }
+    };
+    auto transport = std::make_shared<ScriptedTransport>();
+    keen_pbr3::URLTester tester(transport);
+    keen_pbr3::RetryConfig retry;
+    retry.attempts = 1;
+    const auto result = tester.test("https://example.test/generate_204", 9, 5000, retry, true);
+    REQUIRE(transport->requests.size() == 2);
+    CHECK(transport->requests[0].ip_resolve == keen_pbr3::HttpIpResolve::whatever);
+    CHECK(transport->requests[0].timeout_ms == 2500);
+    CHECK(transport->requests[1].ip_resolve == keen_pbr3::HttpIpResolve::v4);
+    CHECK(transport->requests[1].timeout_ms <= 5000);
+    CHECK(transport->requests[1].timeout_ms >= 4000);
+    CHECK(result.success);
+    CHECK(result.latency_ms == 700);
+    CHECK(result.latency_us.value_or(0) == 700000);
+}
+
+TEST_CASE("url tester stays on IPv4 when IPv6 is disabled and skips fallback for HTTP errors") {
+    class ScriptedTransport final : public keen_pbr3::HttpTransport {
+    public:
+        std::vector<keen_pbr3::HttpTransportRequest> requests;
+        bool http_error{false};
+        keen_pbr3::HttpTransportResponse perform(const keen_pbr3::HttpTransportRequest& value) override {
+            requests.push_back(value);
+            if (http_error) return {503, {}, {}, std::chrono::microseconds(1000)};
+            return {204, {}, {}, std::chrono::microseconds(800000)};
+        }
+    };
+    auto transport = std::make_shared<ScriptedTransport>();
+    keen_pbr3::URLTester tester(transport);
+    keen_pbr3::RetryConfig retry;
+    retry.attempts = 1;
+    const auto v4 = tester.test("https://example.test/health", 3, 5000, retry, false);
+    REQUIRE(transport->requests.size() == 1);
+    CHECK(v4.success);
+    CHECK(transport->requests[0].ip_resolve == keen_pbr3::HttpIpResolve::v4);
+    CHECK(transport->requests[0].timeout_ms == 5000);
+
+    transport->requests.clear();
+    transport->http_error = true;
+    const auto http = tester.test("https://example.test/health", 3, 5000, retry, true);
+    CHECK_FALSE(http.success);
+    CHECK(http.error == "HTTP 503");
+    REQUIRE(transport->requests.size() == 1);
+    CHECK(transport->requests[0].ip_resolve == keen_pbr3::HttpIpResolve::whatever);
 }

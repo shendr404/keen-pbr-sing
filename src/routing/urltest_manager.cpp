@@ -128,6 +128,11 @@ void UrltestManager::trigger_immediate_test(const std::string& urltest_tag) {
     queue_probe_unlocked(urltest_tag, "manual");
 }
 
+void UrltestManager::set_ipv6_enabled(bool enabled) {
+    KPBR_SHARED_UNIQUE_LOCK(lock, mutex_);
+    ipv6_enabled_ = enabled;
+}
+
 bool UrltestManager::commit_probe_results(const std::string& urltest_tag,
                                           std::uint64_t generation,
                                           std::map<std::string, URLTestResult> results) {
@@ -272,6 +277,7 @@ bool UrltestManager::queue_probe_unlocked(const std::string& tag,
                                           const std::string& reason) {
     std::vector<TestCandidate> candidates;
     std::uint64_t probe_generation = 0;
+    bool ipv6_enabled = true;
     const TraceId trace_id = ensure_trace_id();
 
     {
@@ -297,6 +303,7 @@ bool UrltestManager::queue_probe_unlocked(const std::string& tag,
         state.probe_inflight = true;
         state.generation = generation_++;
         probe_generation = state.generation;
+        ipv6_enabled = ipv6_enabled_;
 
         for (const auto& group : state.config.outbound_groups.value_or(std::vector<OutboundGroup>{})) {
             for (const auto& child_tag : outbound_group_tags(group)) {
@@ -355,6 +362,7 @@ bool UrltestManager::queue_probe_unlocked(const std::string& tag,
          reason,
          candidates_for_probe = candidates,
          candidate_tags_for_probe = candidate_tags,
+         ipv6_enabled,
          trace_id]() mutable {
             ScopedTraceContext trace_scope(trace_id);
             auto completion_guard = make_scope_exit([this, &tag, probe_generation,
@@ -394,7 +402,7 @@ bool UrltestManager::queue_probe_unlocked(const std::string& tag,
                                             candidate.max_failed, candidate.packet_interval_ms,
                                             candidate.timeout_ms, candidate.max_rtt_ms)
                         : tester_.test(candidate.url, candidate.fwmark, candidate.timeout_ms,
-                                       candidate.retry);
+                                       candidate.retry, ipv6_enabled);
                 } catch (const std::exception& error) {
                     result.error = std::string("probe exception: ") + error.what();
                 } catch (...) {

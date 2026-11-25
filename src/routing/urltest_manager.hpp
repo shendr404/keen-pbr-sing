@@ -86,6 +86,8 @@ public:
 
     // Run tests immediately for a specific test-group outbound (e.g. on SIGUSR1).
     void trigger_immediate_test(const std::string& urltest_tag);
+    // daemon.ipv6_enabled. False forces URL probes to IPv4.
+    void set_ipv6_enabled(bool enabled);
     bool commit_probe_results(const std::string& urltest_tag,
                               std::uint64_t generation,
                               std::map<std::string, URLTestResult> results);
@@ -131,6 +133,7 @@ private:
     mutable TracedSharedMutex mutex_;
     std::map<std::string, UrltestState> states_ GUARDED_BY(mutex_);
     std::uint64_t generation_ GUARDED_BY(mutex_){1};
+    bool ipv6_enabled_ GUARDED_BY(mutex_){true};
 };
 
 } // namespace keen_pbr3

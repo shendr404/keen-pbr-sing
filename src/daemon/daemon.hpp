@@ -325,7 +325,8 @@ private:
   // externally visible active snapshot unchanged until its transaction commits.
   void apply_prepared_runtime_inputs(PreparedRuntimeInputs prepared,
                                      bool publish_active_snapshot = true,
-                                     bool defer_dnsmasq_sync = false);
+                                     bool defer_dnsmasq_sync = false,
+                                     bool finish_runtime = true);
   PreparedRuntimeInputs
   prepare_runtime_inputs(const Config &config);
   void reload_from_disk();

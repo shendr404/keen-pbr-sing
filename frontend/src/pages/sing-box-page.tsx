@@ -49,17 +49,6 @@ const emptyDraft = (): Draft => ({
   seeds: "",
 })
 
-function isSubscriptionUrl(line: string) {
-  return /^https?:\/\//i.test(line)
-}
-
-function splitSeedLines(text: string) {
-  return text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-}
-
 function draftFromProfile(profile: SingboxProfile): Draft {
   return {
     id: profile.id,
@@ -155,7 +144,7 @@ export function SingboxPage() {
   const saveProfile = useMutation({
     mutationFn: async () => {
       const known = new Set((profiles.data?.profiles ?? []).map((profile) => profile.id))
-      let state = await postSingbox("/api/sing-box/profiles", {
+      const state = await postSingbox("/api/sing-box/profiles", {
         id: draft.id,
         name: draft.name,
         tag: draft.tag,
@@ -166,24 +155,10 @@ export function SingboxPage() {
         tun_stack: draft.tunStack,
         tun_mtu: nonNegative(draft.tunMtu) || 1400,
         tun_address: draft.tunAddress,
+        links: draft.seeds,
       })
       const created = state.profiles.find((profile) => !known.has(profile.id)) ?? state.profiles.at(-1)
-      const profileId = created?.id ?? ""
-      createdId.current = profileId
-      const lines = splitSeedLines(draft.seeds)
-      const links = lines.filter((line) => !isSubscriptionUrl(line))
-      const subscriptions = lines.filter(isSubscriptionUrl)
-      if (profileId && links.length > 0) {
-        state = await postSingbox("/api/sing-box/connections", { profile_id: profileId, links: links.join("\n") })
-      }
-      for (const url of subscriptions) {
-        if (!profileId) break
-        state = await postSingbox("/api/sing-box/subscriptions", {
-          profile_id: profileId,
-          url,
-          interval_hours: 0,
-        })
-      }
+      createdId.current = created?.id ?? ""
       return state
     },
     onMutate: clearMessages,

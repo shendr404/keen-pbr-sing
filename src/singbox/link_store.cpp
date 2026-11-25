@@ -1176,7 +1176,8 @@ SingboxApplyResult SingboxLinkService::commit(std::vector<SingboxProfile> profil
     return result;
 }
 
-SingboxApplyResult SingboxLinkService::save_profile(const SingboxProfileDraft& draft) {
+SingboxApplyResult SingboxLinkService::save_profile(const SingboxProfileDraft& draft,
+                                                         const std::vector<std::string>& seed_lines) {
     const auto lock = begin_mutation();
     auto profiles = read();
     std::string previous_tag;
@@ -1198,11 +1199,74 @@ SingboxApplyResult SingboxLinkService::save_profile(const SingboxProfileDraft& d
         profile->interface_name = next_free_interface(existing, profiles, profile->id);
     }
     if (!safe_interface_name(profile->interface_name)) throw std::runtime_error("interface name is invalid");
+    SubscriptionParseInfo seed_info;
+    std::size_t imported = 0;
+    for (const auto& line : split_links(seed_lines)) {
+        const bool subscription = line.rfind("http://", 0) == 0 || line.rfind("https://", 0) == 0;
+        if (subscription) {
+            if (!download_) throw std::runtime_error("subscription download failed");
+            std::string body;
+            try {
+                body = download_(line, {});
+            } catch (const std::exception&) {
+                throw std::runtime_error("subscription download failed");
+            }
+            auto nodes = subscription_connections(body, seed_info);
+            SingboxSubscription subscription_record;
+            subscription_record.id = make_subscription_id(*profile, line);
+            subscription_record.url = line;
+            subscription_record.interval_hours = 0;
+            subscription_record.last_refresh = clock_();
+            subscription_record.last_error = subscription_warning(seed_info);
+            const auto subscription_id = subscription_record.id;
+            profile->subscriptions.push_back(std::move(subscription_record));
+            for (auto& node : nodes) {
+                node.subscription_id = subscription_id;
+                node.source = "subscription";
+                profile->connections.push_back(std::move(node));
+                ++imported;
+            }
+            continue;
+        }
+        try {
+            auto parsed = parse_proxy_link(line);
+            for (const auto& warning : parsed.warnings) {
+                if (warning.find("encryption") != std::string::npos) ++seed_info.encryption_ignored;
+            }
+            SingboxConnection connection;
+            connection.id = proxy_node_id(parsed);
+            connection.name = parsed.name;
+            connection.protocol = parsed.protocol;
+            connection.server = parsed.server;
+            connection.port = parsed.port;
+            connection.link = line;
+            connection.source = "manual";
+            profile->connections.push_back(std::move(connection));
+            ++imported;
+        } catch (const UnsupportedProxyTransport& error) {
+            ++seed_info.skipped;
+            ++seed_info.unsupported_transports[error.transport()];
+        } catch (const std::runtime_error&) {
+            ++seed_info.skipped;
+        }
+    }
+    if (!split_links(seed_lines).empty() && imported == 0) {
+        auto message = subscription_warning(seed_info);
+        if (message.empty()) message = "proxy link could not be parsed";
+        throw std::runtime_error(message);
+    }
+    if (profile->active.empty() && !profile->connections.empty()) {
+        profile->active = profile->connections.back().id;
+    }
     validate_unique(profiles);
     assert_interfaces_available(existing, profiles);
     const auto id = profile->id;
     const bool has_nodes = !profile->connections.empty();
-    if (has_nodes) return commit(std::move(profiles), id, previous_tag);
+    if (has_nodes) {
+        auto result = commit(std::move(profiles), id, previous_tag);
+        attach_skips(result, seed_info);
+        return result;
+    }
 
     const auto previous = read();
     for (auto& item : profiles) mirror_subscription(item);
@@ -1242,7 +1306,12 @@ SingboxApplyResult SingboxLinkService::remove_profile(const std::string& profile
     clear_profile_status(profile_id);
     if (removed.connections.empty()) {
         write_store(paths_.store, remaining);
-        if (keenetic_) keenetic_(removed, false);
+        try {
+            if (keenetic_) keenetic_(removed, false);
+        } catch (const std::exception&) {
+            write_store(paths_.store, profiles);
+            throw;
+        }
         SingboxApplyResult result;
         result.keenetic_applied = true;
         result.state = public_state(remaining);

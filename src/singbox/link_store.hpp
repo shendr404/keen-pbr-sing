@@ -114,7 +114,10 @@ public:
     nlohmann::json preview(const std::string& link) const;
     nlohmann::json state() const;
     std::map<std::string, std::string> subscription_errors() const;
-    SingboxApplyResult save_profile(const SingboxProfileDraft& draft);
+    // seed_lines are share links or subscription URLs, one entry each. They are
+    // imported before the profile is committed, so a failure leaves no profile.
+    SingboxApplyResult save_profile(const SingboxProfileDraft& draft,
+                                    const std::vector<std::string>& seed_lines = {});
     SingboxApplyResult remove_profile(const std::string& profile_id);
     // Adds every link to the profile identified by profile_id. Does not create or merge profiles.
     SingboxApplyResult add_connections(const std::string& profile_id,

@@ -493,3 +493,57 @@ TEST_CASE("empty TUN name and address pick the next free values") {
     CHECK(service.state()["profiles"][0]["tun_address"] == "");
     std::filesystem::remove_all(root);
 }
+
+TEST_CASE("a profile created with a link gets a TUN and rolls back when keenetic apply fails") {
+    const auto root = std::filesystem::temp_directory_path() / "keen-pbr-singbox-one-step";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    SingboxPaths paths;
+    paths.store = (root / "links.json").string();
+    paths.singbox_config = (root / "config.json").string();
+    const char* manual = R"({"inbounds":[{"type":"tun","tag":"tun-in","interface_name":"sbtun","address":["172.19.1.1/30"]}]})";
+    std::ofstream(paths.singbox_config) << manual;
+    const auto before = read_file(paths.singbox_config);
+    int keenetic_calls = 0;
+    SingboxLinkService failing(
+        paths,
+        [](const std::string&, std::string*) { return 0; },
+        [&](const SingboxProfile&, bool) {
+            ++keenetic_calls;
+            throw std::runtime_error("invalid runtime transition: running -> running");
+        },
+        [] { return true; });
+    SingboxProfileDraft draft;
+    draft.name = "Proxy";
+    draft.keenetic_tag = "proxy";
+    draft.mode = "direct";
+    CHECK_THROWS_WITH(failing.save_profile(draft, {"trojan://pw@a.example:443#A"}),
+                      "invalid runtime transition: running -> running");
+    CHECK(keenetic_calls == 1);
+    CHECK(read_file(paths.singbox_config) == before);
+    CHECK(failing.state()["profiles"].empty());
+
+    SingboxLinkService service(
+        paths, [](const std::string&, std::string*) { return 0; },
+        [](const SingboxProfile& profile, bool present) {
+            CHECK(present);
+            CHECK(profile.interface_name == "sbtun2");
+            CHECK(profile.keenetic_tag == "proxy");
+        },
+        [] { return true; });
+    const auto saved = service.save_profile(draft, {"trojan://pw@a.example:443#A"});
+    CHECK(saved.singbox_checked);
+    CHECK(saved.singbox_reloaded);
+    const auto config = nlohmann::json::parse(read_file(paths.singbox_config));
+    CHECK(config["inbounds"][0]["interface_name"] == "sbtun");
+    CHECK(config["inbounds"][1]["interface_name"] == "sbtun2");
+    CHECK(config["inbounds"][1]["tag"].get<std::string>().rfind("kpbr-tun-", 0) == 0);
+    bool saw_trojan = false;
+    for (const auto& outbound : config["outbounds"]) {
+        if (outbound.value("type", "") == "trojan") saw_trojan = true;
+    }
+    CHECK(saw_trojan);
+    REQUIRE(saved.state["profiles"].size() == 1);
+    CHECK(saved.state["profiles"][0]["connections"].size() == 1);
+    std::filesystem::remove_all(root);
+}

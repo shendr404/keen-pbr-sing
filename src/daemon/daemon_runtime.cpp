@@ -1015,6 +1015,8 @@ void Daemon::register_urltest_outbounds() {
                                                     trace_id);
             });
     }
+    urltest_manager_->set_ipv6_enabled(
+        config_.daemon.value_or(DaemonConfig{}).ipv6_enabled.value_or(config_defaults::ipv6_enabled));
 
     for (const auto& ob : config_.outbounds.value_or(std::vector<Outbound>{})) {
         if (ob.type == OutboundType::URLTEST || ob.type == OutboundType::ICMPTEST) {
@@ -1380,9 +1382,14 @@ PreparedRuntimeInputs Daemon::prepare_runtime_inputs(const Config& config) {
 
 void Daemon::apply_prepared_runtime_inputs(PreparedRuntimeInputs prepared,
                                            bool publish_active_snapshot,
-                                           bool defer_dnsmasq_sync) {
+                                           bool defer_dnsmasq_sync,
+                                           bool finish_runtime) {
     reconcile_prepared_runtime(std::move(prepared));
-    complete_running_runtime("config apply complete", defer_dnsmasq_sync);
+    // Callers that still have a durable commit to finish leave the runtime
+    // in `applying` and complete it once, after that commit.
+    if (finish_runtime) {
+        complete_running_runtime("config apply complete", defer_dnsmasq_sync);
+    }
     if (publish_active_snapshot) {
         config_store_.replace_active(config_, outbound_marks_);
         publish_runtime_state();
