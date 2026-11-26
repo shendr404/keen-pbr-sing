@@ -2,6 +2,7 @@ add_executable(keen-pbr-sx-tests
   ../src/auth/password.cpp
   ../src/singbox/link_parser.cpp
   ../src/singbox/link_store.cpp
+  ../src/singbox/xray_config.cpp
   test_main.cpp
   test_firewall_verifier.cpp
   test_firewall_runtime.cpp
@@ -60,6 +61,7 @@ add_executable(keen-pbr-sx-tests
   test_list_parser.cpp
   test_list_streamer.cpp
   test_singbox_links.cpp
+  test_xray_core.cpp
   test_list_service.cpp
   test_domain_index.cpp
   test_control_protocol.cpp

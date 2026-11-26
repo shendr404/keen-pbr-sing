@@ -1080,7 +1080,17 @@ bool Daemon::queue_subscription_refresh(
             nlohmann::json results;
             const char* error = nullptr;
             try {
-              if (!stopping()) results = singbox_links_.refresh_subscriptions(profile_id, due_only, stopping);
+              if (!stopping()) {
+                const Config active = config_store_.active_config();
+                std::string core = "sing-box";
+                std::string bin;
+                if (active.proxy) {
+                  if (active.proxy->core && !active.proxy->core->empty()) core = *active.proxy->core;
+                  if (active.proxy->xray_bin) bin = *active.proxy->xray_bin;
+                }
+                singbox_links_.set_proxy(core, bin);
+                results = singbox_links_.refresh_subscriptions(profile_id, due_only, stopping);
+              }
               if (stopping()) error = "daemon is shutting down";
             } catch (const SingboxBusy&) {
               error = "another sing-box operation is in progress";

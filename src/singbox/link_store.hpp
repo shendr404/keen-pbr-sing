@@ -99,11 +99,27 @@ struct SingboxApplyResult {
 
 // nodes is the full set that should exist. removed_tags are keen-pbr-sx tags that
 // this change drops. owned_tags are the tags this store already managed.
+struct InterfaceRename {
+    std::string tag;
+    std::string from;
+    std::string to;
+};
+
 struct KeeneticSyncRequest {
     std::vector<SingboxNode> nodes;
     std::vector<std::string> removed_tags;
     std::vector<std::string> owned_tags;
+    // Old TUN name -> new TUN name. Group members that used the old name are rewritten.
+    std::vector<InterfaceRename> renames;
+    // When set, written into config.proxy in the same save as the outbounds.
+    nlohmann::json proxy;
+    bool has_proxy{false};
 };
+
+// Group members name outbound tags. Tags stay put across a core switch, so a
+// member equal to the tag is left alone. A member that instead stored the old
+// TUN name is rewritten to the new one (xrtun, xrtun2, ...).
+void apply_interface_renames(nlohmann::json& config, const std::vector<InterfaceRename>& renames);
 
 using SingboxCheck = std::function<int(const std::string& config_path, std::string* error)>;
 using KeeneticSyncFn = std::function<void(const KeeneticSyncRequest& request)>;
@@ -111,6 +127,13 @@ using SingboxReloadFn = std::function<bool()>;
 using SubscriptionStopFn = std::function<bool()>;
 using SubscriptionDownloadFn = std::function<std::string(const std::string&, const SubscriptionStopFn&)>;
 using SubscriptionClock = std::function<std::int64_t()>;
+// core is "sing-box" or "xray". action is "start" or "stop".
+// bin and config are the xray executable and xray.json; they are empty for sing-box.
+using CoreProcessFn = std::function<bool(const std::string& core, const std::string& action,
+                                          const std::string& bin, const std::string& config)>;
+using XrayTestFn = std::function<int(const std::string& bin, const std::string& config_path, std::string* error)>;
+using XrayVersionFn = std::function<std::string(const std::string& bin)>;
+using RamFn = std::function<long()>;
 
 class SingboxBusy : public std::runtime_error {
 public:
@@ -121,9 +144,15 @@ class SingboxLinkService {
 public:
     SingboxLinkService(SingboxPaths paths, SingboxCheck check, KeeneticSyncFn keenetic,
                        SingboxReloadFn reload, SubscriptionDownloadFn download = {},
-                       SubscriptionClock clock = {});
+                       SubscriptionClock clock = {}, CoreProcessFn process = {}, XrayTestFn test = {},
+                       XrayVersionFn version = {}, RamFn ram = {});
 
     void set_keenetic_callback(KeeneticSyncFn keenetic) { keenetic_ = std::move(keenetic); }
+    void set_proxy(std::string core, std::string xray_bin);
+    void set_core_hooks(CoreProcessFn process, XrayTestFn test, XrayVersionFn version, RamFn ram);
+    // One core for the router. Recreates TUN names (sbtun* or xrtun*) and
+    // asks keenetic sync to retarget interface outbounds and group members.
+    SingboxApplyResult switch_core(const std::string& core, const std::string& xray_bin, bool icmptest_groups);
     nlohmann::json preview(const std::string& link) const;
     // Downloads a subscription and returns nodes plus skipped lines. Does not save.
     nlohmann::json preview_subscription(const std::string& url_or_id) const;
@@ -175,12 +204,20 @@ private:
     static void write_store(const std::string& path, const SingboxStore& store);
     nlohmann::json public_state(const SingboxStore& store) const;
 
+    std::string tun_prefix() const;
     SingboxPaths paths_;
     SingboxCheck check_;
     KeeneticSyncFn keenetic_;
     SingboxReloadFn reload_;
     SubscriptionDownloadFn download_;
     SubscriptionClock clock_;
+    std::string proxy_core_{"sing-box"};
+    std::string xray_bin_;
+    std::string xray_config_{"/opt/etc/keen-pbr-sx/xray.json"};
+    CoreProcessFn core_process_;
+    XrayTestFn xray_test_;
+    mutable XrayVersionFn xray_version_;
+    mutable RamFn ram_;
     std::mutex mutation_mutex_;
     mutable std::mutex status_mutex_;
     std::map<std::string, RefreshStatus> refresh_status_;
