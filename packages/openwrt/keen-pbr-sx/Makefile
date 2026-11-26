@@ -51,6 +51,16 @@ endef
 # Common blocks
 #
 
+# Copy every helper under files/usr/lib/keen-pbr-sx. INSTALL_BIN is not used
+# for that directory, so a new file cannot be left out of the package.
+# *.sh is forced executable: firewall.sh is not executable in git.
+define KeenPbr/InstallOpenWrtLib
+	$(INSTALL_DIR) $(1)/usr/lib/keen-pbr-sx
+	$(CP) $(PKG_BUILD_DIR)/packages/openwrt/keen-pbr-sx/files/usr/lib/keen-pbr-sx/. $(1)/usr/lib/keen-pbr-sx/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/common/cleanup-firewall.sh $(1)/usr/lib/keen-pbr-sx/cleanup-firewall.sh
+	chmod 755 $(1)/usr/lib/keen-pbr-sx/*.sh
+endef
+
 define Build/Prepare
 	rm -rf $(PKG_BUILD_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
@@ -135,10 +145,7 @@ define Package/keen-pbr-sx/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/openwrt/keen-pbr-sx/files/etc/init.d/keen-pbr-sx $(1)/etc/init.d/keen-pbr-sx
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/openwrt/keen-pbr-sx/files/etc/init.d/keen-pbr-sx-dnsmasq $(1)/etc/init.d/keen-pbr-sx-dnsmasq
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/openwrt/keen-pbr-sx/files/etc/hotplug.d/firewall/70-keen-pbr-sx $(1)/etc/hotplug.d/firewall/70-keen-pbr-sx
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/openwrt/keen-pbr-sx/files/usr/lib/keen-pbr-sx/firewall.sh $(1)/usr/lib/keen-pbr-sx/firewall.sh
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/openwrt/keen-pbr-sx/files/usr/lib/keen-pbr-sx/uci.sh $(1)/usr/lib/keen-pbr-sx/uci.sh
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/openwrt/keen-pbr-sx/files/usr/lib/keen-pbr-sx/dnsmasq-hook.sh $(1)/usr/lib/keen-pbr-sx/dnsmasq-hook.sh
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/common/cleanup-firewall.sh $(1)/usr/lib/keen-pbr-sx/cleanup-firewall.sh
+	$(call KeenPbr/InstallOpenWrtLib,$(1))
 	$(CP) $(PKG_BUILD_DIR)/frontend/dist/. $(1)/usr/share/keen-pbr-sx/frontend/
 	chmod -R a=rX,u+w $(1)/usr/share/keen-pbr-sx/frontend
 	$(INSTALL_CONF) $(KEEN_PBR_FULL_CONFIG) $(1)/etc/keen-pbr-sx/config.json
@@ -193,10 +200,7 @@ define Package/keen-pbr-sx-headless/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/openwrt/keen-pbr-sx/files/etc/init.d/keen-pbr-sx $(1)/etc/init.d/keen-pbr-sx
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/openwrt/keen-pbr-sx/files/etc/init.d/keen-pbr-sx-dnsmasq $(1)/etc/init.d/keen-pbr-sx-dnsmasq
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/openwrt/keen-pbr-sx/files/etc/hotplug.d/firewall/70-keen-pbr-sx $(1)/etc/hotplug.d/firewall/70-keen-pbr-sx
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/openwrt/keen-pbr-sx/files/usr/lib/keen-pbr-sx/firewall.sh $(1)/usr/lib/keen-pbr-sx/firewall.sh
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/openwrt/keen-pbr-sx/files/usr/lib/keen-pbr-sx/uci.sh $(1)/usr/lib/keen-pbr-sx/uci.sh
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/openwrt/keen-pbr-sx/files/usr/lib/keen-pbr-sx/dnsmasq-hook.sh $(1)/usr/lib/keen-pbr-sx/dnsmasq-hook.sh
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/common/cleanup-firewall.sh $(1)/usr/lib/keen-pbr-sx/cleanup-firewall.sh
+	$(call KeenPbr/InstallOpenWrtLib,$(1))
 	$(INSTALL_CONF) $(KEEN_PBR_HEADLESS_CONFIG) $(1)/etc/keen-pbr-sx/config.json
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/packages/openwrt/keen-pbr-sx/files/etc/keen-pbr-sx/dnsmasq-fallback.conf $(1)/etc/keen-pbr-sx/dnsmasq-fallback.conf
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/packages/common/local.lst $(1)/etc/keen-pbr-sx/local.lst

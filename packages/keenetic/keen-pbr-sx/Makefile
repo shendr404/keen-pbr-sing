@@ -51,6 +51,17 @@ endef
 # Common blocks
 #
 
+# Copy every helper under files/opt/usr/lib/keen-pbr-sx, then the shared
+# cleanup script. A new file in that directory is packaged without another
+# install line. pkg.sh must be among them: postinst refuses to continue
+# without it.
+define KeenPbr/InstallEntwareLib
+	$(INSTALL_DIR) $(1)/opt/usr/lib/keen-pbr-sx
+	$(CP) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/usr/lib/keen-pbr-sx/. $(1)/opt/usr/lib/keen-pbr-sx/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/common/cleanup-firewall.sh $(1)/opt/usr/lib/keen-pbr-sx/cleanup-firewall.sh
+	chmod 755 $(1)/opt/usr/lib/keen-pbr-sx/*.sh
+endef
+
 define Build/Prepare
 	rm -rf $(PKG_BUILD_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
@@ -131,13 +142,9 @@ define Package/keen-pbr-sx/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/etc/init.d/S80keen-pbr-sx $(1)/opt/etc/init.d/S80keen-pbr-sx
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/etc/keen-pbr-sx/defaults $(1)/opt/etc/keen-pbr-sx/defaults
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/etc/keen-pbr-sx/dnsmasq-fallback.conf $(1)/opt/etc/keen-pbr-sx/dnsmasq-fallback.conf
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/usr/lib/keen-pbr-sx/dnsmasq.sh $(1)/opt/usr/lib/keen-pbr-sx/dnsmasq.sh
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/usr/lib/keen-pbr-sx/dnsmasq-hook.sh $(1)/opt/usr/lib/keen-pbr-sx/dnsmasq-hook.sh
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/usr/lib/keen-pbr-sx/dnsmasq.recommended.conf $(1)/opt/usr/lib/keen-pbr-sx/dnsmasq.recommended.conf
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/common/cleanup-firewall.sh $(1)/opt/usr/lib/keen-pbr-sx/cleanup-firewall.sh
+	$(call KeenPbr/InstallEntwareLib,$(1))
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/etc/ndm/netfilter.d/50-keen-pbr-sx-routing.sh $(1)/opt/etc/ndm/netfilter.d/50-keen-pbr-sx-routing.sh
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/etc/ndm/netfilter.d/51-keen-pbr-sx-forward.sh $(1)/opt/etc/ndm/netfilter.d/51-keen-pbr-sx-forward.sh
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/usr/lib/keen-pbr-sx/interface-forward.sh $(1)/opt/usr/lib/keen-pbr-sx/interface-forward.sh
 	$(CP) $(PKG_BUILD_DIR)/frontend/dist/. $(1)/opt/usr/share/keen-pbr-sx/frontend/
 	chmod -R a=rX,u+w $(1)/opt/usr/share/keen-pbr-sx/frontend
 	$(INSTALL_CONF) $(KEEN_PBR_FULL_CONFIG) $(1)/opt/etc/keen-pbr-sx/config.json
@@ -197,13 +204,9 @@ define Package/keen-pbr-sx-headless/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/etc/init.d/S80keen-pbr-sx $(1)/opt/etc/init.d/S80keen-pbr-sx
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/etc/keen-pbr-sx/defaults $(1)/opt/etc/keen-pbr-sx/defaults
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/etc/keen-pbr-sx/dnsmasq-fallback.conf $(1)/opt/etc/keen-pbr-sx/dnsmasq-fallback.conf
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/usr/lib/keen-pbr-sx/dnsmasq.sh $(1)/opt/usr/lib/keen-pbr-sx/dnsmasq.sh
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/usr/lib/keen-pbr-sx/dnsmasq-hook.sh $(1)/opt/usr/lib/keen-pbr-sx/dnsmasq-hook.sh
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/usr/lib/keen-pbr-sx/dnsmasq.recommended.conf $(1)/opt/usr/lib/keen-pbr-sx/dnsmasq.recommended.conf
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/common/cleanup-firewall.sh $(1)/opt/usr/lib/keen-pbr-sx/cleanup-firewall.sh
+	$(call KeenPbr/InstallEntwareLib,$(1))
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/etc/ndm/netfilter.d/50-keen-pbr-sx-routing.sh $(1)/opt/etc/ndm/netfilter.d/50-keen-pbr-sx-routing.sh
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/etc/ndm/netfilter.d/51-keen-pbr-sx-forward.sh $(1)/opt/etc/ndm/netfilter.d/51-keen-pbr-sx-forward.sh
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/packages/keenetic/keen-pbr-sx/files/opt/usr/lib/keen-pbr-sx/interface-forward.sh $(1)/opt/usr/lib/keen-pbr-sx/interface-forward.sh
 	$(INSTALL_CONF) $(KEEN_PBR_HEADLESS_CONFIG) $(1)/opt/etc/keen-pbr-sx/config.json
 	$(INSTALL_CONF) $(KEEN_PBR_HEADLESS_CONFIG) $(1)/opt/etc/keen-pbr-sx/config.example.json
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/packages/common/local.lst $(1)/opt/etc/keen-pbr-sx/local.lst

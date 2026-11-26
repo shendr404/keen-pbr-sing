@@ -236,4 +236,15 @@ grep -q 'custom' "$cust_new/config.json" || fail "migration overwrote a custom c
 grep -q 'keep' "$cust_new/sing-box-links.json" || fail "migration skipped the link store when the config was custom"
 [ -f "$cust_new/.migrated-from-keen-pbr" ] || fail "custom config did not stamp the migration"
 
+# A package built without pkg.sh must not report success.
+rc=0
+out=$(KEEN_PBR_PKG_LIB="$root/missing-pkg.sh" sh "$postinst" 2>&1) || rc=$?
+[ "$rc" -ne 0 ] || fail "postinst succeeded without pkg.sh: $out"
+echo "$out" | grep -q 'helper script is missing' || fail "postinst did not report the missing helper: $out"
+echo "$out" | grep -q 'was not started' || fail "postinst did not say the service was not started: $out"
+rc=0
+out=$(KEEN_PBR_PKG_LIB="$root/missing-pkg.sh" sh "$pkg/postinst-headless" 2>&1) || rc=$?
+[ "$rc" -ne 0 ] || fail "headless postinst succeeded without pkg.sh: $out"
+echo "$out" | grep -q 'helper script is missing' || fail "headless postinst did not report the missing helper: $out"
+
 echo "keenetic package test: ok"

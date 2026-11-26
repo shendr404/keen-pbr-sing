@@ -6,47 +6,34 @@ echo "--------------------------------"
 mkdir -p /opt/usr/lib/keen-pbr-sx 2>/dev/null || true
 
 PKG_LIB="${KEEN_PBR_PKG_LIB:-/opt/usr/lib/keen-pbr-sx/pkg.sh}"
-_have_pkg=0
-# shellcheck disable=SC1090
-if [ -f "$PKG_LIB" ]; then
-    . "$PKG_LIB"
-    _have_pkg=1
+if [ ! -f "$PKG_LIB" ]; then
+    echo "keen-pbr-sx: helper script is missing: $PKG_LIB" >&2
+    echo "keen-pbr-sx: the package does not contain pkg.sh, so the old config was not migrated and keen-pbr-sx was not started" >&2
+    exit 1
 fi
+# shellcheck disable=SC1090
+. "$PKG_LIB"
 
 if [ "$PKG_UPGRADE" = "1" ] && ! grep -q '"version"' /opt/etc/keen-pbr-sx/config.json 2>/dev/null; then
     echo "What's new in 3.4.0: https://keen-pbr.fyi/docs/changelog/#v3-4-0"
 fi
 
-if [ "$_have_pkg" = 1 ]; then
-    migrate_from_legacy || echo "Failed to migrate keen-pbr configuration"
-fi
+migrate_from_legacy || echo "Failed to migrate keen-pbr configuration"
 
 _hook="${KEEN_PBR_HOOK:-/opt/usr/lib/keen-pbr-sx/dnsmasq-hook.sh}"
 _dns="${DNSMASQ_INIT:-/opt/etc/init.d/S56dnsmasq}"
 if [ -x "$_hook" ] && [ -f "${DNSMASQ_CONF:-/opt/etc/dnsmasq.conf}" ]; then
     "$_hook" reinstall-hook || echo "Failed to restore the dnsmasq hook"
-    if [ "$_have_pkg" = 1 ]; then
-        dnsmasq_should_restart && _restart_dns=1 || _restart_dns=0
-    else
-        _restart_dns=1
-    fi
+    dnsmasq_should_restart && _restart_dns=1 || _restart_dns=0
     if [ "$_restart_dns" = 1 ] && [ -x "$_dns" ]; then
-        if [ "$_have_pkg" = 1 ]; then
-            start_detached "$_dns" restart || echo "Failed to restart dnsmasq"
-        else
-            "$_dns" restart || echo "Failed to restart dnsmasq"
-        fi
+        start_detached "$_dns" restart || echo "Failed to restart dnsmasq"
     fi
     _hint=$("$_hook" port53-hint 2>/dev/null) && printf '%s\n' "$_hint"
 fi
 
 echo ""
-if [ "$_have_pkg" = 1 ]; then
-    start_detached "${KEEN_PBR_INIT:-/opt/etc/init.d/S80keen-pbr-sx}" restart \
-        || echo "Failed to start keen-pbr-sx service"
-else
-    ( sh -c "${KEEN_PBR_INIT:-/opt/etc/init.d/S80keen-pbr-sx} restart" </dev/null >/dev/null 2>&1 & )
-fi
+start_detached "${KEEN_PBR_INIT:-/opt/etc/init.d/S80keen-pbr-sx}" restart \
+    || echo "Failed to start keen-pbr-sx service"
 echo ""
 
 echo "Installation complete!"
