@@ -1916,7 +1916,7 @@ SingboxApplyResult SingboxLinkService::switch_core(const std::string& requested,
         if (requested == "sing-box" && core_process_) core_process_("xray", "start", bin, xray_config_);
         throw;
     }
-    const auto old_core = requested == "xray" ? "sing-box" : "xray";
+    const std::string old_core = requested == "xray" ? "sing-box" : "xray";
     if (core_process_ && !core_process_(old_core, "stop", bin, xray_config_)) {
         KeeneticSyncRequest back;
         back.nodes = previous.nodes;
