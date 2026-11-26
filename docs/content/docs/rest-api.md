@@ -66,7 +66,7 @@ When authentication is off, requests from other websites in a browser are blocke
 
 By default, the API listens on `0.0.0.0:12121` (`api.listen`). All routes are served at that address.
 
-The [OpenAPI document](https://github.com/shendr404/keen-pbr-sing/blob/main/docs/openapi.yaml) is the complete request and response schema. The main routes are listed below (an outbound is a channel that traffic goes through: a VPN interface, your ISP, or a block):
+The [OpenAPI document](https://github.com/shendr404/keen-pbr-sx/blob/main/docs/openapi.yaml) is the complete request and response schema. The main routes are listed below (an outbound is a channel that traffic goes through: a VPN interface, your ISP, or a block):
 
 | Route | Purpose |
 |---|---|
@@ -279,7 +279,7 @@ sum by (server) (rate(keen_pbr_dns_proxy_upstream_requests_total{result=~"timeou
 
 ### Grafana dashboard and alerts
 
-Import [keen-pbr-dashboard.json](https://shendr404.github.io/keen-pbr-sing/grafana/keen-pbr-dashboard.json) into Grafana (Dashboards > New > Import). It needs a Prometheus data source with UID `prometheus`. The dashboard has `job` and `outbound` variables, a 30 s refresh, and the sections Status, Outbounds, DNS interception, DNS proxy, Sets & lists and Errors. Use a scrape interval of 30 s or less: the bar panels compute `increase()` over one-minute windows.
+Import [keen-pbr-dashboard.json](https://shendr404.github.io/keen-pbr-sx/grafana/keen-pbr-dashboard.json) into Grafana (Dashboards > New > Import). It needs a Prometheus data source with UID `prometheus`. The dashboard has `job` and `outbound` variables, a 30 s refresh, and the sections Status, Outbounds, DNS interception, DNS proxy, Sets & lists and Errors. Use a scrape interval of 30 s or less: the bar panels compute `increase()` over one-minute windows.
 
 Example alerting rules:
 

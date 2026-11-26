@@ -5,14 +5,14 @@ Maintainer: shendr404 <143122797+shendr404@users.noreply.github.com>
 Build-Depends: debhelper-compat (= 13), cmake, pkg-config, g++, ninja-build, libcurl4-openssl-dev | libcurl4-gnutls-dev, libnl-3-dev, libnl-route-3-dev, libfmt-dev, libunwind-dev, nlohmann-json3-dev
 Standards-Version: 4.6.2
 Rules-Requires-Root: no
-Homepage: https://github.com/shendr404/keen-pbr-sing
+Homepage: https://github.com/shendr404/keen-pbr-sx
 
 Package: keen-pbr-headless
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, conntrack, iptables | nftables
 Suggests: xtables-addons-dkms, dnsmasq
-Description: keen-pbr-sing policy routing without REST API and Web UI
- keen-pbr-sing routes selected traffic through a sing-box TUN on Keenetic.
+Description: keen-pbr-sx policy routing without REST API and Web UI
+ keen-pbr-sx routes selected traffic through a sing-box TUN on Keenetic.
  Based on keen-pbr by Maxim Kurbatov. The package name remains keen-pbr-headless.
  This package installs the daemon and helper scripts without the REST API or frontend assets.
  Install xtables-addons-dkms only when using the iptables backend.

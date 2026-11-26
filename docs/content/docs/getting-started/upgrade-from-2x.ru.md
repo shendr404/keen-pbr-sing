@@ -17,7 +17,7 @@ cp /opt/etc/keen-pbr/keen-pbr.conf /opt/etc/keen-pbr/keen-pbr.conf.bak
 
 Откройте страницу репозитория, слева выберите ОС **Keenetic / NetCraze** и архитектуру своего роутера. Выполните показанные команды по порядку, чтобы заменить старый репозиторий keen-pbr 2.x на текущий:
 
-{{< hextra/hero-button text="Репозиторий keen-pbr" link="https://github.com/shendr404/keen-pbr-sing/releases" >}}
+{{< hextra/hero-button text="Репозиторий keen-pbr" link="https://github.com/shendr404/keen-pbr-sx/releases" >}}
 
 ## 3. Установите keen-pbr
 
@@ -32,7 +32,7 @@ opkg install keen-pbr
 
 ## 4. Сконвертируйте конфигурацию в новый формат
 
-Откройте [конвертер конфига keen-pbr](https://shendr404.github.io/keen-pbr-sing/converter/). Затем:
+Откройте [конвертер конфига keen-pbr](https://shendr404.github.io/keen-pbr-sx/converter/). Затем:
 
 1. Скопируйте содержимое `/opt/etc/keen-pbr/keen-pbr.conf` в поле ввода конвертера слева.
 2. Проверьте сгенерированный конфиг.

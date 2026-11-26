@@ -19,4 +19,4 @@ If something is not working, see [Troubleshooting]({{< relref "/docs/troubleshoo
 
 Building packages and compiling from source are covered in [Developer]({{< relref "/docs/developer" >}}).
 
-Keenetic packages are distributed through [GitHub Releases](https://github.com/shendr404/keen-pbr-sing/releases) and [unsigned opkg feeds](https://shendr404.github.io/keen-pbr-sing/keenetic/).
+Keenetic packages are distributed through [GitHub Releases](https://github.com/shendr404/keen-pbr-sx/releases) and [unsigned opkg feeds](https://shendr404.github.io/keen-pbr-sx/keenetic/).

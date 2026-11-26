@@ -1,7 +1,7 @@
 export const enTranslation = {
   auth: {
-    loading: "Loading keen-pbr-sing…",
-    title: "Sign in to keen-pbr-sing",
+    loading: "Loading keen-pbr-sx…",
+    title: "Sign in to keen-pbr-sx",
     description: "Enter the administrator password to continue.",
     password: "Password",
     signIn: "Sign in",
@@ -150,7 +150,7 @@ export const enTranslation = {
     },
   },
   brand: {
-    logoAlt: "keen-pbr-sing logo",
+    logoAlt: "keen-pbr-sx logo",
     tagline: "Get packets sorted",
     openMenu: "Open menu",
   },
@@ -218,7 +218,7 @@ export const enTranslation = {
       issuesPrefix: "System is running, but there are",
       issueCount_one: "{{count}} problem",
       issueCount_other: "{{count}} problems",
-      versionLine: "keen-pbr-sing {{version}} · build {{build}} · {{os}}",
+      versionLine: "keen-pbr-sx {{version}} · build {{build}} · {{os}}",
       whatsNew: "What's new?",
       confirmStop: "Stop the service?",
       confirmStopAction: "Yes, stop",
@@ -1093,7 +1093,7 @@ export const enTranslation = {
         deviceNameLabel: "Device name",
         deviceNamePlaceholder: "For example, Home router",
         deviceNameHint:
-          "Shown in the browser page title and under the keen-pbr-sing logo. Leave empty to use the default branding.",
+          "Shown in the browser page title and under the keen-pbr-sx logo. Leave empty to use the default branding.",
         strictEnforcementLabel:
           "Block traffic when an outbound is unavailable (kill-switch)",
         strictEnforcementHint:

@@ -591,7 +591,7 @@ The mask must consist of consecutive hexadecimal `F` digits. Values are hex stri
 ## Measuring losses in DNS interception
 
 {{% details title="For advanced users" closed="true" %}}
-If the first connection to a freshly opened site sometimes bypasses the VPN, you can measure how often keen-pbr fails to remember the address before the DNS answer reaches the device. The script `dns-bench.py` does this. It is not included in the keen-pbr packages: download it from the [repository](https://github.com/shendr404/keen-pbr-sing/blob/main/scripts/dns-bench.py). It needs Python 3. Run it from a computer on the local network:
+If the first connection to a freshly opened site sometimes bypasses the VPN, you can measure how often keen-pbr fails to remember the address before the DNS answer reaches the device. The script `dns-bench.py` does this. It is not included in the keen-pbr packages: download it from the [repository](https://github.com/shendr404/keen-pbr-sx/blob/main/scripts/dns-bench.py). It needs Python 3. Run it from a computer on the local network:
 
 ```bash {filename="bash"}
 python3 dns-bench.py --api http://192.168.1.1:12121 --password 'admin-password' \

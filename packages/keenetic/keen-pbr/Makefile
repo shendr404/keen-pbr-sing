@@ -98,16 +98,16 @@ endif
 define Package/keen-pbr
   SECTION:=net
   CATEGORY:=Network
-  URL:=https://github.com/shendr404/keen-pbr-sing
+  URL:=https://github.com/shendr404/keen-pbr-sx
   MAINTAINER:=shendr404 <143122797+shendr404@users.noreply.github.com>
-  TITLE:=keen-pbr-sing (full)
+  TITLE:=keen-pbr-sx (full)
   VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
   DEPENDS:=+conntrack +ipset +iptables +libatomic +libcurl +libnl-core +libnl-route +libstdcpp +zlib +libzstd
   VARIANT:=full
 endef
 
 define Package/keen-pbr/description
-  keen-pbr-sing: sing-box TUN routing for Keenetic, with per-outbound traffic stats, REST API and WebUI. The package name stays keen-pbr.
+  keen-pbr-sx: sing-box TUN routing for Keenetic, with per-outbound traffic stats, REST API and WebUI. The package name stays keen-pbr.
 endef
 
 define Package/keen-pbr/conffiles
@@ -161,16 +161,16 @@ endef
 define Package/keen-pbr-headless
   SECTION:=net
   CATEGORY:=Network
-  URL:=https://github.com/shendr404/keen-pbr-sing
+  URL:=https://github.com/shendr404/keen-pbr-sx
   MAINTAINER:=shendr404 <143122797+shendr404@users.noreply.github.com>
-  TITLE:=keen-pbr-sing (headless)
+  TITLE:=keen-pbr-sx (headless)
   VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
   DEPENDS:=+conntrack +ipset +iptables +libatomic +libcurl +libnl-core +libnl-route +libstdcpp +zlib +libzstd
   VARIANT:=headless
 endef
 
 define Package/keen-pbr-headless/description
-  keen-pbr-sing: sing-box TUN routing for Keenetic, without the REST API or WebUI. The package name stays keen-pbr-headless.
+  keen-pbr-sx: sing-box TUN routing for Keenetic, without the REST API or WebUI. The package name stays keen-pbr-headless.
 endef
 
 define Package/keen-pbr-headless/conffiles

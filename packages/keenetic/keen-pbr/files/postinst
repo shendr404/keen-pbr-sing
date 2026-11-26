@@ -28,7 +28,11 @@ if [ -x "$_hook" ] && [ -f "${DNSMASQ_CONF:-/opt/etc/dnsmasq.conf}" ]; then
         _restart_dns=1
     fi
     if [ "$_restart_dns" = 1 ] && [ -x "$_dns" ]; then
-        "$_dns" restart || echo "Failed to restart dnsmasq"
+        if [ "$_have_pkg" = 1 ]; then
+            start_detached "$_dns" restart || echo "Failed to restart dnsmasq"
+        else
+            "$_dns" restart || echo "Failed to restart dnsmasq"
+        fi
     fi
     _hint=$("$_hook" port53-hint 2>/dev/null) && printf '%s\n' "$_hint"
 fi
@@ -40,7 +44,7 @@ if [ "$_have_pkg" = 1 ]; then
     start_detached "${KEEN_PBR_INIT:-/opt/etc/init.d/S80keen-pbr}" restart \
         || echo "Failed to start keen-pbr service"
 else
-    nohup setsid "${KEEN_PBR_INIT:-/opt/etc/init.d/S80keen-pbr}" restart >/dev/null 2>&1 &
+    ( sh -c "${KEEN_PBR_INIT:-/opt/etc/init.d/S80keen-pbr} restart" </dev/null >/dev/null 2>&1 & )
 fi
 echo ""
 

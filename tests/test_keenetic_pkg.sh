@@ -29,8 +29,21 @@ cat > "$bin/start-stop-daemon" <<'EOF'
 printf '%s\n' "$*" >> "$SSD_LOG"
 exit 0
 EOF
-chmod +x "$bin/start-stop-daemon"
+# BusyBox on Keenetic has neither of these. If a script calls them, fail.
+cat > "$bin/setsid" <<'EOF'
+#!/bin/sh
+printf 'setsid\n' >> "$FORBIDDEN_LOG"
+exit 99
+EOF
+cat > "$bin/nohup" <<'EOF'
+#!/bin/sh
+printf 'nohup\n' >> "$FORBIDDEN_LOG"
+exit 99
+EOF
+chmod +x "$bin/start-stop-daemon" "$bin/setsid" "$bin/nohup"
 export PATH="$bin:$PATH"
+export FORBIDDEN_LOG="$root/forbidden.log"
+: > "$FORBIDDEN_LOG"
 export SSD_LOG="$root/ssd.log"
 export KEEN_PBR_PKG_LIB="$pkg/opt/usr/lib/keen-pbr/pkg.sh"
 export KEEN_PBR_BIN="$root/keen-pbr"
@@ -41,6 +54,11 @@ export DNSMASQ_STATE_FILE="$root/dns-state"
 export DNSMASQ_CONF="$root/dnsmasq.conf"
 export LOCK_DIR="$root/hook.lock"
 export OPKG_CMDLINE=""
+export START_STOP_DAEMON="$bin/start-stop-daemon"
+export OPKG_LOCK="$root/no-opkg-lock"
+if grep -E 'setsid|nohup' "$pkg/opt/usr/lib/keen-pbr/pkg.sh" "$postinst" "$pkg/postinst-headless"; then
+    fail "maintainer scripts still depend on setsid or nohup"
+fi
 
 printf '#!/bin/sh\nprintf "%%s\\n" "$*" >> "%s"\nexit 0\n' "$root/calls" > "$KEEN_PBR_INIT"
 printf '#!/bin/sh\nprintf "%%s\\n" "$*" >> "%s"\ncase "$1" in alive) exit 0 ;; port53-hint) exit 1 ;; esac\nexit 0\n' "$root/calls" > "$KEEN_PBR_HOOK"
@@ -99,8 +117,9 @@ reset
 out=$(NDNPROXY_HOLDS_53=1 DNS_OVERRIDE=off sh "$postinst")
 grep -q 'BEGIN keen-pbr managed block' "$DNSMASQ_CONF" || fail "postinst did not restore the managed block"
 grep -q 'fallback upstream' "$DNSMASQ_CONF" && fail "postinst left the fallback block"
-calls | grep -qx restart || fail "postinst did not restart dnsmasq"
-grep -q 'restart' "$SSD_LOG" || fail "postinst did not start keen-pbr detached: $(cat "$SSD_LOG")"
+grep -q -- "-S -b -x $DNSMASQ_INIT -- restart" "$SSD_LOG" || fail "postinst did not detach dnsmasq via start-stop-daemon: $(cat "$SSD_LOG")"
+grep -q -- "-S -b -x $KEEN_PBR_INIT -- restart" "$SSD_LOG" || fail "postinst did not detach keen-pbr via start-stop-daemon: $(cat "$SSD_LOG")"
+[ ! -s "$FORBIDDEN_LOG" ] || fail "postinst called setsid or nohup: $(cat "$FORBIDDEN_LOG")"
 case "$out" in
     *ndnproxy*port\ 53*dns-override*system\ configuration\ save*) ;;
     *) fail "postinst did not explain the port 53 conflict: $out" ;;
@@ -109,6 +128,25 @@ esac
 printf 'down\n' > "$DNSMASQ_STATE_FILE"
 reset
 sh "$postinst" >/dev/null
-calls | grep -qx restart && fail "postinst restarted dnsmasq that was not enabled"
+grep -q -- "-x $DNSMASQ_INIT" "$SSD_LOG" && fail "postinst restarted dnsmasq that was not enabled"
+grep -q -- "-x $KEEN_PBR_INIT -- restart" "$SSD_LOG" || fail "postinst skipped keen-pbr when dnsmasq stayed down"
+
+# No start-stop-daemon: the restart is a background shell that waits out the opkg lock.
+export START_STOP_DAEMON=""
+printf 'running\n' > "$DNSMASQ_STATE_FILE"
+: > "$root/opkg.lock"
+export OPKG_LOCK="$root/opkg.lock"
+reset
+sh "$postinst" >/dev/null
+sleep 1
+[ ! -s "$root/calls" ] || fail "fallback restarted before opkg released the lock: $(calls)"
+rm -f "$root/opkg.lock"
+sleep 3
+calls | grep -qx restart || fail "fallback did not restart dnsmasq after the lock: $(calls)"
+grep -q "$KEEN_PBR_INIT" "$root/calls" || true
+# Both init scripts log every argument on one line. dnsmasq and keen-pbr each print "restart".
+[ "$(calls | grep -cx restart)" = 2 ] || fail "fallback did not restart both services: $(calls)"
+[ ! -s "$FORBIDDEN_LOG" ] || fail "fallback called setsid or nohup: $(cat "$FORBIDDEN_LOG")"
+[ ! -s "$SSD_LOG" ] || fail "fallback used start-stop-daemon: $(cat "$SSD_LOG")"
 
 echo "keenetic package test: ok"

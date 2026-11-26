@@ -1,5 +1,5 @@
 ---
-title: keen-pbr-sing
+title: keen-pbr-sx
 weight: 1
 layout: hextra-home
 toc: false
@@ -186,7 +186,7 @@ toc: false
     <div style="display:grid;grid-template-columns:102px 1fr;min-height:164px;">
       <div style="padding:12px 10px;background:var(--kpbr-sidebar-bg);border-right:1px solid var(--kpbr-card-border);">
         <div style="display:grid;grid-template-columns:28px 1fr;align-items:center;gap:8px;margin-bottom:12px;">
-          <img src="/keen-pbr-sing/logo.svg" alt="keen-pbr logo" style="width:28px;height:28px;border-radius:8px;display:block;" />
+          <img src="/keen-pbr-sx/logo.svg" alt="keen-pbr logo" style="width:28px;height:28px;border-radius:8px;display:block;" />
           <div style="min-width:0;">
             <div style="font-size:10px;font-weight:700;line-height:1.05;color:var(--kpbr-text);white-space:nowrap;">keen-pbr</div>
             <div style="font-size:7px;color:var(--kpbr-muted);margin-top:3px;line-height:1.15;">Get packets sorted</div>

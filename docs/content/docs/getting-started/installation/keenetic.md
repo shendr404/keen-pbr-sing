@@ -40,14 +40,14 @@ How to set it up: [DoH and DoT proxy servers for DNS requests encryption](https:
 2. Add the fork's feed and install:
 
    ```sh
-   echo 'src/gz keen-pbr-sing https://shendr404.github.io/keen-pbr-sing/keenetic/mipsel-3.4/' >> /opt/etc/opkg.conf
+   echo 'src/gz keen-pbr-sx https://shendr404.github.io/keen-pbr-sx/keenetic/mipsel-3.4/' >> /opt/etc/opkg.conf
    opkg update
    opkg install keen-pbr
    # Without Web UI: opkg install keen-pbr-headless
    ```
 
    Replace `mipsel-3.4` with your Entware target: `mipsel-3.4`, `mips-3.4`, `aarch64-3.10`, `armv7-3.2`, or `x64-3.2`.
-3. You can also download an `.ipk` from [Releases](https://github.com/shendr404/keen-pbr-sing/releases) and install it with `opkg install ./package.ipk`.
+3. You can also download an `.ipk` from [Releases](https://github.com/shendr404/keen-pbr-sx/releases) and install it with `opkg install ./package.ipk`.
 
 At the end of the installation you will see `Installation complete!` and the web UI address.
 

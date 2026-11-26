@@ -83,25 +83,62 @@ dnsmasq_should_restart() {
 }
 
 # The init script must outlive opkg. opkg tears down its process group when
-# the maintainer script returns, which was killing a keen-pbr started in place.
+# the maintainer script returns. Keenetic BusyBox cannot start a new session
+# or ignore hangup, so the restart uses start-stop-daemon -b, or a subshell.
 start_detached() {
     _bin="$1"
     shift
     if [ ! -x "$_bin" ]; then
-        echo "keen-pbr init script is missing: $_bin" >&2
+        echo "init script is missing: $_bin" >&2
         return 1
     fi
     _ssd=""
-    for _cand in start-stop-daemon /opt/sbin/start-stop-daemon /opt/bin/start-stop-daemon; do
-        if command -v "$_cand" >/dev/null 2>&1; then
-            _ssd=$(command -v "$_cand")
-            break
-        fi
-        [ -x "$_cand" ] && _ssd="$_cand" && break
-    done
+    if [ -n "${START_STOP_DAEMON+x}" ]; then
+        _ssd="$START_STOP_DAEMON"
+    else
+        for _cand in /opt/sbin/start-stop-daemon /opt/bin/start-stop-daemon start-stop-daemon; do
+            if [ -x "$_cand" ]; then
+                _ssd="$_cand"
+                break
+            fi
+            if command -v "$_cand" >/dev/null 2>&1; then
+                _ssd=$(command -v "$_cand")
+                break
+            fi
+        done
+    fi
     if [ -n "$_ssd" ]; then
         "$_ssd" -S -b -x "$_bin" -- "$@" && return 0
+        echo "start-stop-daemon failed to start $_bin" >&2
+        return 1
     fi
-    nohup setsid "$_bin" "$@" >/dev/null 2>&1 &
+    # Wait until opkg drops its lock, then run the init script. The extra
+    # subshell and closed stdio keep the job alive after this script exits.
+    _arg1="${1:-}"
+    _arg2="${2:-}"
+    (
+        KPBR_DETACH_BIN="$_bin" \
+        KPBR_DETACH_ARG1="$_arg1" \
+        KPBR_DETACH_ARG2="$_arg2" \
+        KPBR_OPKG_LOCK="${OPKG_LOCK:-/opt/var/lock/opkg.lock}" \
+        sh -c '
+            i=0
+            while [ "$i" -lt 30 ]; do
+                if [ ! -e "$KPBR_OPKG_LOCK" ] && [ ! -e /var/lock/opkg.lock ] && [ ! -e /opt/tmp/opkg.lock ]; then
+                    break
+                fi
+                sleep 1
+                i=$((i + 1))
+            done
+            sleep 1
+            if [ -n "$KPBR_DETACH_ARG2" ]; then
+                "$KPBR_DETACH_BIN" "$KPBR_DETACH_ARG1" "$KPBR_DETACH_ARG2"
+            elif [ -n "$KPBR_DETACH_ARG1" ]; then
+                "$KPBR_DETACH_BIN" "$KPBR_DETACH_ARG1"
+            else
+                "$KPBR_DETACH_BIN"
+            fi
+        ' </dev/null >/dev/null 2>&1 &
+    )
     return 0
 }

@@ -1,25 +1,25 @@
 <div align="center">
-  <img src="docs/static/logo.svg" alt="keen-pbr-sing logo" width="140" />
+  <img src="docs/static/logo.svg" alt="keen-pbr-sx logo" width="140" />
 
-  <h1>keen-pbr-sing</h1>
+  <h1>keen-pbr-sx</h1>
 
   <p><strong>sing-box TUN routing for Keenetic.</strong></p>
   <p>I use this tree to send selected traffic through a sing-box TUN, to see per-outbound traffic, and to keep that tunnel forwarding on Keenetic.</p>
 
   <p>
-    <a href="https://github.com/shendr404/keen-pbr-sing/releases">
-      <img src="https://img.shields.io/github/v/release/shendr404/keen-pbr-sing?style=for-the-badge&sort=date" alt="Latest release" />
+    <a href="https://github.com/shendr404/keen-pbr-sx/releases">
+      <img src="https://img.shields.io/github/v/release/shendr404/keen-pbr-sx?style=for-the-badge&sort=date" alt="Latest release" />
     </a>
   </p>
 </div>
 
-> keen-pbr-sing is an independent project. It is not an official Keenetic product and is not affiliated with or endorsed by Keenetic or Netcraze.
+> keen-pbr-sx is an independent project. It is not an official Keenetic product and is not affiliated with or endorsed by Keenetic or Netcraze.
 
 Based on [keen-pbr](https://github.com/maksimkurb/keen-pbr) by Maxim Kurbatov. The license is the original GNU GPL v3 (`LICENSE`). Copyright notices in the source stay with their authors.
 
 ## What I run
 
-keen-pbr-sing is my Keenetic build of that routing daemon, aimed at a sing-box TUN:
+keen-pbr-sx is my Keenetic build of that routing daemon, aimed at a sing-box TUN:
 
 - a sing-box TUN outbound, such as `sbtun`, that forwards and stays reachable
 - per-outbound bytes, packets, rate, and active connections in the Web UI, `GET /api/runtime/outbound-traffic`, and `/metrics`
@@ -27,7 +27,7 @@ keen-pbr-sing is my Keenetic build of that routing daemon, aimed at a sing-box T
 
 ## Names that stay keen-pbr
 
-I renamed the visible title to keen-pbr-sing. I did not rename the binary, the package, the init script, the config paths, or the API, so an existing router install keeps working:
+I renamed the visible title to keen-pbr-sx. I did not rename the binary, the package, the init script, the config paths, or the API, so an existing router install keeps working:
 
 | What you already have | Name that stays |
 |---|---|
@@ -37,19 +37,19 @@ I renamed the visible title to keen-pbr-sing. I did not rename the binary, the p
 | config | `/opt/etc/keen-pbr/config.json` |
 | Web UI and API | `http://<router>:12121` |
 
-The page title and the header say keen-pbr-sing. `opkg`, the init script, and the command you run are still `keen-pbr`.
+The page title and the header say keen-pbr-sx. `opkg`, the init script, and the command you run are still `keen-pbr`.
 
 ## Документация и opkg-фид
 
-Русская документация: https://shendr404.github.io/keen-pbr-sing/
+Русская документация: https://shendr404.github.io/keen-pbr-sx/
 
-Неподписанный opkg-фид Keenetic: `https://shendr404.github.io/keen-pbr-sing/keenetic/<arch>/`, где `<arch>` — `mipsel-3.4`, `mips-3.4`, `aarch64-3.10`, `armv7-3.2` или `x64-3.2`. Для установки используйте `opkg print-architecture`, добавьте соответствующий `src/gz` в `/opt/etc/opkg.conf` и выполните `opkg update && opkg install keen-pbr`. Для варианта без UI: `keen-pbr-headless`.
+Неподписанный opkg-фид Keenetic: `https://shendr404.github.io/keen-pbr-sx/keenetic/<arch>/`, где `<arch>` — `mipsel-3.4`, `mips-3.4`, `aarch64-3.10`, `armv7-3.2` или `x64-3.2`. Для установки используйте `opkg print-architecture`, добавьте соответствующий `src/gz` в `/opt/etc/opkg.conf` и выполните `opkg update && opkg install keen-pbr`. Для варианта без UI: `keen-pbr-headless`.
 
-Пакеты и `SHA256SUMS` также доступны в [GitHub Releases](https://github.com/shendr404/keen-pbr-sing/releases). Фид неподписанный: проверяйте источник и контрольные суммы.
+Пакеты и `SHA256SUMS` также доступны в [GitHub Releases](https://github.com/shendr404/keen-pbr-sx/releases). Фид неподписанный: проверяйте источник и контрольные суммы.
 
 ## Install
 
-Install from this repository's releases: https://github.com/shendr404/keen-pbr-sing/releases
+Install from this repository's releases: https://github.com/shendr404/keen-pbr-sx/releases
 
 On Keenetic Entware, take the `keenetic_mipsel-3.4` ipk from the latest release. The package lists `/opt/etc/keen-pbr/config.json` as a conffile, so opkg keeps the file you already have. Copy it aside first anyway:
 
@@ -127,7 +127,7 @@ The package, binary, and API paths stay `keen-pbr`. These routes are under the s
 
 ## Documentation
 
-[Документация на русском](https://shendr404.github.io/keen-pbr-sing/) · [GitHub Releases](https://github.com/shendr404/keen-pbr-sing/releases)
+[Документация на русском](https://shendr404.github.io/keen-pbr-sx/) · [GitHub Releases](https://github.com/shendr404/keen-pbr-sx/releases)
 
 ## License
 

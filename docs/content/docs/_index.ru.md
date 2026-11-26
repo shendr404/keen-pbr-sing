@@ -19,4 +19,4 @@ keen-pbr помогает направлять выбранные сайты и 
 
 Сборка пакетов и компиляция из исходного кода — в разделе [Разработка]({{< relref "/docs/developer" >}}).
 
-Фид Keenetic и установочные пакеты публикуются на [GitHub Pages](https://shendr404.github.io/keen-pbr-sing/keenetic/) и в [GitHub Releases](https://github.com/shendr404/keen-pbr-sing/releases).
+Фид Keenetic и установочные пакеты публикуются на [GitHub Pages](https://shendr404.github.io/keen-pbr-sx/keenetic/) и в [GitHub Releases](https://github.com/shendr404/keen-pbr-sx/releases).
