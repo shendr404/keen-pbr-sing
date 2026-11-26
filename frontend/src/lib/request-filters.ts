@@ -9,7 +9,7 @@ export const allRequestMethods: RequestMethod[] = [
 ]
 
 /**
- * keen-pbr actions on a request. A row is shown when any of its actions is
+ * keen-pbr-sx actions on a request. A row is shown when any of its actions is
  * checked; a row without any action counts as "none".
  */
 export type RequestAction =
@@ -206,7 +206,7 @@ export function ipMatches(filter: IpFilter, ip: string): boolean {
 }
 
 /**
- * Answer addresses keen-pbr never learns into sets (blocking or unroutable
+ * Answer addresses keen-pbr-sx never learns into sets (blocking or unroutable
  * replies): 0.0.0.0, ::, 127.0.0.0/8 and ::1. Mirrors
  * dns_wire::is_learnable_address.
  */
@@ -243,7 +243,7 @@ export function answerKind(row: FilterableRow): AnswerKind | null {
   return ips.every(isUnlearnableIp) ? "blocked" : "addresses"
 }
 
-/** True when the row shows the given keen-pbr action. */
+/** True when the row shows the given keen-pbr-sx action. */
 export function hasAction(row: FilterableRow, action: RequestAction): boolean {
   const added = row.added ?? 0
   const refreshed = row.refreshed ?? 0

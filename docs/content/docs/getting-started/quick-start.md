@@ -6,10 +6,10 @@ weight: 2
 After this guide, one test site opens through your VPN and the rest of your traffic goes the usual way. You need a VPN interface that already exists on the router (for example `tun0` or `wg0`).
 
 {{< callout type="info" >}}
-If you do not have a VPN on the router yet, set it up with the guide for your system: [Keenetic / NetCraze](https://help.keenetic.com/hc/en-us/articles/360010592379), [OpenWrt](https://openwrt.org/docs/guide-user/services/vpn/wireguard/start), [Debian](https://wiki.debian.org/WireGuard). In the keen-pbr web UI you pick the interface from a list. To see all interface names in the console, run `ip addr`: the VPN interface is the one with an address from your VPN network.
+If you do not have a VPN on the router yet, set it up with the guide for your system: [Keenetic / NetCraze](https://help.keenetic.com/hc/en-us/articles/360010592379), [OpenWrt](https://openwrt.org/docs/guide-user/services/vpn/wireguard/start), [Debian](https://wiki.debian.org/WireGuard). In the keen-pbr-sx web UI you pick the interface from a list. To see all interface names in the console, run `ip addr`: the VPN interface is the one with an address from your VPN network.
 {{< /callout >}}
 
-If you installed the full package, start with the Web UI. If you have `keen-pbr-headless` or prefer editing files, use the JSON tab.
+If you installed the full package, start with the Web UI. If you have `keen-pbr-sx-headless` or prefer editing files, use the JSON tab.
 
 Setup takes three steps:
 
@@ -39,7 +39,7 @@ The default config already has the outbounds `wan` (the normal internet connecti
 {{< tab name="Web UI" selected=true >}}
 
 {{< callout type="info" >}}
-If you have installed `keen-pbr-headless`, see **JSON** configuration method.
+If you have installed `keen-pbr-sx-headless`, see **JSON** configuration method.
 {{< /callout >}}
 
 <p>
@@ -109,7 +109,7 @@ A banner appears at the top of the page: "Configuration was changed. Save it to 
 3. To check from the command line, run this on the router:
 
 ```bash {filename="bash"}
-keen-pbr test-routing ifconfig.co
+keen-pbr-sx test-routing ifconfig.co
 ```
 
 In the result table, the `Expected Outbound` and `Actual Outbound` columns should show `vpn`, and the last column should show `OK`.
@@ -119,13 +119,13 @@ In the result table, the `Expected Outbound` and `Actual Outbound` columns shoul
 {{< /tab >}}
 {{< tab name="JSON" >}}
 
-Use this path if you installed `keen-pbr-headless` or prefer editing the config file directly.
+Use this path if you installed `keen-pbr-sx-headless` or prefer editing the config file directly.
 
 Config file locations:
 
-- Keenetic / NetCraze: `/opt/etc/keen-pbr/config.json`
-- OpenWrt: `/etc/keen-pbr/config.json`
-- Debian: `/etc/keen-pbr/config.json`
+- Keenetic / NetCraze: `/opt/etc/keen-pbr-sx/config.json`
+- OpenWrt: `/etc/keen-pbr-sx/config.json`
+- Debian: `/etc/keen-pbr-sx/config.json`
 
 The file already has the outbounds `wan`, `block` and `direct_local`, the list `local_networks` and its rule. Add the `vpn` outbound, lists and rules as in the example below. Leave the other sections (`daemon`, `dns`, `fwmark`, `iproute`, `lists_autoupdate`, `api`) as they are.
 
@@ -172,7 +172,7 @@ The file already has the outbounds `wan`, `block` and `direct_local`, the list `
       "url": "https://example.com/my-list.lst"
     },
     "my_local_file_list": { // list read from a file on the router
-      "file": "/etc/keen-pbr/local.lst" // use the path to your own file
+      "file": "/etc/keen-pbr-sx/local.lst" // use the path to your own file
     }
   },
   "route": {
@@ -210,17 +210,17 @@ Restart the service after saving the config:
 {{< tabs >}}
 {{< tab name="Keenetic / NetCraze" selected=true >}}
 ```bash {filename="bash"}
-/opt/etc/init.d/S80keen-pbr restart
+/opt/etc/init.d/S80keen-pbr-sx restart
 ```
 {{< /tab >}}
 {{< tab name="OpenWrt" >}}
 ```bash {filename="bash"}
-service keen-pbr restart
+service keen-pbr-sx restart
 ```
 {{< /tab >}}
 {{< tab name="Debian" >}}
 ```bash {filename="bash"}
-systemctl restart keen-pbr
+systemctl restart keen-pbr-sx
 ```
 {{< /tab >}}
 {{< /tabs >}}
@@ -228,12 +228,12 @@ systemctl restart keen-pbr
 Clear the DNS cache on your device (`ipconfig /flushdns` on Windows, `sudo resolvectl flush-caches` on Linux, reconnect to Wi-Fi on a phone), then check the result on the router:
 
 ```bash {filename="bash"}
-keen-pbr test-routing ifconfig.co
+keen-pbr-sx test-routing ifconfig.co
 ```
 
 The `Expected Outbound` and `Actual Outbound` columns should show `vpn`, and the last column should show `OK`.
 
-For a broader check, run `keen-pbr status`.
+For a broader check, run `keen-pbr-sx status`.
 
 {{< /tab >}}
 {{< /tabs >}}

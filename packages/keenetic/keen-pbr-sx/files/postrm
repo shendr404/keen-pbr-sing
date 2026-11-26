@@ -1,0 +1,42 @@
+#!/bin/sh
+
+PKG_LIB="${KEEN_PBR_PKG_LIB:-/opt/usr/lib/keen-pbr-sx/pkg.sh}"
+_have_pkg=0
+# shellcheck disable=SC1090
+if [ -f "$PKG_LIB" ]; then
+    . "$PKG_LIB"
+    _have_pkg=1
+fi
+
+if [ "$_have_pkg" = 1 ]; then
+    real_removal "$@" && _remove=1 || _remove=0
+else
+    case "${1:-}" in
+        upgrade|reinstall) _remove=0 ;;
+        *)
+            case "${PKG_UPGRADE:-}" in
+                1|yes|true) _remove=0 ;;
+                *) _remove=1 ;;
+            esac
+            ;;
+    esac
+fi
+
+# An upgrade's postrm runs while the binary is still there, or with
+# "upgrade" / PKG_UPGRADE=1. Only a real removal talks about the fallback.
+if [ "$_remove" != 1 ]; then
+    exit 0
+fi
+
+# The hook is usually already gone with the package files. When it is still
+# here, finish the unhook. uninstall is idempotent.
+"${KEEN_PBR_HOOK:-/opt/usr/lib/keen-pbr-sx/dnsmasq-hook.sh}" uninstall >/dev/null 2>&1 || true
+
+cat <<'EOF2'
+keen-pbr-sx has been removed.
+Its entry was removed from /opt/etc/dnsmasq.conf. If dnsmasq had no upstream DNS
+server left, the fallback servers were added there in a block marked
+"keen-pbr-sx fallback upstream": replace them with your own if you like.
+EOF2
+
+exit 0

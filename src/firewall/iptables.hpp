@@ -163,7 +163,7 @@ private:
   // line. -exist remains the final token for ipset restore compatibility.
   static std::string build_ipset_create_line(const PendingSet &ps);
   static bool is_dynamic_set_name(const std::string &set_name);
-  // Strict grammar of the static-set names keen-pbr owns.  Stable:
+  // Strict grammar of the static-set names keen-pbr-sx owns.  Stable:
   // kpbr4_<tag>/kpbr6_<tag>; Temp: kpbr4t_<tag>/kpbr6t_<tag> (refresh
   // staging); Legacy: kpbr4s_/kpbr4S_/kpbr6s_/kpbr6S_<tag> (retired A/B
   // generations); Internal: kpbr4g_*/kpbr6g_* (default_gateway bypass) and

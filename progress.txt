@@ -1,16 +1,16 @@
-# keen-pbr3 Progress
+# keen-pbr-sx3 Progress
 
 ## Codebase Patterns
 - Build system: Meson + Conan 2.x with PkgConfigDeps and MesonToolchain generators
 - C++20 standard with size optimization (-Os, -ffunction-sections, -fdata-sections, --gc-sections, LTO)
 - Optional features use Meson options (e.g., `with_api`) and C++ preprocessor guards (e.g., `#ifdef WITH_API`)
-- Include path: `include/keen-pbr3/` for public headers
+- Include path: `include/keen-pbr-sx3/` for public headers
 - Source path: `src/` for implementation files
 - Cross-compilation: Conan profiles in `conan/profiles/`, Meson cross-files in `meson/cross/`
 - Conan profiles use `include(base-embedded)` to share common embedded settings
 - OpenWRT toolchain prefix pattern: `<arch>-openwrt-linux-musl-` (e.g., `mipsel-openwrt-linux-musl-gcc`)
 - Keenetic toolchain prefix pattern: `<arch>-linux-musl-` (e.g., `mipsel-linux-musl-gcc`)
-- Docker build: `docker/build.sh <arch>` runs full Conan + Meson build, outputs to `dist/<arch>/keen-pbr3`
+- Docker build: `docker/build.sh <arch>` runs full Conan + Meson build, outputs to `dist/<arch>/keen-pbr-sx3`
 - Source file layout: `src/<module>/<file>.hpp` and `src/<module>/<file>.cpp` (headers co-located with source, not in `include/`)
 - Namespace: `keen_pbr3` for all project code
 - Error handling: custom exception classes inheriting from `std::runtime_error`
@@ -21,7 +21,7 @@
 - Outbound variant: std::variant<InterfaceOutbound, TableOutbound, BlackholeOutbound, IgnoreOutbound, UrltestOutbound> — all std::visit lambdas must handle 5 types
 - UrltestOutbound: has nested outbound_groups (weight + outbounds), retry (attempts, interval_ms), circuit_breaker (failure_threshold, success_threshold, timeout_ms, half_open_max_requests)
 - Urltest validation: outbound_groups references validated in parse_config() after all outbounds parsed — must reference interface/table/blackhole only
-- Local typecheck: `export PKG_CONFIG_PATH=/home/maksimkurb/Dev/keen-pbr3 && g++ -std=c++20 -fsyntax-only -I include $(pkg-config --cflags ...) <file>`
+- Local typecheck: `export PKG_CONFIG_PATH=/home/maksimkurb/Dev/keen-pbr-sx3 && g++ -std=c++20 -fsyntax-only -I include $(pkg-config --cflags ...) <file>`
 - IP/subnet matching: IpSet uses binary trie (IpTrie) with separate v4/v6 tries for efficient CIDR lookup
 - Netlink: libnl3 requires `-I /usr/include/libnl3` for local typecheck; use RAII wrappers with custom deleters for nl_addr, rtnl_route, rtnl_nexthop, rtnl_rule
 - Netlink: `rtnl_route_add_nexthop()` takes ownership of the nexthop pointer (use `.release()`, not `.get()`)
@@ -87,8 +87,8 @@
 -- Looking for C++ include format
 -- Looking for C++ include format - not found
 -- Configuring incomplete, errors occurred!
-See also "/home/maksimkurb/Dev/keen-pbr3/CMakeFiles/CMakeOutput.log".
-See also "/home/maksimkurb/Dev/keen-pbr3/CMakeFiles/CMakeError.log". builds keen-pbr3-tests; tests include only pure-function verifiers (NOT RoutingVerifier requiring real kernel)
+See also "/home/maksimkurb/Dev/keen-pbr-sx3/CMakeFiles/CMakeOutput.log".
+See also "/home/maksimkurb/Dev/keen-pbr-sx3/CMakeFiles/CMakeError.log". builds keen-pbr-sx3-tests; tests include only pure-function verifiers (NOT RoutingVerifier requiring real kernel)
 
 ## Iteration Log
 
@@ -98,7 +98,7 @@ See also "/home/maksimkurb/Dev/keen-pbr3/CMakeFiles/CMakeError.log". builds keen
   - `conanfile.py` - Conan 2.x recipe with dependencies (libcurl, nlohmann_json, libnl, mbedtls, optional cpp-httplib)
   - `meson.build` - Project definition with C++20, size optimization, dependency resolution, with_api feature flag
   - `meson_options.txt` - Build options: with_api (boolean), firewall_backend (combo)
-  - `include/keen-pbr3/version.hpp` - Version macros (3.0.0)
+  - `include/keen-pbr-sx3/version.hpp` - Version macros (3.0.0)
 - **Learnings for future iterations:**
   - The executable target in meson.build is commented out until source files are added (US-027 will finalize it)
   - libnl requires both `libnl-3.0` and `libnl-route-3.0` pkg-config packages
@@ -138,7 +138,7 @@ See also "/home/maksimkurb/Dev/keen-pbr3/CMakeFiles/CMakeError.log". builds keen
 - **Learnings for future iterations:**
   - build.sh uses `--wipe` on meson setup to handle re-runs cleanly, falling back to fresh setup
   - Architecture names match Conan profile and Meson cross-file names (e.g., `mips-le-openwrt`)
-  - Output goes to `dist/<arch>/keen-pbr3`
+  - Output goes to `dist/<arch>/keen-pbr-sx3`
   - Conan's MesonToolchain generates `conan_meson_native.ini` which is passed as `--native-file` to meson setup
 ---
 
@@ -491,7 +491,7 @@ See also "/home/maksimkurb/Dev/keen-pbr3/CMakeFiles/CMakeError.log". builds keen
 - **Learnings for future iterations:**
   - Workflow uses `fail-fast: false` in matrix strategy so one arch failure doesn't cancel others
   - Docker image is built per-job (each arch); could be optimized with a separate build-image job + caching
-  - Artifact names include architecture suffix for unique identification: `keen-pbr3-<arch>`
+  - Artifact names include architecture suffix for unique identification: `keen-pbr-sx3-<arch>`
   - The dist directory is bind-mounted (`-v`) so artifacts survive container removal
   - `if-no-files-found: error` in upload-artifact ensures build failures are caught
 ---
@@ -499,7 +499,7 @@ See also "/home/maksimkurb/Dev/keen-pbr3/CMakeFiles/CMakeError.log". builds keen
 ## 2026-02-06 - US-027
 - What was implemented: Final meson.build integration - uncommented executable target, added static linking for cross-builds, verified all 22 source files are included
 - Files changed:
-  - `meson.build` - Uncommented executable target `keen-pbr3`, added `meson.is_cross_build()` guard for static linking (`-static`), updated comment from "will be added" to final form
+  - `meson.build` - Uncommented executable target `keen-pbr-sx3`, added `meson.is_cross_build()` guard for static linking (`-static`), updated comment from "will be added" to final form
 - **Learnings for future iterations:**
   - `meson.is_cross_build()` is the proper way to conditionally add flags only for cross-compilation targets
   - Static linking via `-static` in link arguments ensures the binary is self-contained for embedded deployments
@@ -522,11 +522,11 @@ See also "/home/maksimkurb/Dev/keen-pbr3/CMakeFiles/CMakeError.log". builds keen
 ---
 
 ## 2026-02-09 - US-029
-- What was implemented: Added configurable `cache_dir` to DaemonConfig (default `/var/cache/keen-pbr3`) and removed `list_update_interval` field since downloading is now a separate command
+- What was implemented: Added configurable `cache_dir` to DaemonConfig (default `/var/cache/keen-pbr-sx3`) and removed `list_update_interval` field since downloading is now a separate command
 - Files changed:
   - `src/config/config.hpp` - Replaced `list_update_interval` with `cache_dir` in DaemonConfig
   - `src/config/config.cpp` - Updated `parse_daemon()` to parse `cache_dir` instead of `list_update_interval`
-  - `src/main.cpp` - Replaced hardcoded `/var/cache/keen-pbr3` with `config.daemon.cache_dir` in both print-dnsmasq-config and daemon mode; removed periodic list update scheduler
+  - `src/main.cpp` - Replaced hardcoded `/var/cache/keen-pbr-sx3` with `config.daemon.cache_dir` in both print-dnsmasq-config and daemon mode; removed periodic list update scheduler
   - `config.example.json` - Replaced `list_update_interval` with `cache_dir`
 - **Learnings for future iterations:**
   - `parse_duration()` helper is still used by outbound ping_interval/ping_timeout and list TTL parsing, so it remains in config.cpp
@@ -657,7 +657,7 @@ See also "/home/maksimkurb/Dev/keen-pbr3/CMakeFiles/CMakeError.log". builds keen
 ---
 
 ## 2026-02-10 - US-039
-- What was implemented: 'keen-pbr3 download' CLI command that downloads all configured lists to cache with ETag/If-Modified-Since support, counts entries, and updates metadata
+- What was implemented: 'keen-pbr-sx3 download' CLI command that downloads all configured lists to cache with ETag/If-Modified-Since support, counts entries, and updates metadata
 - Files changed:
   - `src/main.cpp` - Added `download_lists` field to CliOptions, `download` command parsing, download command handler: CacheManager creation, per-list download with EntryCounter for counting, metadata update, stderr status output
 - **Learnings for future iterations:**
@@ -1031,11 +1031,11 @@ See also "/home/maksimkurb/Dev/keen-pbr3/CMakeFiles/CMakeError.log". builds keen
   - `third_party/doctest` - git submodule added (doctest/doctest.h single header)
   - `.gitmodules` - new entry for doctest submodule
   - `tests/test_firewall_verifier.cpp` - 26 test cases covering all required scenarios
-  - `tests/CMakeLists.txt` - builds keen-pbr3-tests from iptables_verifier, nftables_verifier, firewall_verifier object files + doctest header
+  - `tests/CMakeLists.txt` - builds keen-pbr-sx3-tests from iptables_verifier, nftables_verifier, firewall_verifier object files + doctest header
   - `CMakeLists.txt` - added `option(BUILD_TESTS ...)` and `add_subdirectory(tests)` when ON
 - **Learnings for future iterations:**
   - doctest is single-header at `third_party/doctest/doctest/doctest.h`; include path is `third_party/doctest` → `#include <doctest/doctest.h>`
-  - Tests built with `cmake -DBUILD_TESTS=ON && cmake --build build --target keen-pbr3-tests`
+  - Tests built with `cmake -DBUILD_TESTS=ON && cmake --build build --target keen-pbr-sx3-tests`
   - Tests include only iptables_verifier, nftables_verifier, firewall_verifier.cpp (NOT routing_verifier — requires real kernel)
   - RoutingVerifier tests are NOT included (requires real kernel via libnl3; covered by manual testing)
   - CommandRunner injection: `IptablesFirewallVerifier verifier([&canned](const std::string&) { return canned; });`

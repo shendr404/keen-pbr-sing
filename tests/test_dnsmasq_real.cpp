@@ -165,8 +165,8 @@ TEST_CASE("dnsmasq_real: detector verifies the stamp") {
     const std::string inspect =
         "hook_version=2\nplatform=test\nbinary=" + *bin + "\n"
         "[instance]\nselector=uci:real\nenabled=1\nmain_pid=" + std::to_string(child->pid()) +
-        "\ndropin_include=managed\ndropin_dir=/tmp/keen-pbr-real.d\n"
-        "dropin_file=/tmp/keen-pbr-real.d/keen-pbr-upstream-dns.conf\n"
+        "\ndropin_include=managed\ndropin_dir=/tmp/keen-pbr-sx-real.d\n"
+        "dropin_file=/tmp/keen-pbr-sx-real.d/keen-pbr-sx-upstream-dns.conf\n"
         "dropin_content=conf-script=x\ndropin_state=absent\n";
     deps.exec = [inspect](const std::vector<std::string>&) {
         ExecCaptureResult r;

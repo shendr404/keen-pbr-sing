@@ -1,11 +1,11 @@
 #!/bin/sh
-# Removes every firewall object keen-pbr owns: the iptables chains KeenPbr*
+# Removes every firewall object keen-pbr-sx owns: the iptables chains KeenPbr*
 # (and the rules that jump to them), the nftables table inet KeenPbrTable and
 # the ipsets kpbr*.  The package scripts run it on removal, after the service
 # is stopped.  A clean stop already removes all of this; the script covers a
 # daemon that crashed or never started, whose leftover rules (marking, DNS
-# hold, source NAT) would keep steering traffic after keen-pbr is gone.  Uses only
-# iptables, nft and ipset, never keen-pbr itself.  Idempotent; always exits 0.
+# hold, source NAT) would keep steering traffic after keen-pbr-sx is gone.  Uses only
+# iptables, nft and ipset, never keen-pbr-sx itself.  Idempotent; always exits 0.
 #
 #   cleanup-firewall.sh [--reason uninstall|stop|crash]
 #
@@ -13,10 +13,10 @@
 # runs it before the process dies.  Finding anything is not normal (a clean
 # stop leaves nothing), so that is logged as a warning naming the reason.
 #
-# keen-pbr's policy routing rules only match its fwmarks, so once nothing marks
+# keen-pbr-sx's policy routing rules only match its fwmarks, so once nothing marks
 # packets they are inert and are left alone (they disappear on reboot).
 
-INTERFACE_FORWARD="${INTERFACE_FORWARD:-/opt/usr/lib/keen-pbr/interface-forward.sh}"
+INTERFACE_FORWARD="${INTERFACE_FORWARD:-/opt/usr/lib/keen-pbr-sx/interface-forward.sh}"
 IPTABLES="${IPTABLES:-iptables}"
 IP6TABLES="${IP6TABLES:-ip6tables}"
 NFT="${NFT:-nft}"
@@ -30,7 +30,7 @@ found=0
 
 log() {
     found=1
-    logger -t keen-pbr "cleanup-firewall: $1" >/dev/null 2>&1 || true
+    logger -t keen-pbr-sx "cleanup-firewall: $1" >/dev/null 2>&1 || true
 }
 
 # cleanup_xt_table <command> <table>
@@ -83,8 +83,8 @@ if [ -x "$INTERFACE_FORWARD" ]; then
 fi
 
 if [ "$found" = 1 ]; then
-    logger -s -t keen-pbr -p user.warning \
-        "WARNING: keen-pbr firewall rules were left behind (on $REASON: keen-pbr did not stop cleanly); removed them" \
+    logger -s -t keen-pbr-sx -p user.warning \
+        "WARNING: keen-pbr-sx firewall rules were left behind (on $REASON: keen-pbr-sx did not stop cleanly); removed them" \
         2>&1 || true
 fi
 

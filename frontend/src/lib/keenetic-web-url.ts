@@ -1,6 +1,6 @@
 /**
- * Address of a page of the Keenetic web interface. The keen-pbr UI is served
- * by the router itself, so the page's host is the router; the keen-pbr port is
+ * Address of a page of the Keenetic web interface. The keen-pbr-sx UI is served
+ * by the router itself, so the page's host is the router; the keen-pbr-sx port is
  * dropped to reach the Keenetic web interface on its default port.
  */
 export function keeneticWebUrl(path: string): string {

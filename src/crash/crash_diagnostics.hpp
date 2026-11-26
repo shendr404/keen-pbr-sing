@@ -25,7 +25,7 @@ struct RegisterValue {
 };
 
 struct CrashReporterConfig {
-    std::string report_path{"/tmp/keen-pbr-crash.log"};
+    std::string report_path{"/tmp/keen-pbr-sx-crash.log"};
     std::string version;
     std::string build;
     std::string commit;

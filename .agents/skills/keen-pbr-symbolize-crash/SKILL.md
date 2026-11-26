@@ -1,5 +1,5 @@
 ---
-name: keen-pbr-symbolize-crash
+name: keen-pbr-sx-symbolize-crash
 description: Diagnose Keen PBR native crashes from KPBR-CRASH v1 or legacy raw logs. Use when a user has a Keen PBR SIGSEGV, SIGABRT, SIGBUS, SIGFPE, SIGILL, or terminate report and wants the exact historical commit, temporary worktree, matching OpenWrt or Keenetic GitHub debug artifact, readable stack trace, symbol/function, source file, source line, or an evidence-backed explanation of an unresolved address.
 ---
 
@@ -12,9 +12,9 @@ Resolve historical crash addresses without modifying the user's current worktree
 For a complete `KPBR-CRASH v1` report, require only the log. Read version, 14-digit build ID, commit, branch, platform, firmware version, architecture, and variant from its `meta` line. Run:
 
 ```bash
-python3 .agents/skills/keen-pbr-symbolize-crash/scripts/analyze_crash.py \
+python3 .agents/skills/keen-pbr-sx-symbolize-crash/scripts/analyze_crash.py \
   --repo . \
-  --log-file /path/to/keen-pbr-crash.log
+  --log-file /path/to/keen-pbr-sx-crash.log
 ```
 
 Use explicit CLI metadata only to analyze a legacy report or override a known incorrect field. Never override embedded metadata silently.
@@ -37,7 +37,7 @@ Treat source branch and artifact channel as the same value unless the user disti
 From the repository root, run:
 
 ```bash
-python3 .agents/skills/keen-pbr-symbolize-crash/scripts/analyze_crash.py \
+python3 .agents/skills/keen-pbr-sx-symbolize-crash/scripts/analyze_crash.py \
   --repo . \
   --branch main \
   --channel main \
@@ -57,10 +57,10 @@ For OpenWrt, use the artifact layout:
 ```text
 https://raw.githubusercontent.com/maksimkurb/keen-pbr-repository/main/
 repository/<channel>/openwrt-debug/<openwrt>/
-keen-pbr_<version>-<build>_openwrt_<openwrt>_<arch>_<variant>.debug
+keen-pbr-sx_<version>-<build>_openwrt_<openwrt>_<arch>_<variant>.debug
 ```
 
-For Keenetic, use `repository/<channel>/keenetic-debug/<version>/<package-arch>/keen-pbr_<version>-<build>_keenetic_<config>_<variant>.debug`.
+For Keenetic, use `repository/<channel>/keenetic-debug/<version>/<package-arch>/keen-pbr-sx_<version>-<build>_keenetic_<config>_<variant>.debug`.
 
 ## Interpret addresses conservatively
 

@@ -52,7 +52,7 @@ verify_unprivileged_userns() {
 resolve_binary() {
   [[ -n "$binary" ]] || die "INTEGRATION_BIN is required (normally built by make integration-netns-build)"
   binary=$(realpath "$binary")
-  [[ -x "$binary" ]] || die "keen-pbr integration binary is not executable: $binary"
+  [[ -x "$binary" ]] || die "keen-pbr-sx integration binary is not executable: $binary"
   case "$binary" in
     "$repo_root"/*) ;;
     *) die "INTEGRATION_BIN must live inside the repository so the sandbox can bind it read-only" ;;

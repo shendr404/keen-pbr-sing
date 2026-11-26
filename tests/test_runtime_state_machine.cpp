@@ -13,6 +13,17 @@ TEST_CASE("RuntimeStateMachine rejects invalid transitions without mutation") {
     CHECK(error == "invalid runtime transition: starting -> applying");
 }
 
+TEST_CASE("config apply moves applying to running once") {
+    RuntimeStateMachine machine{RuntimeState::running};
+    std::string error;
+    REQUIRE(machine.transition(RuntimeState::applying, "config apply", error));
+    REQUIRE(machine.transition(RuntimeState::running, "config apply complete", error));
+    CHECK(machine.state() == RuntimeState::running);
+    CHECK_FALSE(machine.transition(RuntimeState::running, "config apply complete", error));
+    CHECK(error.find("running -> running") != std::string::npos);
+    CHECK(machine.state() == RuntimeState::running);
+}
+
 TEST_CASE("RuntimeStateMachine records transitions and recovery from broken") {
     RuntimeStateMachine machine;
     std::string error;

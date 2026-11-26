@@ -3,8 +3,8 @@
 # skips ip6tables when IPv6 is disabled, and removes the rules it added.
 set -eu
 repo=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
-script="$repo/packages/keenetic/keen-pbr/files/opt/usr/lib/keen-pbr/interface-forward.sh"
-hook="$repo/packages/keenetic/keen-pbr/files/opt/etc/ndm/netfilter.d/51-keen-pbr-forward.sh"
+script="$repo/packages/keenetic/keen-pbr-sx/files/opt/usr/lib/keen-pbr-sx/interface-forward.sh"
+hook="$repo/packages/keenetic/keen-pbr-sx/files/opt/etc/ndm/netfilter.d/51-keen-pbr-sx-forward.sh"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }

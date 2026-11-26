@@ -18,7 +18,7 @@ namespace {
 std::filesystem::path make_temp_static_root() {
     const auto base = std::filesystem::temp_directory_path();
     for (int i = 0; i < 100; ++i) {
-        auto path = base / ("keen-pbr-static-test-" + std::to_string(::getpid()) + "-" + std::to_string(i));
+        auto path = base / ("keen-pbr-sx-static-test-" + std::to_string(::getpid()) + "-" + std::to_string(i));
         std::error_code ec;
         if (std::filesystem::create_directory(path, ec)) {
             return path;
@@ -49,7 +49,7 @@ void write_gzip_file(const std::filesystem::path& path, const std::string& conte
 
 TEST_CASE("static frontend gzip response does not duplicate compression headers") {
     const auto root = make_temp_static_root();
-    write_file(root / "index.html", "<!doctype html><title>keen-pbr</title>");
+    write_file(root / "index.html", "<!doctype html><title>keen-pbr-sx</title>");
     write_file(root / "index.html.gz", "pretend-gzip-bytes");
 
     ApiConfig api_config;
@@ -81,7 +81,7 @@ TEST_CASE("static frontend gzip response does not duplicate compression headers"
 
 TEST_CASE("static frontend gzip variant is skipped without gzip accept header") {
     const auto root = make_temp_static_root();
-    write_gzip_file(root / "index.html.gz", "<!doctype html><title>keen-pbr</title>");
+    write_gzip_file(root / "index.html.gz", "<!doctype html><title>keen-pbr-sx</title>");
 
     ApiConfig api_config;
     api_config.listen = std::string("127.0.0.1:18191");
@@ -104,7 +104,7 @@ TEST_CASE("static frontend gzip variant is skipped without gzip accept header") 
     CHECK(response->get_header_value("Vary") == "Accept-Encoding");
     CHECK(response->get_header_value("Cache-Control") == "no-cache");
     CHECK(response->get_header_value_count("Content-Encoding") == 0);
-    CHECK(response->body == "<!doctype html><title>keen-pbr</title>");
+    CHECK(response->body == "<!doctype html><title>keen-pbr-sx</title>");
 }
 
 TEST_CASE("fingerprinted gzip-only assets are immutable and support ETag revalidation") {
@@ -145,7 +145,7 @@ TEST_CASE("fingerprinted gzip-only assets are immutable and support ETag revalid
 
 TEST_CASE("static frontend gzip variant respects explicit q zero") {
     const auto root = make_temp_static_root();
-    write_file(root / "index.html", "<!doctype html><title>keen-pbr</title>");
+    write_file(root / "index.html", "<!doctype html><title>keen-pbr-sx</title>");
     write_file(root / "index.html.gz", "pretend-gzip-bytes");
 
     ApiConfig api_config;
@@ -166,7 +166,7 @@ TEST_CASE("static frontend gzip variant respects explicit q zero") {
     REQUIRE(response != nullptr);
     CHECK(response->status == 200);
     CHECK(response->get_header_value_count("Content-Encoding") == 0);
-    CHECK(response->body == "<!doctype html><title>keen-pbr</title>");
+    CHECK(response->body == "<!doctype html><title>keen-pbr-sx</title>");
 }
 
 } // namespace keen_pbr3

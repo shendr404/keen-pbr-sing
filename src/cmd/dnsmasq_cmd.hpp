@@ -9,7 +9,7 @@
 
 namespace keen_pbr3 {
 
-// `keen-pbr resolver dnsmasq <args>` (args start at the subcommand, i.e.
+// `keen-pbr-sx resolver dnsmasq <args>` (args start at the subcommand, i.e.
 // "detect"). Returns the process exit code. Never throws.
 int run_dnsmasq_command(const std::vector<std::string>& args,
                         const std::string& config_path,

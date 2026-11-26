@@ -48,13 +48,13 @@ release_asset_name() {
     local version_release=""
     local os_flavor=""
 
-    if [[ "$stem" =~ ^(keen-pbr(-headless)?)_([^_]+)_(openwrt|debian|keenetic)_([^_]+)_(.+)$ ]]; then
+    if [[ "$stem" =~ ^(keen-pbr-sx(-headless)?)_([^_]+)_(openwrt|debian|keenetic)_([^_]+)_(.+)$ ]]; then
         package_name="${BASH_REMATCH[1]}"
         version_release="${BASH_REMATCH[3]}"
         os_flavor="${BASH_REMATCH[4]}"
         os_version="${BASH_REMATCH[5]}"
         arch="${BASH_REMATCH[6]}"
-    elif [[ "$stem" =~ ^(keen-pbr(-headless)?)_([^_]+)_(openwrt|debian|keenetic)_(.+)$ ]]; then
+    elif [[ "$stem" =~ ^(keen-pbr-sx(-headless)?)_([^_]+)_(openwrt|debian|keenetic)_(.+)$ ]]; then
         package_name="${BASH_REMATCH[1]}"
         version_release="${BASH_REMATCH[3]}"
         os_flavor="${BASH_REMATCH[4]}"
@@ -65,7 +65,7 @@ release_asset_name() {
             arch="${keenetic_parts[0]}"
             os_version="${keenetic_parts[1]}"
         fi
-    elif [[ "$stem" =~ ^(keen-pbr(-headless)?)-([0-9].*)$ ]]; then
+    elif [[ "$stem" =~ ^(keen-pbr-sx(-headless)?)-([0-9].*)$ ]]; then
         package_name="${BASH_REMATCH[1]}"
         version_release="${BASH_REMATCH[3]}"
         os_flavor="openwrt"

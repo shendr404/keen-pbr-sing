@@ -76,7 +76,7 @@ private:
 class TempDir {
 public:
     TempDir() {
-        char path_template[] = "/tmp/keen-pbr-safe-exec-XXXXXX";
+        char path_template[] = "/tmp/keen-pbr-sx-safe-exec-XXXXXX";
         const char* created = mkdtemp(path_template);
         if (created == nullptr) {
             throw std::runtime_error("mkdtemp failed");

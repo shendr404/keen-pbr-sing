@@ -1,5 +1,5 @@
 #include <doctest/doctest.h>
-#include <keen-pbr/version.hpp>
+#include <keen-pbr-sx/version.hpp>
 
 #include "../src/config/config.hpp"
 #include "../src/config/config_writer.hpp"
@@ -1994,8 +1994,8 @@ TEST_CASE("shipped example configs validate and include default local_networks r
         {"config.example.json", "config.example.json"},
         {"packages/common/config.full.example.json", "packages/common/config.full.example.json"},
         {"packages/common/config.headless.example.json", "packages/common/config.headless.example.json"},
-        {"packages/keenetic/keen-pbr/files/opt/etc/keen-pbr/config.full.example.json", "packages/keenetic/keen-pbr/files/opt/etc/keen-pbr/config.full.example.json"},
-        {"packages/keenetic/keen-pbr/files/opt/etc/keen-pbr/config.headless.example.json", "packages/keenetic/keen-pbr/files/opt/etc/keen-pbr/config.headless.example.json"}
+        {"packages/keenetic/keen-pbr-sx/files/opt/etc/keen-pbr-sx/config.full.example.json", "packages/keenetic/keen-pbr-sx/files/opt/etc/keen-pbr-sx/config.full.example.json"},
+        {"packages/keenetic/keen-pbr-sx/files/opt/etc/keen-pbr-sx/config.headless.example.json", "packages/keenetic/keen-pbr-sx/files/opt/etc/keen-pbr-sx/config.headless.example.json"}
     };
 
     for (const auto& entry : example_configs) {

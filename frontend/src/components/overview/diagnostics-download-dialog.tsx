@@ -177,7 +177,7 @@ async function downloadDiagnosticsFile(payload: Record<string, unknown>) {
       ? payload
       : { ...payload, command_failure_log: commandFailureLog }
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-")
-  const filename = `keen-pbr-diagnostics-${timestamp}.json`
+  const filename = `keen-pbr-sx-diagnostics-${timestamp}.json`
   const content = `${JSON.stringify(completePayload, null, 2)}\n`
   const blob = new Blob([content], { type: "application/json;charset=utf-8" })
   const url = URL.createObjectURL(blob)

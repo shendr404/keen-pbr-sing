@@ -6,10 +6,12 @@
 
 #ifdef WITH_API
 
+#include <cerrno>
 #include <filesystem>
 #include <fcntl.h>
 #include <fstream>
 #include <future>
+#include <sstream>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -28,7 +30,7 @@
 #include "../util/time_utils.hpp"
 
 #ifndef KEEN_PBR_FRONTEND_ROOT
-#define KEEN_PBR_FRONTEND_ROOT "/usr/share/keen-pbr/frontend"
+#define KEEN_PBR_FRONTEND_ROOT "/usr/share/keen-pbr-sx/frontend"
 #endif
 
 namespace keen_pbr3 {
@@ -374,10 +376,20 @@ ConfigApplyResult Daemon::apply_validated_config_via_control_task(
                 complete(*result);
             };
             try {
-                apply_prepared_runtime_inputs(std::move(*prepared), false, persist_config);
-                // The candidate is serving; what follows is the durable commit.
+                // Stay in `applying` until the file commit succeeds. SIGHUP
+                // passes persist_config=false and still completes once below.
+                apply_prepared_runtime_inputs(std::move(*prepared), false, true, false);
+                std::string previous_config;
+                bool had_previous = false;
                 try {
                     if (persist_config) {
+                        std::ifstream current(config_path_);
+                        if (current) {
+                            std::ostringstream buffered;
+                            buffered << current.rdbuf();
+                            previous_config = buffered.str();
+                            had_previous = true;
+                        }
                         write_config_atomically(config_path_, saved_config_json);
                         // dnsmasq's conf-script reads config.json: sync only now.
                         schedule_dnsmasq_sync(dnsmasq_apply_reason("config apply complete"),
@@ -387,16 +399,46 @@ ConfigApplyResult Daemon::apply_validated_config_via_control_task(
                     if (persist_config) {
                         config_store_.clear_staged();
                     }
-                    transition_runtime_or_throw(RuntimeState::running,
-                                                "config apply complete");
-                    publish_runtime_state();
+                    // One applying -> running transition for API apply and SIGHUP.
+                    complete_running_runtime("config apply complete", persist_config);
                     result->saved = persist_config;
                     result->applied = true;
                 } catch (const std::exception& error) {
                     result->error = error.what();
                     Logger::instance().error("Config durable commit failed: {}", error.what());
-                    // The candidate is already serving successfully. A durable
-                    // write failure fails only the commit and keeps it as a draft.
+                    if (persist_config) {
+                        try {
+                            std::ifstream current(config_path_);
+                            std::string now;
+                            if (current) {
+                                std::ostringstream buffered;
+                                buffered << current.rdbuf();
+                                now = buffered.str();
+                            }
+                            // Restore the file when this attempt replaced it and
+                            // then failed. The caller rolls back its own store.
+                            if (had_previous) {
+                                if (now != previous_config) write_config_atomically(config_path_, previous_config);
+                            } else if (::unlink(config_path_.c_str()) != 0 && errno != ENOENT) {
+                                Logger::instance().error("Cannot remove config left by a failed apply");
+                            }
+                        } catch (const std::exception& restore_error) {
+                            Logger::instance().error("Cannot restore config after a failed apply: {}",
+                                                     restore_error.what());
+                        }
+                    }
+                    if (runtime_state_machine_.state() == RuntimeState::applying) {
+                        try {
+                            // The firewall is already serving the candidate.
+                            // Finish the one allowed applying -> running step
+                            // without rereading a file this attempt did not keep.
+                            complete_running_runtime("config apply complete", true);
+                        } catch (const std::exception& complete_error) {
+                            result->error = complete_error.what();
+                            fail_after_mutation();
+                            return;
+                        }
+                    }
                     complete(*result);
                     return;
                 }

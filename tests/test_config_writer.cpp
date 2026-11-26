@@ -15,7 +15,7 @@ namespace {
 class TempDir {
 public:
     TempDir() {
-        char pattern[] = "/tmp/keen-pbr-config-writer-XXXXXX";
+        char pattern[] = "/tmp/keen-pbr-sx-config-writer-XXXXXX";
         const char* created = ::mkdtemp(pattern);
         REQUIRE(created != nullptr);
         path = created;

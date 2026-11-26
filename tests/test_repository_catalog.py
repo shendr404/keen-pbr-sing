@@ -21,7 +21,7 @@ class RepositoryCatalogTest(unittest.TestCase):
                     "version": "noble",
                     "arch": "amd64",
                     "sourceLine": (
-                        "deb [signed-by=/usr/share/keyrings/keen-pbr-archive-keyring.asc] "
+                        "deb [signed-by=/usr/share/keyrings/keen-pbr-sx-archive-keyring.asc] "
                         "https://repo.test/repository/stable/debian/bookworm/amd64 ./"
                     ),
                 },
@@ -29,7 +29,7 @@ class RepositoryCatalogTest(unittest.TestCase):
                     "version": "resolute",
                     "arch": "arm64",
                     "sourceLine": (
-                        "deb [signed-by=/usr/share/keyrings/keen-pbr-archive-keyring.asc] "
+                        "deb [signed-by=/usr/share/keyrings/keen-pbr-sx-archive-keyring.asc] "
                         "https://repo.test/repository/stable/debian/trixie/arm64 ./"
                     ),
                 },

@@ -76,7 +76,7 @@ def build_registry() -> Registry:
 
 def optional_missing(backend: str) -> set[str]:
     """Optional capabilities the preflight found absent for this backend."""
-    path = os.path.join(os.environ.get("KPBR_RUNTIME", "/run/keen-pbr-it"),
+    path = os.path.join(os.environ.get("KPBR_RUNTIME", "/run/keen-pbr-sx-it"),
                         "optional-missing")
     try:
         with open(path, encoding="utf-8") as handle:

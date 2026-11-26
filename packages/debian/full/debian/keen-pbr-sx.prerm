@@ -1,0 +1,29 @@
+#!/bin/sh
+
+set -e
+
+# Never runs keen-pbr-sx itself (a broken binary or config must not block or
+# break the removal); the cleanup steps are best effort.
+
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl stop keen-pbr-sx >/dev/null 2>&1 || true
+fi
+
+# On package removal (not on upgrade): take keen-pbr-sx out of dnsmasq's config,
+# then remove firewall rules a crashed daemon may have left behind.  The
+# service is stopped first so it cannot re-apply either.
+case "$1" in
+    remove|purge)
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl disable keen-pbr-sx >/dev/null 2>&1 || true
+        fi
+        if [ -x /usr/lib/keen-pbr-sx/dnsmasq-hook.sh ]; then
+            /usr/lib/keen-pbr-sx/dnsmasq-hook.sh uninstall >/dev/null 2>&1 || true
+        fi
+        if [ -x /usr/lib/keen-pbr-sx/cleanup-firewall.sh ]; then
+            /usr/lib/keen-pbr-sx/cleanup-firewall.sh >/dev/null 2>&1 || true
+        fi
+        ;;
+esac
+
+exit 0

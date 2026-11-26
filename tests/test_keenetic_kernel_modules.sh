@@ -2,7 +2,7 @@
 set -u
 
 repo_root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
-init_script="$repo_root/packages/keenetic/keen-pbr/files/opt/etc/init.d/S80keen-pbr"
+init_script="$repo_root/packages/keenetic/keen-pbr-sx/files/opt/etc/init.d/S80keen-pbr-sx"
 tmp_script=$(mktemp)
 tmp_dir=$(mktemp -d)
 trap 'rm -rf "$tmp_script" "$tmp_dir"' EXIT

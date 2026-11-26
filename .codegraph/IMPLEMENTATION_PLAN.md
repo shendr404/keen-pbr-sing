@@ -2,16 +2,16 @@
 
 ## Цель и границы
 
-Цель — исключить дополнительные утечки и разрывы, которые создаёт сам `keen-pbr` при повторном применении состояния, сделать активный daemon единственным источником правды для operational-команд и ввести проверяемую транзакционную модель применения конфигурации.
+Цель — исключить дополнительные утечки и разрывы, которые создаёт сам `keen-pbr-sx` при повторном применении состояния, сделать активный daemon единственным источником правды для operational-команд и ввести проверяемую транзакционную модель применения конфигурации.
 
-План не обещает устранить внешнее разрушение таблиц самим Keenetic до получения `SIGUSR1`. Гарантия для `SIGUSR1` формулируется так: если объекты ядра сохранились, `keen-pbr` не создаёт дополнительного disruption; если Keenetic уже удалил их, daemon восстанавливает желаемое состояние без предварительной очистки уцелевших объектов.
+План не обещает устранить внешнее разрушение таблиц самим Keenetic до получения `SIGUSR1`. Гарантия для `SIGUSR1` формулируется так: если объекты ядра сохранились, `keen-pbr-sx` не создаёт дополнительного disruption; если Keenetic уже удалил их, daemon восстанавливает желаемое состояние без предварительной очистки уцелевших объектов.
 
 В план намеренно не входят:
 
 - принудительный перехват клиентского DNS на портах 53/853 и блокировка DoH;
 - управление IPv6 при `ipv6_enabled=false` — в этом режиме IPv6 осознанно остаётся unmanaged и может обходить PBR;
 - периодический self-healing;
-- отдельная CLI-команда `keen-pbr reload`;
+- отдельная CLI-команда `keen-pbr-sx reload`;
 - хранение версий списков или resolver-конфигураций на диске либо в памяти.
 
 ## Зафиксированные архитектурные решения
@@ -324,7 +324,7 @@ Firewall backends имеют разные неполные механизмы п
 - Оба backend проходят один conformance suite.
 - Inspect отличает missing, extra, reordered и schema mismatch.
 - Static и dnsmasq-populated dynamic sets моделируются отдельно.
-- Cleanup удаляет только namespace `keen-pbr`.
+- Cleanup удаляет только namespace `keen-pbr-sx`.
 - Crash adoption не требует файлового ownership manifest.
 - Failed plan не изменяет cached actual/desired и не переиспользуется.
 - API health показывает backend capability и итог verify.
@@ -475,9 +475,9 @@ routine re-apply. Port-only правила разворачиваются по I
 
 Для original direction:
 
-1. если в ctmark есть keen-pbr bits — восстановить только зарезервированные bits в nfmark и пропустить повторную классификацию;
+1. если в ctmark есть keen-pbr-sx bits — восстановить только зарезервированные bits в nfmark и пропустить повторную классификацию;
 2. иначе классифицировать первый пакет;
-3. сохранить в ctmark только успешно выбранный routed/DNS-detour mark под keen-pbr mask.
+3. сохранить в ctmark только успешно выбранный routed/DNS-detour mark под keen-pbr-sx mask.
 
 Не сохранять marks для ignore, unmatched и terminal blackhole. Reply direction не восстанавливать в routing mark. Чужие bits nfmark/ctmark сохранять.
 
@@ -490,7 +490,7 @@ User traffic к URLTEST и DNS detour через URLTEST используют ma
 ### Критерии приёмки
 
 - Один established flow сохраняет mark при static set swap и SIGUSR1.
-- В одном направлении сохраняются только keen-pbr mask bits; чужие bits не меняются.
+- В одном направлении сохраняются только keen-pbr-sx mask bits; чужие bits не меняются.
 - Reply packets не отправляются повторно по PBR из-за restore.
 - URLTEST switch с `preserve` не удаляет conntrack entries.
 - URLTEST switch с `delete` удаляет только entries URLTEST mark после готовности нового route.
@@ -679,10 +679,10 @@ CLI-команды могут читать конфигурацию/состоя
 
 Socket path задаётся build option:
 
-- Debian/OpenWrt: `/run/keen-pbr/control.sock`;
-- Keenetic: `/tmp/keen-pbr/control.sock`.
+- Debian/OpenWrt: `/run/keen-pbr-sx/control.sock`;
+- Keenetic: `/tmp/keen-pbr-sx/control.sock`.
 
-Mode `0660`, owner `root:keen-pbr`. Peer проверяется через filesystem permissions и `SO_PEERCRED`. Участники группы могут выполнять list update; матрица разрешений для read/mutate задаётся явно. Общий connect timeout — 1 секунда, non-streaming response idle/read timeout — 5 секунд.
+Mode `0660`, owner `root:keen-pbr-sx`. Peer проверяется через filesystem permissions и `SO_PEERCRED`. Участники группы могут выполнять list update; матрица разрешений для read/mutate задаётся явно. Общий connect timeout — 1 секунда, non-streaming response idle/read timeout — 5 секунд.
 
 ### Критерии приёмки
 
@@ -701,16 +701,16 @@ Mode `0660`, owner `root:keen-pbr`. Peer проверяется через files
 2. Остановить daemon; `status`, `test-routing`, `download` завершаются nonzero.
 3. Передать operational-команде `--config`; получить usage error до обращения к файлу.
 4. Подключиться несовместимой protocol version; получить structured error.
-5. Проверить root, member `keen-pbr` и постороннего пользователя по permission matrix.
+5. Проверить root, member `keen-pbr-sx` и постороннего пользователя по permission matrix.
 6. Запустить две mutations; вторая мгновенно получает busy.
 7. Имитировать connect/read timeout; CLI завершается в заданные границы.
 8. Проверить stale socket на startup: daemon безопасно определяет отсутствие live owner и переоткрывает только свой exact path.
 
 **Примечания после имплементации:** Добавлен versioned length-prefixed JSON
 control protocol и Unix `SOCK_STREAM` listener. Socket создаётся по build
-option, с mode `0660` и owner `root:keen-pbr`, stale non-socket path
+option, с mode `0660` и owner `root:keen-pbr-sx`, stale non-socket path
 отклоняется, а graceful shutdown удаляет exact socket. `SO_PEERCRED`
-ограничивает read/mutate операции root; член `keen-pbr` может выполнять только
+ограничивает read/mutate операции root; член `keen-pbr-sx` может выполнять только
 list download. IPC client имеет bounded connect/read/write exchange; CLI
 `status`, `resolver-config-hash`, `download`/`--reload` и `test-routing`
 работают через active daemon state и отклоняют `--config`. Ответы имеют
@@ -748,12 +748,12 @@ Protocol: length-prefixed JSON header, затем raw byte chunks напряму
 
 Fallback paths — build options:
 
-- Debian/OpenWrt: `/etc/keen-pbr/dnsmasq-fallback.conf`;
-- Keenetic: `/opt/etc/keen-pbr/dnsmasq-fallback.conf`.
+- Debian/OpenWrt: `/etc/keen-pbr-sx/dnsmasq-fallback.conf`;
+- Keenetic: `/opt/etc/keen-pbr-sx/dnsmasq-fallback.conf`.
 
 Каждая выдача содержит текущее время invocation и marker:
 
-- active comments: `# keen-pbr resolver state: active`;
+- active comments: `# keen-pbr-sx resolver state: active`;
 - active TXT: `txt-record=config-hash.keen.pbr,<timestamp>|<active-md5>` и `txt-record=resolver-state.keen.pbr,<timestamp>|active|runtime_active`;
 - fallback comments: state и обязательная причина;
 - fallback TXT: hash fallback content и `<timestamp>|fallback|<reason_code>`.
@@ -1041,7 +1041,7 @@ policy rules/routes/firewall namespace. Ранее существующие test
 Packaging:
 
 - добавить userspace `conntrack` как обязательную dependency;
-- создать system group `keen-pbr`, настроить `root:keen-pbr` и `0660` socket;
+- создать system group `keen-pbr-sx`, настроить `root:keen-pbr-sx` и `0660` socket;
 - установить статический fallback config по platform path;
 - оставить restart helpers маленькими адаптерами без файлового swap active config;
 - обеспечить корректные runtime directory ownership/cleanup.
@@ -1086,7 +1086,7 @@ Packaging:
   nullable inheritance. CMake уже валидирует numeric route protocol и задаёт
   control socket/fallback paths как platform build options.
 - Debian, OpenWrt и Keenetic packages теперь depend на `conntrack`, создают
-  системную группу `keen-pbr`, а OpenWrt/Keenetic компилируются с platform socket
+  системную группу `keen-pbr-sx`, а OpenWrt/Keenetic компилируются с platform socket
   paths. Fallback остаётся conffile, поэтому package manager не перезаписывает
   пользовательскую версию при upgrade.
 - English/Russian advanced configuration docs описывают terminal actions,
@@ -1167,7 +1167,7 @@ Acceptance gate для SIGUSR1 при intact state: ноль дополните�
   iptables и nftables; оба backend теперь проходят smoke, URLTEST, формы правил,
   table/interface и multiport fixture. Во время этой проверки исправлена
   совместимость nft JSON conntrack-mark выражений с nftables 1.0.x.
-- Выполнены `make`, полный `keen-pbr-tests` (597 test cases, 2374 assertions),
+- Выполнены `make`, полный `keen-pbr-sx-tests` (597 test cases, 2374 assertions),
   `clangd-tidy` изменённых firewall/test файлов и `make firewall-it`.
 
 ---
@@ -1266,7 +1266,7 @@ Expected resolver hash вычисляется из одного пути кон�
 
 Реальный OpenWrt случай: active config содержал enabled route rules и DNS rules
 для `work`, `cubly_home` и `tailscale`; firewall подтвердил dynamic sets,
-однако `keen-pbr generate-resolver-config dnsmasq` выдал только fallback
+однако `keen-pbr-sx generate-resolver-config dnsmasq` выдал только fallback
 servers, probe TXT и hash без единой list directive. Повторный restart dnsmasq
 в таком состоянии лишь применяет тот же неверный stream.
 

@@ -4,7 +4,7 @@
 
 #include <httplib.h>
 #include <nlohmann/json.hpp>
-#include <keen-pbr/version.hpp>
+#include <keen-pbr-sx/version.hpp>
 
 #include "../src/api/handler_config.hpp"
 #include "../src/api/server.hpp"
@@ -46,7 +46,7 @@ ApiContext make_config_post_context(SseBroadcaster& broadcaster,
 
 nlohmann::json post_balance_config(int port, RawPreroutingMode raw_prerouting,
                                    int* status, int* staged_count) {
-    const std::string config_path = "/tmp/keen-pbr-test-config.json";
+    const std::string config_path = "/tmp/keen-pbr-sx-test-config.json";
     SseBroadcaster broadcaster;
     ApiConfig api_config;
     api_config.listen = "127.0.0.1:" + std::to_string(port);
@@ -113,7 +113,7 @@ TEST_CASE("POST /api/config stamps the running version on the staged config") {
     ApiServer server(api_config);
     std::optional<Config> staged;
     ApiContext ctx{
-        "/tmp/keen-pbr-test-config.json",
+        "/tmp/keen-pbr-sx-test-config.json",
         broadcaster,
         []() { return Config{}; },
         []() { return false; },

@@ -21,7 +21,7 @@ struct FirewallSnapshot {
 class FirewallSnapshotInspector {
 public:
     virtual ~FirewallSnapshotInspector() = default;
-    // Reads only the tables that can hold keen-pbr rules: iptables mangle
+    // Reads only the tables that can hold keen-pbr-sx rules: iptables mangle
     // (plus raw per family in RAW PREROUTING mode) for IPv4 and, when
     // `ipv6_enabled`, IPv6; the nft KeenPbrTable without set elements.
     virtual FirewallSnapshot inspect(bool ipv6_enabled) const = 0;

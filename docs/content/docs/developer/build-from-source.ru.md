@@ -5,7 +5,7 @@ aliases:
   - /docs/getting-started/compilation/
 ---
 
-Эта страница для разработчиков и мейнтейнеров пакетов, которые хотят собрать keen-pbr из исходного кода. Если вам нужен готовый пакет, смотрите [установку]({{< relref "/docs/getting-started" >}}).
+Эта страница для разработчиков и мейнтейнеров пакетов, которые хотят собрать keen-pbr-sx из исходного кода. Если вам нужен готовый пакет, смотрите [установку]({{< relref "/docs/getting-started" >}}).
 
 ## Предварительные требования
 
@@ -40,8 +40,8 @@ aliases:
 
 ```bash {filename="bash"}
 # Клонировать репозиторий вместе с подмодулями
-git clone --recurse-submodules https://github.com/shendr404/keen-pbr-sing.git
-cd keen-pbr
+git clone --recurse-submodules https://github.com/shendr404/keen-pbr-sx.git
+cd keen-pbr-sx
 
 # Собрать
 make
@@ -60,7 +60,7 @@ make setup    # cmake -S . -B cmake-build-gcc
 make build    # cmake --build cmake-build-gcc
 ```
 
-Бинарный файл создаётся в `cmake-build-gcc/keen-pbr`. Цели Clang (`make clang-build`) собирают в `cmake-build-clang`.
+Бинарный файл создаётся в `cmake-build-gcc/keen-pbr-sx`. Цели Clang (`make clang-build`) собирают в `cmake-build-clang`.
 
 Запустите `make help`, чтобы увидеть все цели сборки и упаковки.
 
@@ -76,7 +76,7 @@ make build    # cmake --build cmake-build-gcc
 | `KEEN_PBR_USE_LIBUNWIND` | `ON` | Искать и использовать `libunwind` для диагностики сбоев. Сборки Debian требуют её при включённом параметре; OpenWrt и Keenetic при её отсутствии или выключенном параметре используют диагностику только по регистрам. |
 | `BUILD_TESTS` | `OFF` | Собирать модульные тесты (`make test` включает его сам) |
 
-Пример: сборка без HTTP-сервера (как пакет `keen-pbr-headless`):
+Пример: сборка без HTTP-сервера (как пакет `keen-pbr-sx-headless`):
 
 ```bash {filename="bash"}
 cmake -S . -B cmake-build-gcc -DWITH_API=OFF
@@ -109,12 +109,12 @@ make debian-builder-image
 
 Готовые пакеты (полный и `headless`) появятся в `build/packages/`:
 
-- `build/packages/debian/<debian-version>/<architecture>/keen-pbr_<version>_debian_<architecture>.deb`
-- `build/packages/debian/<debian-version>/<architecture>/keen-pbr-headless_<version>_debian_<architecture>.deb`
+- `build/packages/debian/<debian-version>/<architecture>/keen-pbr-sx_<version>_debian_<architecture>.deb`
+- `build/packages/debian/<debian-version>/<architecture>/keen-pbr-sx-headless_<version>_debian_<architecture>.deb`
 
 Опубликованный репозиторий также содержит пакеты для Ubuntu: Ubuntu noble (24.04) использует пакеты Debian bookworm, а Ubuntu resolute (26.04) использует пакеты Debian trixie.
 
-Для полного пакета интерфейс собирается с помощью `bun`. При установке пакета сервис `keen-pbr` (юнит `systemd`) включается и запускается, а конфигурация лежит в `/etc/keen-pbr`.
+Для полного пакета интерфейс собирается с помощью `bun`. При установке пакета сервис `keen-pbr-sx` (юнит `systemd`) включается и запускается, а конфигурация лежит в `/etc/keen-pbr-sx`.
 
 ## Сборка пакетов для роутеров
 
@@ -139,7 +139,7 @@ make keenetic-packages KEENETIC_CONFIG=mipsel-3.4 KEENETIC_VERSION=current
 
 - Используется готовый образ `ghcr.io/maksimkurb/entware-builder:<config>`.
 - Репозиторий монтируется в контейнер в `/workspace`.
-- Пакеты (`keen-pbr` и `keen-pbr-headless`) копируются в `build/packages/keenetic/<версия>/<архитектура>/`, например `keen-pbr_<version>_keenetic_mipsel-3.4.ipk`.
+- Пакеты (`keen-pbr-sx` и `keen-pbr-sx-headless`) копируются в `build/packages/keenetic/<версия>/<архитектура>/`, например `keen-pbr-sx_<version>_keenetic_mipsel-3.4.ipk`.
 
 ### OpenWrt
 
@@ -180,25 +180,25 @@ make openwrt-packages OPENWRT_VERSION=25.12.2 OPENWRT_ARCHITECTURE=x86_64
 
 ```bash {filename="bash"}
 # Пример для Keenetic
-scp build/packages/keenetic/<keenetic_version>/<pkg_arch>/keen-pbr_<version>_keenetic_<config>.ipk root@192.168.1.1:/tmp/
-ssh root@192.168.1.1 opkg install /tmp/keen-pbr_<version>_keenetic_<config>.ipk
+scp build/packages/keenetic/<keenetic_version>/<pkg_arch>/keen-pbr-sx_<version>_keenetic_<config>.ipk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 opkg install /tmp/keen-pbr-sx_<version>_keenetic_<config>.ipk
 
 # Пример для OpenWrt .ipk
-scp build/packages/openwrt/<openwrt_version>/<pkg_arch>/keen-pbr_<version>_openwrt_<openwrt_version>_<architecture>.ipk root@192.168.1.1:/tmp/
-ssh root@192.168.1.1 opkg install /tmp/keen-pbr_<version>_openwrt_<openwrt_version>_<architecture>.ipk
+scp build/packages/openwrt/<openwrt_version>/<pkg_arch>/keen-pbr-sx_<version>_openwrt_<openwrt_version>_<architecture>.ipk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 opkg install /tmp/keen-pbr-sx_<version>_openwrt_<openwrt_version>_<architecture>.ipk
 
 # Пример для OpenWrt .apk
 # имя файла .apk сохраняется таким, каким его создал SDK OpenWrt
-scp build/packages/openwrt/<openwrt_version>/<pkg_arch>/keen-pbr-<version>.apk root@192.168.1.1:/tmp/
-ssh root@192.168.1.1 apk add --allow-untrusted /tmp/keen-pbr-<version>.apk
+scp build/packages/openwrt/<openwrt_version>/<pkg_arch>/keen-pbr-sx-<version>.apk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 apk add --allow-untrusted /tmp/keen-pbr-sx-<version>.apk
 ```
 
 После установки сервис обычно уже запущен. Если нет, запустите его на роутере:
 
 ```bash {filename="bash"}
 # Keenetic
-/opt/etc/init.d/S80keen-pbr start
+/opt/etc/init.d/S80keen-pbr-sx start
 
 # OpenWrt
-service keen-pbr start
+service keen-pbr-sx start
 ```

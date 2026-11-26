@@ -17,7 +17,7 @@ while ((i < ${#args[@]})); do
     -u)
       ((i+=1))
       case "${args[$i]}" in
-        keen-pbr.service|keen-pbr) want_keen=1 ;;
+        keen-pbr-sx.service|keen-pbr-sx) want_keen=1 ;;
         dnsmasq.service|dnsmasq) want_dns=1 ;;
       esac
       ;;
@@ -27,12 +27,12 @@ done
 
 [[ $want_keen == 1 || $want_dns == 1 ]] || { want_keen=1; want_dns=1; }
 files=()
-[[ $want_keen == 1 ]] && files+=("$KPBR_RUNTIME/keen-pbr.log")
+[[ $want_keen == 1 ]] && files+=("$KPBR_RUNTIME/keen-pbr-sx.log")
 [[ $want_dns == 1 ]] && files+=("$KPBR_RUNTIME/dnsmasq.log")
 
 for file in "${files[@]}"; do
   [[ -r "$file" ]] || continue
-  if [[ $has_since == 1 && "$file" == "$KPBR_RUNTIME/keen-pbr.log" && -r "$KPBR_RUNTIME/journal-since.offset" ]]; then
+  if [[ $has_since == 1 && "$file" == "$KPBR_RUNTIME/keen-pbr-sx.log" && -r "$KPBR_RUNTIME/journal-since.offset" ]]; then
     offset=$(cat "$KPBR_RUNTIME/journal-since.offset")
     start=$((offset + 1))
     if [[ -n "$pattern" ]]; then

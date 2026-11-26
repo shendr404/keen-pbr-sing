@@ -3,7 +3,7 @@ title: Concepts
 weight: 2
 ---
 
-You do not need this page for a normal setup. It explains how keen-pbr decides where traffic goes.
+You do not need this page for a normal setup. It explains how keen-pbr-sx decides where traffic goes.
 
 ## The idea: lists, rules, outbounds
 
@@ -31,7 +31,7 @@ A list is a set of domains, IP addresses and subnets (CIDR ranges such as `192.1
 - **File on the device**: the list is read from a file on the router;
 - **Domains / IPs**: you write the addresses directly in the config.
 
-For domains you do not need to know IP addresses. keen-pbr learns the addresses of listed sites when devices on your network open them, and keeps them for a limited time. After you change lists, clear the DNS cache on your device: otherwise it may connect to a site by an old address that keen-pbr does not know yet.
+For domains you do not need to know IP addresses. keen-pbr-sx learns the addresses of listed sites when devices on your network open them, and keeps them for a limited time. After you change lists, clear the DNS cache on your device: otherwise it may connect to a site by an old address that keen-pbr-sx does not know yet.
 
 See [Lists]({{< relref "/docs/configuration/lists" >}}).
 
@@ -68,7 +68,7 @@ See [Routing rules]({{< relref "/docs/configuration/route-rules" >}}).
 
 ## DNS
 
-Domain-based routing needs no DNS server setup. dnsmasq, the Keenetic DNS proxy or any other resolver keeps working as before. keen-pbr learns the addresses of listed sites from DNS replies and from site names in connections that pass through the router.
+Domain-based routing needs no DNS server setup. dnsmasq, the Keenetic DNS proxy or any other resolver keeps working as before. keen-pbr-sx learns the addresses of listed sites from DNS replies and from site names in connections that pass through the router.
 
 If some lists need different DNS servers, for example to get CDN addresses for the right region, use [per-list DNS servers]({{< relref "/docs/configuration/dns#per-list-dns-servers-dnsmasq" >}}) (via dnsmasq).
 
@@ -78,5 +78,5 @@ See [DNS]({{< relref "/docs/configuration/dns" >}}).
 
 You will meet these two words in logs and search results when something goes wrong. You normally do not need to configure them.
 
-- **{{< term "fwmark" >}}** is a numeric tag on a packet. keen-pbr puts it on traffic from your lists, and the tag tells the router which outbound to send the packet to. Each outbound has its own tag from the range set in the [`fwmark`]({{< relref "/docs/configuration/advanced#fwmark" >}}) setting.
-- **{{< term "conntrack" >}}** is the router's table of open connections. It keeps all packets of one connection on the same path. When a connection has to move to another channel, keen-pbr clears its entry in this table and the device opens the connection again.
+- **{{< term "fwmark" >}}** is a numeric tag on a packet. keen-pbr-sx puts it on traffic from your lists, and the tag tells the router which outbound to send the packet to. Each outbound has its own tag from the range set in the [`fwmark`]({{< relref "/docs/configuration/advanced#fwmark" >}}) setting.
+- **{{< term "conntrack" >}}** is the router's table of open connections. It keeps all packets of one connection on the same path. When a connection has to move to another channel, keen-pbr-sx clears its entry in this table and the device opens the connection again.

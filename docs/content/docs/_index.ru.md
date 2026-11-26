@@ -5,9 +5,9 @@ cascade:
   type: docs
 ---
 
-keen-pbr помогает направлять выбранные сайты и сервисы через VPN, оставляя весь остальной трафик на обычном подключении.
+keen-pbr-sx помогает направлять выбранные сайты и сервисы через VPN, оставляя весь остальной трафик на обычном подключении.
 
-**Впервые здесь?** Начните с раздела [Начало работы]({{< relref "/docs/getting-started" >}}), чтобы установить пакет и выполнить первоначальную настройку. Если keen-pbr уже установлен — переходите сразу к [Быстрому старту]({{< relref "/docs/getting-started/quick-start" >}}).
+**Впервые здесь?** Начните с раздела [Начало работы]({{< relref "/docs/getting-started" >}}), чтобы установить пакет и выполнить первоначальную настройку. Если keen-pbr-sx уже установлен — переходите сразу к [Быстрому старту]({{< relref "/docs/getting-started/quick-start" >}}).
 
 Полный справочник по настройке см. в разделе [Конфигурация]({{< relref "/docs/configuration" >}}).
 
@@ -19,4 +19,4 @@ keen-pbr помогает направлять выбранные сайты и 
 
 Сборка пакетов и компиляция из исходного кода — в разделе [Разработка]({{< relref "/docs/developer" >}}).
 
-Фид Keenetic и установочные пакеты публикуются на [GitHub Pages](https://shendr404.github.io/keen-pbr-sing/keenetic/) и в [GitHub Releases](https://github.com/shendr404/keen-pbr-sing/releases).
+Фид Keenetic и установочные пакеты публикуются на [GitHub Pages](https://shendr404.github.io/keen-pbr-sx/keenetic/) и в [GitHub Releases](https://github.com/shendr404/keen-pbr-sx/releases).

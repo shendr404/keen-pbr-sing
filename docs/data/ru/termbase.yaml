@@ -1,13 +1,13 @@
 # Глоссарий для шорткода {{< term >}}. Совпадение по `term` или `abbr` без учёта регистра.
 - term: fwmark
   abbr: fwmark
-  definition: Firewall mark — число, которое ядро Linux хранит вместе с пакетом. keen-pbr ставит его в firewall, а ip rule по нему выбирает таблицу маршрутизации.
+  definition: Firewall mark — число, которое ядро Linux хранит вместе с пакетом. keen-pbr-sx ставит его в firewall, а ip rule по нему выбирает таблицу маршрутизации.
 - term: conntrack
   abbr: conntrack
   definition: Connection tracking — таблица открытых соединений в ядре Linux. У каждой записи может быть своя метка (connmark).
 - term: connmark
   abbr: connmark
-  definition: Метка соединения в записи conntrack. keen-pbr копирует в неё fwmark, чтобы все пакеты соединения шли одним маршрутом.
+  definition: Метка соединения в записи conntrack. keen-pbr-sx копирует в неё fwmark, чтобы все пакеты соединения шли одним маршрутом.
 - term: ipset
   abbr: ipset
   definition: Именованный набор IP-адресов или подсетей в ядре Linux. Правила iptables проверяют по нему сразу много адресов.
@@ -22,7 +22,7 @@
   definition: Таблица iptables для изменения служебных данных пакета, например установки fwmark, до маршрутизации.
 - term: PREROUTING
   abbr: PREROUTING
-  definition: Точка в firewall, через которую проходят входящие пакеты до выбора маршрута. Здесь keen-pbr ставит fwmark.
+  definition: Точка в firewall, через которую проходят входящие пакеты до выбора маршрута. Здесь keen-pbr-sx ставит fwmark.
 - term: policy routing
   abbr: policy routing
   definition: Маршрутизация, при которой таблица выбирается по правилам (ip rule), а не только по адресу назначения, например по fwmark.
@@ -37,7 +37,7 @@
   definition: 'Проверка ядра (rp_filter): пакет отбрасывается, если ответ на него ушёл бы не через тот интерфейс, через который он пришёл.'
 - term: NFQUEUE
   abbr: NFQUEUE
-  definition: Механизм netfilter, который передаёт пакеты программе и ждёт её решения. keen-pbr так ненадолго задерживает DNS-ответы.
+  definition: Механизм netfilter, который передаёт пакеты программе и ждёт её решения. keen-pbr-sx так ненадолго задерживает DNS-ответы.
 - term: NFLOG
   abbr: NFLOG
   definition: Механизм netfilter, который отправляет программе копии пакетов, не задерживая их.
@@ -85,7 +85,7 @@
   definition: Небольшой дополнительный файл конфигурации, который программа читает вместе с основным.
 - term: Entware
   abbr: Entware
-  definition: Репозиторий пакетов для роутеров. На Keenetic из него ставятся keen-pbr и dnsmasq.
+  definition: Репозиторий пакетов для роутеров. На Keenetic из него ставятся keen-pbr-sx и dnsmasq.
 - term: RCI
   abbr: RCI
   definition: Встроенный API настройки роутеров Keenetic.

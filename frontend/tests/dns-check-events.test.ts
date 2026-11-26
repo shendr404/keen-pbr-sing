@@ -92,8 +92,8 @@ describe("DNS interception SSE events", () => {
   })
 
   test("builds isolated marker stream URLs", () => {
-    expect(dnsEventStreamUrl("keen-pbr", " Foo.Check.Keen-PBR.FYI... ")).toBe(
-      "/api/dns/test?show=keen-pbr&domain=foo.check.keen-pbr.fyi"
+    expect(dnsEventStreamUrl("keen-pbr-sx", " Foo.Check.Keen-PBR.FYI... ")).toBe(
+      "/api/dns/test?show=keen-pbr-sx&domain=foo.check.keen-pbr.fyi"
     )
     expect(dnsEventStreamUrl("full")).toBe("/api/dns/test?show=full")
   })

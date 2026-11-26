@@ -1,26 +1,26 @@
 ---
-title: keen-pbr CLI usage
+title: keen-pbr-sx CLI usage
 weight: 4
 aliases:
   - /docs/advanced/cli/
   - /docs/advanced/signals/
 ---
 
-`keen-pbr` can run the service, inspect live routing state, download list data, and test routing decisions.
+`keen-pbr-sx` can run the service, inspect live routing state, download list data, and test routing decisions.
 
 The `status`, `download` and `test-routing` commands talk to the running service. If the service is not running, they fail with exit code 1. Start the service first (on a router it starts with the system).
 
 ## Usage
 
 ```text
-Usage: keen-pbr [options] <command>
+Usage: keen-pbr-sx [options] <command>
 
 Options:
   --config <path>    Path to JSON config file (default: <KEEN_PBR_DEFAULT_CONFIG_PATH>)
   --log-level <lvl>  Log level: error, warn, info, verbose, debug (default: info)
   --log-target <target>  Log destination: stderr, syslog, or both (default: both)
   --pid-file <path>  Override daemon.pid_file when running the service command
-  --crash-report <path>  Last-crash report path (default: /tmp/keen-pbr-crash.log)
+  --crash-report <path>  Last-crash report path (default: /tmp/keen-pbr-sx-crash.log)
   --no-api           Disable REST API at runtime
   --use-raw-prerouting  Use raw PREROUTING for IPv4 forwarded traffic (iptables only)
   --use-raw6-prerouting Use raw PREROUTING for IPv6 forwarded traffic (iptables only)
@@ -39,11 +39,11 @@ Commands:
       --dest-port <port>             Packet destination port
       --dscp <0-63>                  Packet DSCP (default: 0)
   resolver dnsmasq print-config      Print the dnsmasq config generated from dns.rules/dns.fallback (cached lists only; used as dnsmasq conf-script, always exits 0)
-  resolver dnsmasq detect [--json]   List dnsmasq instances, their DNS endpoints and which one keen-pbr uses
+  resolver dnsmasq detect [--json]   List dnsmasq instances, their DNS endpoints and which one keen-pbr-sx uses
   hash-password [--update]           Generate an authentication password hash; --update writes config.json
 ```
 
-The config file is usually `/etc/keen-pbr/config.json` on OpenWrt and Debian, and `/opt/etc/keen-pbr/config.json` on Keenetic / NetCraze.
+The config file is usually `/etc/keen-pbr-sx/config.json` on OpenWrt and Debian, and `/opt/etc/keen-pbr-sx/config.json` on Keenetic / NetCraze.
 
 ## Options
 
@@ -53,7 +53,7 @@ The config file is usually `/etc/keen-pbr/config.json` on OpenWrt and Debian, an
 | `--log-level <lvl>` | Log verbosity: `error`, `warn`, `info`, `verbose`, or `debug`. |
 | `--log-target <target>` | External log destination: `stderr`, `syslog`, or `both`. Defaults to `both` for every command. The packaged service files (systemd, OpenWrt procd, Keenetic init script) pass `--log-target syslog` so logs are not duplicated when stdout/stderr are also captured by the init system. |
 | `--pid-file <path>` | Path to the PID file (the file holding the service's process number). Replaces `daemon.pid_file` from the config; `service` only. |
-| `--crash-report <path>` | Where to write the report about the last crash. Defaults to `/tmp/keen-pbr-crash.log`. |
+| `--crash-report <path>` | Where to write the report about the last crash. Defaults to `/tmp/keen-pbr-sx-crash.log`. |
 | `--no-api` | Disable the REST API even if enabled in config. |
 | `--use-raw-prerouting` | {{< only iptables >}} Opt in to raw-table IPv4 forwarded-traffic classification. |
 | `--use-raw6-prerouting` | {{< only iptables >}} Opt in to raw-table IPv6 forwarded-traffic classification. |
@@ -62,9 +62,9 @@ The config file is usually `/etc/keen-pbr/config.json` on OpenWrt and Debian, an
 
 ### `--use-raw-prerouting`
 
-This flag is mainly for Keenetic / NetCraze. The firmware periodically rebuilds the `mangle` firewall table, and keen-pbr's rules briefly disappear. With this flag keen-pbr puts the rules for IPv4 traffic passing through the router into the `raw` table, which the firmware does not rebuild. IPv6 has a separate flag, `--use-raw6-prerouting`.
+This flag is mainly for Keenetic / NetCraze. The firmware periodically rebuilds the `mangle` firewall table, and keen-pbr-sx's rules briefly disappear. With this flag keen-pbr-sx puts the rules for IPv4 traffic passing through the router into the `raw` table, which the firmware does not rebuild. IPv6 has a separate flag, `--use-raw6-prerouting`.
 
-On Keenetic / NetCraze the start script sets these flags. The mode is set with `KEEN_PBR_RAW_PREROUTING` in `/opt/etc/keen-pbr/defaults`:
+On Keenetic / NetCraze the start script sets these flags. The mode is set with `KEEN_PBR_RAW_PREROUTING` in `/opt/etc/keen-pbr-sx/defaults`:
 
 | Value | What it does |
 |---|---|
@@ -95,23 +95,23 @@ ip6tables -t raw -S
 | `download [--reload]` | Download all URL-backed lists into the cache and exit. With `--reload` the service applies the lists that changed right away. |
 | `resolver dnsmasq print-config` | Print the dnsmasq configuration for per-list DNS servers. |
 | `hash-password [--update]` | Create a password hash for logging in to the web UI and API. |
-| `resolver dnsmasq detect [--json]` | List dnsmasq instances, their DNS endpoints and the instance keen-pbr uses. |
+| `resolver dnsmasq detect [--json]` | List dnsmasq instances, their DNS endpoints and the instance keen-pbr-sx uses. |
 | `test-routing <ip-or-domain> [packet options]` | Compare expected and actual routing for the given IP or domain. The daemon runs the check, the same way as the routing test in the web UI. |
 
 ### `resolver dnsmasq print-config`
 
-When `dns.resolver_integration: "dnsmasq"` is enabled, this command prints the dnsmasq configuration built by keen-pbr. Lists are taken from the cache only; nothing is downloaded. It contains domain-to-server mappings, {{< term "DNS rebinding" >}} protection exceptions, and `fallback` servers.
+When `dns.resolver_integration: "dnsmasq"` is enabled, this command prints the dnsmasq configuration built by keen-pbr-sx. Lists are taken from the cache only; nothing is downloaded. It contains domain-to-server mappings, {{< term "DNS rebinding" >}} protection exceptions, and `fallback` servers.
 
 **Usage:**
 
 ```bash
-keen-pbr resolver dnsmasq print-config
+keen-pbr-sx resolver dnsmasq print-config
 ```
 
 **Output:** Dnsmasq configuration directives.
 
 ```text
-# keen-pbr generated, do not edit
+# keen-pbr-sx generated, do not edit
 
 address=/use-application-dns.net/
 
@@ -134,41 +134,41 @@ server=/example.com/.../127.0.0.89#52101
 ```
 
 **Behavior:**
-- Always exits with status 0, even on errors; errors are printed as `# keen-pbr: ...` comment lines.
+- Always exits with status 0, even on errors; errors are printed as `# keen-pbr-sx: ...` comment lines.
 - When `resolver_integration: "none"` (default), or the config cannot be read, the output is only the `server=` lines from `dnsmasq-fallback.conf`; the dynamic sets are filled by interception.
 - With `"dnsmasq"` and no `fallback` servers, those `server=` lines are added to the output.
-- dnsmasq reads the config via this command (see `conf-script=keen-pbr generate-resolver-config dnsmasq` in the {{< term "drop-in" >}}).
+- dnsmasq reads the config via this command (see `conf-script=keen-pbr-sx generate-resolver-config dnsmasq` in the {{< term "drop-in" >}}).
 
 ### `hash-password`
 
 Creates a password hash for logging in to the web UI and API. The command asks for the password twice.
 
 ```bash
-keen-pbr hash-password
-keen-pbr hash-password --update
+keen-pbr-sx hash-password
+keen-pbr-sx hash-password --update
 ```
 
-Without `--update` the command prints `Password hash: <hash>`, which you paste into `api.authentication.password_hash` yourself. With `--update` it writes `api.enabled: true`, `api.authentication.enabled: true` and the hash into `config.json`. Then restart the service: `Restart the keen-pbr service for authentication changes to take effect.`
+Without `--update` the command prints `Password hash: <hash>`, which you paste into `api.authentication.password_hash` yourself. With `--update` it writes `api.enabled: true`, `api.authentication.enabled: true` and the hash into `config.json`. Then restart the service: `Restart the keen-pbr-sx service for authentication changes to take effect.`
 
 ### `resolver dnsmasq detect` {#resolver-dnsmasq-detect}
 
 Inspect the dnsmasq integration without the daemon. The command does not need the control socket.
 
 ```bash
-keen-pbr resolver dnsmasq detect [--json]
+keen-pbr-sx resolver dnsmasq detect [--json]
 ```
 
-The command lists every dnsmasq instance the platform hook reports: whether it runs, its DNS endpoint and how it was confirmed, listening sockets, whether keen-pbr's {{< term "drop-in" >}} is installed and which configuration it loaded, and any problem. The last line tells which instance keen-pbr selected and how (`explicit`, `adopted` or `automatic`), or why it could not choose.
+The command lists every dnsmasq instance the platform hook reports: whether it runs, its DNS endpoint and how it was confirmed, listening sockets, whether keen-pbr-sx's {{< term "drop-in" >}} is installed and which configuration it loaded, and any problem. The last line tells which instance keen-pbr-sx selected and how (`explicit`, `adopted` or `automatic`), or why it could not choose.
 
 ```text
-dnsmasq hook: /usr/lib/keen-pbr/dnsmasq-hook.sh (platform openwrt, binary /usr/sbin/dnsmasq)
+dnsmasq hook: /usr/lib/keen-pbr-sx/dnsmasq-hook.sh (platform openwrt, binary /usr/sbin/dnsmasq)
 
   uci:cfg01411c  [selected: adopted]
     running:     yes (pid 1842)
     enabled:     yes
     endpoint:    127.0.0.1:53 (stamp_verified)
     listeners:   udp+tcp 0.0.0.0:53, udp+tcp [::]:53
-    keen-pbr:    installed, loaded hash 3f2a9c0e1b7d4a55c6e8f0a1b2c3d4e5
+    keen-pbr-sx:    installed, loaded hash 3f2a9c0e1b7d4a55c6e8f0a1b2c3d4e5
     conf-dir:    /tmp/dnsmasq.cfg01411c.d (included)
     problem:     none
 
@@ -181,18 +181,18 @@ Selection: uci:cfg01411c (adopted)
 
 ## Signals
 
-You can control the running `keen-pbr` service with signals:
+You can control the running `keen-pbr-sx` service with signals:
 
 | Signal | Action |
 |---|---|
 | `SIGUSR1` | Rebuild routes and firewall rules |
-| `SIGHUP` | Re-read `config.json` and apply it again. Does not work in the `keen-pbr-headless` build |
+| `SIGHUP` | Re-read `config.json` and apply it again. Does not work in the `keen-pbr-sx-headless` build |
 | `SIGTERM` / `SIGINT` | Graceful shutdown |
 
 Example: re-read the config with SIGHUP:
 
 ```bash {filename="bash"}
-kill -HUP $(cat /var/run/keen-pbr.pid)
+kill -HUP $(cat /var/run/keen-pbr-sx.pid)
 ```
 
 ## Examples
@@ -200,14 +200,14 @@ kill -HUP $(cat /var/run/keen-pbr.pid)
 Check live routing and firewall state:
 
 ```bash {filename="bash"}
-keen-pbr status
+keen-pbr-sx status
 ```
 
 Example output:
 
 ```text
-keen-pbr status - config: /etc/keen-pbr/config.json
-Service: running (runtime running: startup complete) - keen-pbr 3.4.0 (build 20261012064940)
+keen-pbr-sx status - config: /etc/keen-pbr-sx/config.json
+Service: running (runtime running: startup complete) - keen-pbr-sx 3.4.0 (build 20261012064940)
 Firewall backend: nftables
 
 Outbounds:
@@ -250,7 +250,7 @@ Status values: OK / MISSING / MISMATCH / ERROR
 Download all URL-backed lists:
 
 ```bash {filename="bash"}
-keen-pbr download
+keen-pbr-sx download
 ```
 
 The command prints the service's answer as one JSON line. `refreshed_lists` holds the lists that were updated, `changed_lists` those whose content changed:
@@ -264,7 +264,7 @@ If a list fails to download, the command prints an error and exits with code 1.
 Compare expected and actual routing:
 
 ```bash {filename="bash"}
-keen-pbr test-routing google.com
+keen-pbr-sx test-routing google.com
 ```
 
 Example output:
@@ -290,7 +290,7 @@ By default only list membership is checked. To also match rules that use ports, 
 | `--dscp <0-63>` | DSCP value. A packet without `--dscp` is treated as DSCP 0. |
 
 ```bash {filename="bash"}
-keen-pbr test-routing google.com --proto tcp --dest-port 443 --src-addr 192.168.1.10
+keen-pbr-sx test-routing google.com --proto tcp --dest-port 443 --src-addr 192.168.1.10
 ```
 
 If a rule depends on a field you did not give (for example `src_addr`), that IP shows `(unknown)`.

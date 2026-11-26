@@ -81,7 +81,7 @@ DnsmasqCapabilityResult probe_impl(const std::string& dnsmasq_path,
                                    const DnsmasqCapabilityDeps& deps) {
     const DnsmasqTimedExecFn exec = deps.exec ? deps.exec : DnsmasqTimedExecFn(dnsmasq_default_timed_exec);
 
-    std::string templ = deps.tmp_root + "/keen-pbr-capprobe.XXXXXX";
+    std::string templ = deps.tmp_root + "/keen-pbr-sx-capprobe.XXXXXX";
     std::vector<char> buf(templ.begin(), templ.end());
     buf.push_back('\0');
     if (::mkdtemp(buf.data()) == nullptr) {
@@ -95,9 +95,9 @@ DnsmasqCapabilityResult probe_impl(const std::string& dnsmasq_path,
     const std::string script =
         "#!/bin/sh\n"
         ": > \"" + dir + "/marker\"\n"
-        "echo 'server=/keen-pbr-capability.invalid/127.0.0.1#9'\n"
-        "echo 'txt-record=keen-pbr-capability.invalid,ok'\n"
-        "echo 'rebind-domain-ok=/keen-pbr-capability.invalid/'\n"
+        "echo 'server=/keen-pbr-sx-capability.invalid/127.0.0.1#9'\n"
+        "echo 'txt-record=keen-pbr-sx-capability.invalid,ok'\n"
+        "echo 'rebind-domain-ok=/keen-pbr-sx-capability.invalid/'\n"
         "echo 'address=/use-application-dns.net/'\n"
         "echo 'no-resolv'\n";
     if (!write_file(dir + "/emit.sh", script, 0700) ||

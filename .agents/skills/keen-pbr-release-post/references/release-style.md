@@ -1,4 +1,4 @@
-# keen-pbr Release Post Style
+# keen-pbr-sx Release Post Style
 
 ## GitHub Release Notes
 
@@ -30,7 +30,7 @@
   ```
 - For 3.x beta releases, keep the beta caution unless the user says the release is no longer beta:
   ```text
-  ❗️ Это BETA-релиз полностью переписанной с нуля keen-pbr.
+  ❗️ Это BETA-релиз полностью переписанной с нуля keen-pbr-sx.
 
   Данная версия ещё не протестирована большим количеством людей, поэтому баги неизбежны. Не устанавливайте данную версию на критичную для вас инфраструктуру.
   ```
@@ -43,7 +43,7 @@
 - Mention upgrade commands when relevant:
   ```text
   opkg update
-  opkg install keen-pbr
+  opkg install keen-pbr-sx
   ```
 - Include warning blocks for OpenWrt repository URL changes, breaking config changes, known critical issues, or migration steps only when supported by the approved change list.
 - End with useful links when relevant:

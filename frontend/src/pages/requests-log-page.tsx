@@ -77,10 +77,10 @@ const rowHeight = 32
 const cardHeight = 100
 const defaultViewportHeight = 560
 // v2: actions became "show checked" like the other groups (all by default).
-const filtersStorageKey = "keen-pbr.requestsLog.filters.v2"
-const legacyFiltersStorageKey = "keen-pbr.requestsLog.filters"
+const filtersStorageKey = "keen-pbr-sx.requestsLog.filters.v2"
+const legacyFiltersStorageKey = "keen-pbr-sx.requestsLog.filters"
 // Only widths changed from the defaults are stored, so new defaults apply.
-const columnWidthsStorageKey = "keen-pbr.requestsLog.columnWidths.v2"
+const columnWidthsStorageKey = "keen-pbr-sx.requestsLog.columnWidths.v2"
 
 const columns = [
   { key: "device", width: 144 },
@@ -878,7 +878,7 @@ function CopyValue({
 
 const warnTextClass = "text-amber-600 dark:text-amber-400"
 
-/** Comma-joined addresses; ones keen-pbr never learns (0.0.0.0, ::,
+/** Comma-joined addresses; ones keen-pbr-sx never learns (0.0.0.0, ::,
  * loopback) are highlighted as a warning. */
 function IpList({ ips }: { ips: string[] }) {
   return ips.map((ip, index) => (

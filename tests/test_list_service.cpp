@@ -28,7 +28,7 @@ using namespace keen_pbr3;
 namespace {
 
 std::filesystem::path make_temp_dir() {
-    char path_template[] = "/tmp/keen-pbr-list-service-XXXXXX";
+    char path_template[] = "/tmp/keen-pbr-sx-list-service-XXXXXX";
     const char* created = mkdtemp(path_template);
     if (created == nullptr) {
         throw std::runtime_error("mkdtemp failed");

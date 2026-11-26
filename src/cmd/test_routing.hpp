@@ -79,7 +79,7 @@ struct RuleIpDiagnostic {
     // Whether this resolved IP matches the rule's packet criteria. null means
     // that a required packet field was not supplied or directness is unknown.
     std::optional<bool> criteria_match;
-    // Evidence that keen-pbr successfully operated on this exact dynamic set
+    // Evidence that keen-pbr-sx successfully operated on this exact dynamic set
     // and address. This says nothing about DNS provenance or current kernel
     // membership, which is reported separately by in_ipset.
     std::optional<SetWriteEvidence> set_write_evidence;

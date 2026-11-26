@@ -2,7 +2,7 @@ Real kernel dumps used by `tests/test_firewall_physical.cpp`.
 
 Capture (rootless, no sudo; iptables 1.8.13 nf_tables frontend, nftables 1.1.7):
 
-    bash tests/firewall_it/scripts/capture_physical_fixtures.sh cmake-build-gcc/tests/keen-pbr-tests
+    bash tests/firewall_it/scripts/capture_physical_fixtures.sh cmake-build-gcc/tests/keen-pbr-sx-tests
 
 The unit-test binary applies a plan through the real iptables/nftables backend
 inside `unshare --user --map-root-user --net`, and the script dumps the result

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>keen-pbr Config Converter</title>
+    <title>keen-pbr-sx Config Converter</title>
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
@@ -334,7 +334,7 @@
   </head>
   <body x-data="app()" x-init="init()">
     <header>
-      <div class="title">keen-pbr Config Converter</div>
+      <div class="title">keen-pbr-sx Config Converter</div>
       <div class="flex-spacer"></div>
       <button
         class="lang-btn"
@@ -495,8 +495,8 @@
               W: "WARN",
               I: "INFO",
               ph_in:
-                "Paste keen-pbr v2.x TOML config here\n(/opt/etc/keen-pbr/keen-pbr.conf)",
-              ph_out: "Save it to\n/opt/etc/keen-pbr/config.json",
+                "Paste keen-pbr-sx v2.x TOML config here\n(/opt/etc/keen-pbr-sx/keen-pbr-sx.conf)",
+              ph_out: "Save it to\n/opt/etc/keen-pbr-sx/config.json",
               log_empty: "No messages yet — paste a config",
               E_parse: "Failed to parse TOML (line {line}, col {col}): {msg}",
               E_no_ipset:
@@ -510,15 +510,15 @@
               W_multi_if:
                 'ipset "{n}": multiple interfaces [{ifaces}] — v3 uses one interface per outbound. Only "{first}" was used. Create separate outbounds + a urltest outbound for failover.',
               W_keenapi:
-                '"use_keenetic_api = true" is not supported in v3. A DNS server of type "keenetic" has been added as fallback. For interface health-checking, create urltest outbounds manually — see <link href="/keen-pbr-sing/docs/configuration/outbounds/">shendr404.github.io/keen-pbr-sing/docs/configuration/outbounds/</link>.',
+                '"use_keenetic_api = true" is not supported in v3. A DNS server of type "keenetic" has been added as fallback. For interface health-checking, create urltest outbounds manually — see <link href="/keen-pbr-sx/docs/configuration/outbounds/">shendr404.github.io/keen-pbr-sx/docs/configuration/outbounds/</link>.',
               W_keen_dns:
                 '"use_keenetic_dns" is enabled or omitted — a DNS server of type "keenetic" has been added as the first fallback resolver.',
               W_cache_def:
-                '"lists_output_dir" was the old default path. The v3 default changed to "/opt/var/cache/keen-pbr". daemon.cache_dir has been updated.',
+                '"lists_output_dir" was the old default path. The v3 default changed to "/opt/var/cache/keen-pbr-sx". daemon.cache_dir has been updated.',
               W_cache_cst:
                 '"lists_output_dir" was a custom path "{p}". Mapped to daemon.cache_dir.',
               W_fwmark:
-                'ipset "{n}": custom fwmark/table/priority are not individually configurable in v3. keen-pbr v3 allocates them automatically via fwmark.start/mask.',
+                'ipset "{n}": custom fwmark/table/priority are not individually configurable in v3. keen-pbr-sx v3 allocates them automatically via fwmark.start/mask.',
               W_flush:
                 'ipset "{n}": flush_before_applying is the default behaviour in v3. No action needed.',
               W_ip6:
@@ -545,7 +545,7 @@
               I_newformat:
                 "Config converted from TOML v2 to JSON v3. Review IPv4/IPv6 gateway settings, DNS addresses, and ttl_ms values before deploying.",
               I_cbr:
-                'v3 supports urltest outbounds with circuit-breaker for interface health-checking. See <link href="/keen-pbr-sing/docs/configuration/outbounds/">shendr404.github.io/keen-pbr-sing/docs/configuration/outbounds/</link>.',
+                'v3 supports urltest outbounds with circuit-breaker for interface health-checking. See <link href="/keen-pbr-sx/docs/configuration/outbounds/">shendr404.github.io/keen-pbr-sx/docs/configuration/outbounds/</link>.',
               I_keen_fb:
                 'DNS server of type "keenetic" added to dns.fallback because use_keenetic_api was enabled or use_keenetic_dns was not explicitly disabled.',
               I_dns_test:
@@ -569,8 +569,8 @@
               W: "ПРЕДУПР.",
               I: "ИНФО",
               ph_in:
-                "Вставьте конфиг keen-pbr v2.x сюда\n(/opt/etc/keen-pbr/keen-pbr.conf)",
-              ph_out: "Сохраните его в\n/opt/etc/keen-pbr/config.json",
+                "Вставьте конфиг keen-pbr-sx v2.x сюда\n(/opt/etc/keen-pbr-sx/keen-pbr-sx.conf)",
+              ph_out: "Сохраните его в\n/opt/etc/keen-pbr-sx/config.json",
               log_empty: "Сообщений нет — вставьте конфиг.",
               E_parse:
                 "Ошибка разбора TOML (строка {line}, столбец {col}): {msg}",
@@ -585,11 +585,11 @@
               W_multi_if:
                 'ipset "{n}": несколько интерфейсов [{ifaces}] — в v3 один интерфейс на outbound. Используется только "{first}". Создайте отдельные outbound + urltest для failover.',
               W_keenapi:
-                '"use_keenetic_api = true" не поддерживается в v3. Добавлен DNS-сервер типа "keenetic" как fallback. Для проверки доступности интерфейсов создайте urltest outbound вручную — см. <link href="/keen-pbr-sing/docs/configuration/outbounds/">shendr404.github.io/keen-pbr-sing/docs/configuration/outbounds/</link>.',
+                '"use_keenetic_api = true" не поддерживается в v3. Добавлен DNS-сервер типа "keenetic" как fallback. Для проверки доступности интерфейсов создайте urltest outbound вручную — см. <link href="/keen-pbr-sx/docs/configuration/outbounds/">shendr404.github.io/keen-pbr-sx/docs/configuration/outbounds/</link>.',
               W_keen_dns:
                 '"use_keenetic_dns" включён или не задан — добавлен DNS-сервер типа "keenetic" как первый fallback-резолвер.',
               W_cache_def:
-                '"lists_output_dir" раньше был путём по умолчанию. В v3 путь по умолчанию изменился на "/opt/var/cache/keen-pbr". Значение daemon.cache_dir обновлено.',
+                '"lists_output_dir" раньше был путём по умолчанию. В v3 путь по умолчанию изменился на "/opt/var/cache/keen-pbr-sx". Значение daemon.cache_dir обновлено.',
               W_cache_cst:
                 '"lists_output_dir" был нестандартным путём "{p}". Перенесён в daemon.cache_dir.',
               W_fwmark:
@@ -609,7 +609,7 @@
               I_daemon:
                 "Добавлена секция daemon со значениями по умолчанию. Новые настройки v3: cache_dir, pid_file, strict_enforcement.",
               I_fwmark:
-                "Добавлена секция fwmark (start=0x00010000, mask=0x00FF0000). В v3 keen-pbr автоматически назначает fwmark каждому outbound.",
+                "Добавлена секция fwmark (start=0x00010000, mask=0x00FF0000). В v3 keen-pbr-sx автоматически назначает fwmark каждому outbound.",
               I_iproute:
                 "Добавлена секция iproute (table_start=150). В v3 ID таблиц маршрутизации выделяются последовательно с этого значения.",
               I_autoupd:
@@ -621,7 +621,7 @@
               I_newformat:
                 "Конфиг конвертирован из TOML v2 в JSON v3. Проверьте настройки IPv4/IPv6 шлюзов, адреса DNS и ttl_ms перед применением.",
               I_cbr:
-                'В v3 urltest outbounds поддерживают circuit-breaker для проверки доступности интерфейсов. Подробнее: <link href="/keen-pbr-sing/docs/configuration/outbounds/">shendr404.github.io/keen-pbr-sing/docs/configuration/outbounds/</link>.',
+                'В v3 urltest outbounds поддерживают circuit-breaker для проверки доступности интерфейсов. Подробнее: <link href="/keen-pbr-sx/docs/configuration/outbounds/">shendr404.github.io/keen-pbr-sx/docs/configuration/outbounds/</link>.',
               I_keen_fb:
                 'DNS-сервер типа "keenetic" добавлен в dns.fallback, т.к. был включён use_keenetic_api или use_keenetic_dns не был явно отключён.',
               I_dns_test:
@@ -788,8 +788,8 @@
             if (useKeeneticApi) this.log("warning", "W_keenapi");
             else if (useKeeneticDns) this.log("warning", "W_keen_dns");
 
-            const OLD_DEFAULT = "/opt/etc/keen-pbr/lists.d";
-            const NEW_DEFAULT = "/opt/var/cache/keen-pbr";
+            const OLD_DEFAULT = "/opt/etc/keen-pbr-sx/lists.d";
+            const NEW_DEFAULT = "/opt/var/cache/keen-pbr-sx";
             let cacheDir = NEW_DEFAULT;
             if (listsDir) {
               if (listsDir === OLD_DEFAULT) {
@@ -1042,8 +1042,8 @@
         },
         // Daemon / service settings
         "daemon": {
-          "cache_dir": "/opt/var/cache/keen-pbr",
-          "pid_file": "/opt/var/run/keen-pbr.pid",
+          "cache_dir": "/opt/var/cache/keen-pbr-sx",
+          "pid_file": "/opt/var/run/keen-pbr-sx.pid",
           "strict_enforcement": false
         },
         // Firewall mark range (auto-assigned per outbound)
@@ -1222,7 +1222,7 @@
                 this.lang === "ru" && !href.startsWith("/ru/")
                   ? `/ru${href}`
                   : href;
-              return `https://shendr404.github.io/keen-pbr-sing${path}`;
+              return `https://shendr404.github.io/keen-pbr-sx${path}`;
             }
             return href;
           },
@@ -1230,10 +1230,10 @@
             if (this.lang !== "ru") return text;
             if (
               href.startsWith("/docs/") &&
-              text.startsWith("shendr404.github.io/keen-pbr-sing/docs/")
+              text.startsWith("shendr404.github.io/keen-pbr-sx/docs/")
             ) {
               return text.replace(
-                "shendr404.github.io/keen-pbr-sing/docs/",
+                "shendr404.github.io/keen-pbr-sx/docs/",
                 "keen-pbr.fyi/ru/docs/",
               );
             }

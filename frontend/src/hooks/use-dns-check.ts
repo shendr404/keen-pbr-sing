@@ -111,7 +111,7 @@ export function useDnsCheck(
       // Keep this check on a marker-domain-scoped stream. A different tab may
       // run a check at the same time; its marker must not close this stream
       // before this check's own generated domain is observed.
-      const hub = getDnsEventHub("keen-pbr", domain)
+      const hub = getDnsEventHub("keen-pbr-sx", domain)
       const releaseLease = hub.acquireLease()
       const unsubscribe = hub.subscribe((payload) => {
         if (generation !== checkGenerationRef.current) {

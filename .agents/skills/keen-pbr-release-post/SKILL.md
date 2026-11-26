@@ -1,24 +1,24 @@
 ---
-name: keen-pbr-release-post
-description: Draft keen-pbr release posts for GitHub and Telegram from git history. Use when asked to create or prepare keen-pbr release notes, GitHub release text, Telegram release announcements, changelog summaries, or when the user mentions keen_pbr_release_post. The skill analyzes commits and touched files since the latest semver release tag, asks for approval of the change list, then drafts English GitHub notes and a Russian Telegram post. It drafts only and never publishes.
+name: keen-pbr-sx-release-post
+description: Draft keen-pbr-sx release posts for GitHub and Telegram from git history. Use when asked to create or prepare keen-pbr-sx release notes, GitHub release text, Telegram release announcements, changelog summaries, or when the user mentions keen_pbr_release_post. The skill analyzes commits and touched files since the latest semver release tag, asks for approval of the change list, then drafts English GitHub notes and a Russian Telegram post. It drafts only and never publishes.
 ---
 
 # Keen PBR Release Post
 
 ## Overview
 
-Use this skill to prepare release-post drafts for the keen-pbr project from local git history. Always separate analysis from writing: first propose a change list for user approval, then draft the GitHub and Telegram posts only after the user approves or edits that list.
+Use this skill to prepare release-post drafts for the keen-pbr-sx project from local git history. Always separate analysis from writing: first propose a change list for user approval, then draft the GitHub and Telegram posts only after the user approves or edits that list.
 
 ## Workflow
 
-1. Confirm you are in the keen-pbr repository.
+1. Confirm you are in the keen-pbr-sx repository.
    - Prefer the current workspace if it contains `.git` and project files.
    - If unclear, inspect `git remote -v`, `git status --short`, and nearby files before asking the user.
 
 2. Collect release context.
    - Prefer `scripts/collect_release_context.sh` from this skill:
      ```sh
-     /path/to/keen-pbr-release-post/scripts/collect_release_context.sh
+     /path/to/keen-pbr-sx-release-post/scripts/collect_release_context.sh
      ```
    - If not using the script, run equivalent read-only commands:
      ```sh

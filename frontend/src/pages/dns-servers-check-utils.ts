@@ -15,7 +15,7 @@ export const PRESET_DOMAINS = [
 export const DEFAULT_PRESETS: readonly string[] = ["yandex.ru", "telegram.org"]
 /** The daemon refuses more domains than this in one check. */
 export const MAX_CHECK_DOMAINS = 5
-export const CHECK_STORAGE_KEY = "keen-pbr-dns-check-domains"
+export const CHECK_STORAGE_KEY = "keen-pbr-sx-dns-check-domains"
 
 export type CheckSelection = {
   presets: string[]

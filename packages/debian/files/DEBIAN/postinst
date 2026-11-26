@@ -7,8 +7,8 @@ if command -v systemctl >/dev/null 2>&1; then
 fi
 
 if command -v systemctl >/dev/null 2>&1; then
-    systemctl enable keen-pbr >/dev/null 2>&1 || true
-    systemctl start keen-pbr >/dev/null 2>&1 || true
+    systemctl enable keen-pbr-sx >/dev/null 2>&1 || true
+    systemctl start keen-pbr-sx >/dev/null 2>&1 || true
 fi
 
 exit 0

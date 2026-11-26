@@ -67,7 +67,7 @@ enum class EndpointEvidence {
     None,           // no candidate at all
     SocketOwned,    // a socket of the selected PID is bound there, nothing answered
     Responding,     // something answered DNS there (the PID owns the socket)
-    StampVerified,  // it answered with a keen-pbr stamp whose hash == expected
+    StampVerified,  // it answered with a keen-pbr-sx stamp whose hash == expected
 };
 const char* endpoint_evidence_name(EndpointEvidence e);  // "none", "socket_owned", "responding", "stamp_verified"
 

@@ -3,15 +3,15 @@ title: Конфигурация
 weight: 3
 ---
 
-keen-pbr хранит настройки в едином JSON-файле конфигурации.
+keen-pbr-sx хранит настройки в едином JSON-файле конфигурации.
 
 Расположение файла конфигурации:
 
-- Keenetic / NetCraze: `/opt/etc/keen-pbr/config.json`
-- OpenWrt: `/etc/keen-pbr/config.json`
-- Debian: `/etc/keen-pbr/config.json`
+- Keenetic / NetCraze: `/opt/etc/keen-pbr-sx/config.json`
+- OpenWrt: `/etc/keen-pbr-sx/config.json`
+- Debian: `/etc/keen-pbr-sx/config.json`
 
-Если установлен полный пакет, настраивайте keen-pbr в веб-интерфейсе: он сам записывает конфиг, редактировать файл вручную не нужно. Если у вас пакет `keen-pbr-headless` (без веб-интерфейса), правьте файл конфигурации. Настройка состоит из четырёх частей:
+Если установлен полный пакет, настраивайте keen-pbr-sx в веб-интерфейсе: он сам записывает конфиг, редактировать файл вручную не нужно. Если у вас пакет `keen-pbr-sx-headless` (без веб-интерфейса), правьте файл конфигурации. Настройка состоит из четырёх частей:
 
 - [Outbounds]({{< relref "/docs/configuration/outbounds" >}}) — каналы, через которые может пойти трафик: VPN, провайдер или блокировка
 - [Списки]({{< relref "/docs/configuration/lists" >}}) — сайты и диапазоны IP, которые нужно маршрутизировать

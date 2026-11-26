@@ -29,7 +29,7 @@ openwrt-packages: ## Build OpenWrt packages inside the official OpenWrt SDK cont
 	  -e OPENWRT_USIGN_PRIVATE_KEY \
 	  -e OPENWRT_APK_PRIVATE_KEY \
 	  -e KEEN_PBR_RELEASE_OVERRIDE="$(KEEN_PBR_RELEASE)" \
-	  -e HOME=/tmp/keen-pbr-home \
+	  -e HOME=/tmp/keen-pbr-sx-home \
 	  -v "$(abspath .):/workspace" \
 	  "$(OPENWRT_DOCKER_IMAGE)" \
 	  bash -lc 'set -e; \
@@ -51,7 +51,7 @@ openwrt-sign-packages: ## Sign OpenWrt repository metadata inside the official O
 	docker run --rm \
 	  -e OPENWRT_USIGN_PRIVATE_KEY \
 	  -e OPENWRT_APK_PRIVATE_KEY \
-	  -e HOME=/tmp/keen-pbr-home \
+	  -e HOME=/tmp/keen-pbr-sx-home \
 	  -v "$(abspath .):/workspace" \
 	  "$(OPENWRT_DOCKER_IMAGE)" \
 	  bash -lc 'set -e; \

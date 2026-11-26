@@ -48,7 +48,7 @@ def register(registry):
             apply(context, [{"outbound": "wan_pbr", "src_addr": "192.0.2.2/32"}])
             # The src rule is active: client-originated traffic leaves via wan_pbr.
             probe(context, "wan_pbr", destination_port=19000)
-            # Control: that flow's connection carries keen-pbr's non-zero mark.
+            # Control: that flow's connection carries keen-pbr-sx's non-zero mark.
             marked = _conntrack(context, "--dport", "19000")
             assert re.search(r"mark=[1-9]\d*", marked), marked
 

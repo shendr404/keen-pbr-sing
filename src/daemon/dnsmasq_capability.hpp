@@ -56,7 +56,7 @@ struct DnsmasqCapabilityDeps {
 
 constexpr std::chrono::seconds kCapabilityTimeout{10};
 
-// Runs only keen-pbr's own controlled files. Never throws.
+// Runs only keen-pbr-sx's own controlled files. Never throws.
 DnsmasqCapabilityResult probe_dnsmasq_capabilities(const std::string& dnsmasq_path,
                                                    const DnsmasqCapabilityDeps& deps = {});
 

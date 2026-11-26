@@ -70,7 +70,7 @@ std::string record(const std::string& sel, const std::string& state, const std::
     std::ostringstream o;
     o << "[instance]\nselector=" << sel << "\nenabled=1\ndropin_include=" << include
       << "\ndropin_dir=/tmp/" << sel.substr(4) << ".d\ndropin_file=/tmp/" << sel.substr(4)
-      << ".d/keen-pbr-upstream-dns.conf\ndropin_content=conf-script=x\ndropin_state=" << state << "\n"
+      << ".d/keen-pbr-sx-upstream-dns.conf\ndropin_content=conf-script=x\ndropin_state=" << state << "\n"
       << extra;
     return o.str();
 }

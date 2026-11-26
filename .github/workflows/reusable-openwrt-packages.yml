@@ -41,6 +41,29 @@ jobs:
           make openwrt-packages \
             OPENWRT_VERSION="${{ inputs.openwrt_version }}" \
             OPENWRT_ARCHITECTURE="${{ inputs.architecture }}"
+      - name: Validate lib files are in the package
+        shell: bash
+        run: |
+          set -euo pipefail
+          sh tests/test_package_lib_files.sh
+          lib="$GITHUB_WORKSPACE/packages/openwrt/keen-pbr-sx/files/usr/lib/keen-pbr-sx"
+          full=0
+          headless=0
+          while IFS= read -r package; do
+            [ -n "$package" ] || continue
+            base=$(basename "$package")
+            case "$base" in
+              keen-pbr-sx-headless_*.ipk|keen-pbr-sx-headless-[0-9]*.apk)
+                headless=1
+                sh build_scripts/check-package-data.sh "$package" usr/lib/keen-pbr-sx "$lib"
+                ;;
+              keen-pbr-sx_*.ipk|keen-pbr-sx-[0-9]*.apk)
+                full=1
+                sh build_scripts/check-package-data.sh "$package" usr/lib/keen-pbr-sx "$lib"
+                ;;
+            esac
+          done < <(find build/packages/openwrt -type f \( -name '*.ipk' -o -name '*.apk' \) -print)
+          [ "$full" -eq 1 ] && [ "$headless" -eq 1 ]
       - name: Upload unsigned packages
         uses: actions/upload-artifact@v6
         with:

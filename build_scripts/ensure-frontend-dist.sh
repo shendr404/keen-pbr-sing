@@ -8,8 +8,8 @@ PLATFORM="${3:?Usage: $0 <workspace-dir> <dist-dir> <platform>}"
 
 # Reuse an existing bundle (e.g. a CI artifact) only when it was built for the
 # same platform; the platform is baked into the bundle at build time.
-if [ -f "$DIST_DIR/.keen-pbr-platform" ] &&
-    [ "$(cat "$DIST_DIR/.keen-pbr-platform")" = "$PLATFORM" ]; then
+if [ -f "$DIST_DIR/.keen-pbr-sx-platform" ] &&
+    [ "$(cat "$DIST_DIR/.keen-pbr-sx-platform")" = "$PLATFORM" ]; then
     exit 0
 fi
 

@@ -70,7 +70,7 @@ export function useWarningBannerState(): WarningBannerState {
     retainedOperation?.status === "failed" &&
     (dismissedId === retainedOperation.id ||
       sessionStorage.getItem(
-        `keen-pbr.lifecycle.dismissed.${retainedOperation.id}`
+        `keen-pbr-sx.lifecycle.dismissed.${retainedOperation.id}`
       ))
       ? null
       : retainedOperation
@@ -92,7 +92,7 @@ export function useWarningBannerState(): WarningBannerState {
     dismissFailure: () => {
       if (retainedOperation?.status === "failed") {
         sessionStorage.setItem(
-          `keen-pbr.lifecycle.dismissed.${retainedOperation.id}`,
+          `keen-pbr-sx.lifecycle.dismissed.${retainedOperation.id}`,
           "1"
         )
         setDismissedId(retainedOperation.id)

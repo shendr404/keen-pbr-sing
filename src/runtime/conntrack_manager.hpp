@@ -51,7 +51,7 @@ public:
     bool reconcile(ConntrackPolicy desired);
     ConntrackPolicy inspect() const;
 
-    // Restore only keen-pbr owned bits for an original-direction packet. Reply
+    // Restore only keen-pbr-sx owned bits for an original-direction packet. Reply
     // traffic deliberately bypasses restore so it cannot be classified again.
     static uint32_t restore_original_mark(uint32_t nfmark, uint32_t ctmark,
                                           uint32_t owned_mask);

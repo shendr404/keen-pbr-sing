@@ -532,7 +532,7 @@ class RateTests(unittest.TestCase):
         self.assertIsNone(bench.rate_warning(100, None))
         msg = bench.rate_warning(100, 50)
         self.assertIn("achieved 50 qps", msg)
-        self.assertIn("the client, not keen-pbr, is the bottleneck", msg)
+        self.assertIn("the client, not keen-pbr-sx, is the bottleneck", msg)
 
     def test_run_step_reports_rates(self):
         router = FakeRouter(lambda name: "held")

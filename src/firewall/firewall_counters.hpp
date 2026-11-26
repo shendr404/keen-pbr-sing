@@ -17,7 +17,7 @@
 
 namespace keen_pbr3 {
 
-// Read-only packet counters of keen-pbr's own iptables rules.  Nothing here
+// Read-only packet counters of keen-pbr-sx's own iptables rules.  Nothing here
 // adds or changes a rule: counters are parsed from `iptables-save -c` and the
 // rules are recognised by their `kpbr:v1:` comments.
 
@@ -61,7 +61,7 @@ struct FirewallCounters {
     uint64_t connections{0};
   };
   std::vector<Classification> balance_classifications;
-  // Packets and bytes that hit a keen-pbr MARK rule setting this outbound's
+  // Packets and bytes that hit a keen-pbr-sx MARK rule setting this outbound's
   // fwmark, summed across families.  On the default connmark path that is the
   // traffic which was classified, not the full flow: later packets are restored
   // and leave the chain before the MARK rule.  Restarts from zero on apply.
@@ -84,7 +84,7 @@ void aggregate_firewall_counters(const std::vector<IptablesCounterRule>& rules,
                                  const FirewallCounterIndex& index,
                                  FirewallCounters& into);
 
-// Runs `<iptables|ip6tables>-save -c -t mangle` (and raw when keen-pbr uses
+// Runs `<iptables|ip6tables>-save -c -t mangle` (and raw when keen-pbr-sx uses
 // raw PREROUTING for that family).  A family that cannot be read is omitted.
 FirewallCounters collect_iptables_counters(const CommandRunner& runner,
                                            const FirewallCounterIndex& index,

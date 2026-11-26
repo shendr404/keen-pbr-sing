@@ -51,7 +51,7 @@ TEST_CASE("dnsmasq_conf: conf_dir_accepts") {
     CHECK(conf_dir_accepts(exc, "#x"));
     CHECK_FALSE(conf_dir_accepts(exc, ""));
     const auto ex2 = parse_conf_dir_value("/d,.conf");
-    CHECK_FALSE(conf_dir_accepts(ex2, "keen-pbr-upstream-dns.conf"));
+    CHECK_FALSE(conf_dir_accepts(ex2, "keen-pbr-sx-upstream-dns.conf"));
 }
 
 TEST_CASE("dnsmasq_conf: read_effective_config merges files and argv") {
@@ -67,9 +67,9 @@ TEST_CASE("dnsmasq_conf: read_effective_config merges files and argv") {
             "conf-script=/bin/false\n");
     t.write("d/a.conf", "port=5354\n");
     t.write("d/b.txt", "port=1\n");
-    t.write("d/keen-pbr-upstream-dns.conf", "port=9\n");
+    t.write("d/keen-pbr-sx-upstream-dns.conf", "port=9\n");
 
-    const std::string skip = t.path("d/keen-pbr-upstream-dns.conf");
+    const std::string skip = t.path("d/keen-pbr-sx-upstream-dns.conf");
     auto cfg = read_effective_config({"dnsmasq", "-C", t.path("main.conf")}, "", skip);
     REQUIRE(cfg.port.has_value());
     CHECK(*cfg.port == 5354);

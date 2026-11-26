@@ -3,7 +3,7 @@ title: Changelog
 weight: 8
 ---
 
-What changed in each keen-pbr release, and what to do when you upgrade.
+What changed in each keen-pbr-sx release, and what to do when you upgrade.
 
 ## 3.4.0 {#v3-4-0}
 
@@ -14,15 +14,15 @@ What changed in each keen-pbr release, and what to do when you upgrade.
 
   {{< compare name="dashboard" mobile="true" alt="Dashboard" >}}
 - **Diagnostics.**\
-  All problems are in one list: kernel, routing, outbound and DNS server checks. The header shows at once whether everything is fine and how many problems there are. keen-pbr builds the list itself, so it matches `keen-pbr status`.
+  All problems are in one list: kernel, routing, outbound and DNS server checks. The header shows at once whether everything is fine and how many problems there are. keen-pbr-sx builds the list itself, so it matches `keen-pbr-sx status`.
 
   {{< shot name="diagnostics" only="after" alt="Diagnostics" >}}
 - **Health checks.**\
-  keen-pbr warns about missing NAT or strict `rp_filter` on balanced links, foreign fwmarks that overlap `fwmark.mask`, and missing iptables extensions. `keen-pbr status` shows the same issue list as the Web UI.
+  keen-pbr-sx warns about missing NAT or strict `rp_filter` on balanced links, foreign fwmarks that overlap `fwmark.mask`, and missing iptables extensions. `keen-pbr-sx status` shows the same issue list as the Web UI.
 - **Warning about a DNS server that does not answer.**\
   If 10 requests in a row to a server got no answer or ended with an error, the status page shows a warning. See [Troubleshooting]({{< relref "/docs/troubleshooting#dns-server-not-answering" >}}).
 - **Redesigned route check.**\
-  The route check in the Web UI is easier to read: step by step it shows the decision made at each stage of routing: DNS resolution, list matching, rule selection and the firewall check. You can now set packet parameters in the check: protocol, ports, addresses and DSCP. The same parameters can be set in the CLI for the `keen-pbr test-routing` command.
+  The route check in the Web UI is easier to read: step by step it shows the decision made at each stage of routing: DNS resolution, list matching, rule selection and the firewall check. You can now set packet parameters in the check: protocol, ports, addresses and DSCP. The same parameters can be set in the CLI for the `keen-pbr-sx test-routing` command.
 
   {{< shot name="route-check" only="after" alt="Route check" >}}
 - **Request log.**\
@@ -34,11 +34,11 @@ What changed in each keen-pbr release, and what to do when you upgrade.
 
   {{< compare name="settings" mobile="true" alt="Settings" >}}
 - **Domain routing no longer requires dnsmasq.**\
-  keen-pbr reads the DNS replies passing through the router and fills the sets of your lists itself. If a device looks up the site over plain DNS, the very first connection already takes the right route. See [DNS]({{< relref "/docs/configuration/dns#dns-interception" >}}).
+  keen-pbr-sx reads the DNS replies passing through the router and fills the sets of your lists itself. If a device looks up the site over plain DNS, the very first connection already takes the right route. See [DNS]({{< relref "/docs/configuration/dns#dns-interception" >}}).
 
   {{< shot name="settings-domain-routing" only="after" alt="Domain-based routing settings" >}}
 - **L7 interception (HTTP Host, SNI, QUIC).**\
-  If the device uses encrypted DNS, keen-pbr learns the site from its name at the start of the TLS, HTTP or QUIC connection. That first connection breaks, and the browser or app reconnects, this time over the right route.
+  If the device uses encrypted DNS, keen-pbr-sx learns the site from its name at the start of the TLS, HTTP or QUIC connection. That first connection breaks, and the browser or app reconnects, this time over the right route.
 - **If the kernel lacks a feature.**\
   Only the affected part of interception (DNS or connections) is turned off, and the status page says why.
 
@@ -61,7 +61,7 @@ What changed in each keen-pbr release, and what to do when you upgrade.
 
   {{< compare name="routing-rule-edit" alt="Routing rule page" >}}
 - **Default route setup (for multipath or failover).** {{< only openwrt debian >}}\
-  keen-pbr can now manage the default route for the devices in your network. You can use it for multipath routing and link failover, similar to what mwan3 does. Add a rule with the **IPv4 default gateway** type (`default_gateway`; a separate rule for IPv6) at the end of the route rules and point it at a `urltest` or `icmptest` outbound. With `strategy: "priority"` all internet traffic moves to a backup link when the main one is down, and with `strategy: "balance"` connections are spread across the links by weight. Addresses of your local network still use normal routing. The rule applies to the devices in your network; to apply it to the router's own traffic too, turn on **Process router's own traffic**. Available on OpenWrt and Debian. See [Route rules]({{< relref "/docs/configuration/route-rules#failover-or-balancing-for-all-internet-traffic" >}}) and [Multi-WAN Load Balancing]({{< relref "/docs/configuration/multi-wan" >}}).
+  keen-pbr-sx can now manage the default route for the devices in your network. You can use it for multipath routing and link failover, similar to what mwan3 does. Add a rule with the **IPv4 default gateway** type (`default_gateway`; a separate rule for IPv6) at the end of the route rules and point it at a `urltest` or `icmptest` outbound. With `strategy: "priority"` all internet traffic moves to a backup link when the main one is down, and with `strategy: "balance"` connections are spread across the links by weight. Addresses of your local network still use normal routing. The rule applies to the devices in your network; to apply it to the router's own traffic too, turn on **Process router's own traffic**. Available on OpenWrt and Debian. See [Route rules]({{< relref "/docs/configuration/route-rules#failover-or-balancing-for-all-internet-traffic" >}}) and [Multi-WAN Load Balancing]({{< relref "/docs/configuration/multi-wan" >}}).
 
   {{< compare name="routing-rules" alt="Routing rules" >}}
 - **DNS-over-HTTPS.**\
@@ -69,7 +69,7 @@ What changed in each keen-pbr release, and what to do when you upgrade.
 
   {{< shot name="doh-server" only="after" alt="DNS-over-HTTPS server" >}}
 - **Bootstrap servers for DoH.**\
-  A DoH server needs an IP address to connect to. Pick bootstrap servers, and keen-pbr will look up the DoH servers' addresses through them, or set the DoH server's IP addresses yourself. See [DNS]({{< relref "/docs/configuration/dns#doh-bootstrap" >}}).
+  A DoH server needs an IP address to connect to. Pick bootstrap servers, and keen-pbr-sx will look up the DoH servers' addresses through them, or set the DoH server's IP addresses yourself. See [DNS]({{< relref "/docs/configuration/dns#doh-bootstrap" >}}).
 - **Checking the DNS servers.**\
   The **Check** button on the **DNS servers** page asks all servers about the sites you choose and shows which do not answer and which tamper with answers: they answer that the domain does not exist (NXDOMAIN), or answer with a stub address. See [DNS]({{< relref "/docs/configuration/dns#check-dns-servers" >}}). Click a result to see the details for each site: the addresses received, the response time and what exactly is wrong. You can change the sites to check: tick the ready-made ones or add your own.
 
@@ -81,13 +81,13 @@ What changed in each keen-pbr release, and what to do when you upgrade.
 
   {{< compare name="dns-rule-edit" alt="DNS rule page" >}}
 - **Several DNS servers for a list.**\
-  You can pick several DNS servers for a list. Requests go to them in turn, and if a server does not answer, the next one takes over. In `config.json` the `server` field of a DNS rule is now `servers`, an array of server names; keen-pbr converts old configs automatically.\
-  dnsmasq sends queries for domains of lists with several servers or with DNS-over-HTTPS to the keen-pbr built-in DNS proxy on `127.0.0.89`, with ports starting at 52100. You can change the address and the first port in the **Advanced** settings mode: **DNS proxy address** and **First DNS proxy port**. See [DNS]({{< relref "/docs/configuration/dns#per-list-dns-servers-dnsmasq" >}}).
-- On the **DNS rules** page the main DNS servers and the bootstrap servers are collapsible sections; a collapsed section shows which servers are in use. When no main servers are chosen or a DoH server needs bootstrap servers, the section shows a ⚠️ icon, and the Overview page and `keen-pbr status` show a warning with a link to the page. The DNS servers table marks which servers are main and bootstrap ones. A new DNS rule no longer starts with a server picked: choose one yourself.
+  You can pick several DNS servers for a list. Requests go to them in turn, and if a server does not answer, the next one takes over. In `config.json` the `server` field of a DNS rule is now `servers`, an array of server names; keen-pbr-sx converts old configs automatically.\
+  dnsmasq sends queries for domains of lists with several servers or with DNS-over-HTTPS to the keen-pbr-sx built-in DNS proxy on `127.0.0.89`, with ports starting at 52100. You can change the address and the first port in the **Advanced** settings mode: **DNS proxy address** and **First DNS proxy port**. See [DNS]({{< relref "/docs/configuration/dns#per-list-dns-servers-dnsmasq" >}}).
+- On the **DNS rules** page the main DNS servers and the bootstrap servers are collapsible sections; a collapsed section shows which servers are in use. When no main servers are chosen or a DoH server needs bootstrap servers, the section shows a ⚠️ icon, and the Overview page and `keen-pbr-sx status` show a warning with a link to the page. The DNS servers table marks which servers are main and bootstrap ones. A new DNS rule no longer starts with a server picked: choose one yourself.
 
   {{< compare name="dns-rules" alt="DNS rules" >}}
 - **dnsmasq is needed only for split DNS.**\
-  You need it only for {{< term "split DNS" >}} (different DNS servers depending on the domain) or to set DNS servers for the whole network right in keen-pbr. See [Do I need dnsmasq?]({{< relref "/docs/configuration/dns#do-i-need-dnsmasq" >}}). keen-pbr can pick the dnsmasq instance, shows its state in the Web UI and restores it when it loses the config. New commands: `keen-pbr resolver dnsmasq detect` and `keen-pbr resolver dnsmasq print-config`.
+  You need it only for {{< term "split DNS" >}} (different DNS servers depending on the domain) or to set DNS servers for the whole network right in keen-pbr-sx. See [Do I need dnsmasq?]({{< relref "/docs/configuration/dns#do-i-need-dnsmasq" >}}). keen-pbr-sx can pick the dnsmasq instance, shows its state in the Web UI and restores it when it loses the config. New commands: `keen-pbr-sx resolver dnsmasq detect` and `keen-pbr-sx resolver dnsmasq print-config`.
 - **Web UI on a phone.**\
   Forms and the rule builder adapt to a narrow screen, the request log is shown as cards, and dialogs slide up from the bottom.
 - **Real-time updates.**\
@@ -101,7 +101,7 @@ What changed in each keen-pbr release, and what to do when you upgrade.
 ### Fixes
 
 - Fixed applying a configuration where a new list downloads through a new outbound: the apply used to fail with "Failed to prepare remote list(s)".
-- `urltest` and `icmptest` groups now accept only `interface` and `table` members: other types never worked and now fail config validation. A `blackhole` member was never selected; keen-pbr now skips it and logs a warning. You do not need it to block traffic: when no link works, traffic is blocked anyway.
+- `urltest` and `icmptest` groups now accept only `interface` and `table` members: other types never worked and now fail config validation. A `blackhole` member was never selected; keen-pbr-sx now skips it and logs a warning. You do not need it to block traffic: when no link works, traffic is blocked anyway.
 - Fixed automatic list updates stopping after the first list change that affected routing. Lists now update on schedule.
 - Fixed new devices not getting an address over DHCP when a route rule matches all UDP traffic.
 - Fixed the router's own traffic skipping route rules when `inbound_interfaces` is set.
@@ -111,7 +111,7 @@ What changed in each keen-pbr release, and what to do when you upgrade.
 - {{< only keenetic >}} Fixed a package upgrade where the old version did not stop in time: it kept running after the install instead of the new one.
 - Fixed the routing test with IPv6 turned off: it used to check the domain's IPv6 addresses too.
 - Fixed the routing test showing one route rule as several blocks.
-- Fixed a false error in `keen-pbr status` on every `urltest` and `icmptest` rule: the command now shows the selected link.
+- Fixed a false error in `keen-pbr-sx status` on every `urltest` and `icmptest` rule: the command now shows the selected link.
 - Fixed the Web UI losing `conntrack_on_switch`, `strict_enforcement_action` and the `urltest` probe timeout when saving an outbound.
 - Fixed DNS servers with `detour` through a tunnel: queries entered the tunnel with the ISP address and got no answer. They now use the tunnel address (for servers with an IPv4 address).
 - {{< only iptables >}} Fixed routing rules that negate several addresses (`!a,b`) on iptables: such a rule used to match all traffic.
@@ -119,21 +119,21 @@ What changed in each keen-pbr release, and what to do when you upgrade.
 ### Breaking Changes {#upgrading-from-33x}
 
 **Before the upgrade.** {{< only debian >}}\
-keen-pbr 3.3.x depended on `dnsmasq`, so apt marked it as automatically installed, and `apt autoremove` may remove it. If you need dnsmasq, first run:
+keen-pbr-sx 3.3.x depended on `dnsmasq`, so apt marked it as automatically installed, and `apt autoremove` may remove it. If you need dnsmasq, first run:
 
 ```bash {filename="bash"}
 sudo apt-mark manual dnsmasq
 ```
 
 **Before the upgrade.** {{< only keenetic >}}\
-keen-pbr 3.3.x installed `dnsmasq-full` as a dependency, and opkg may remove it during the upgrade. If you need dnsmasq, first clear its "installed automatically" mark. Run over SSH:
+keen-pbr-sx 3.3.x installed `dnsmasq-full` as a dependency, and opkg may remove it during the upgrade. If you need dnsmasq, first clear its "installed automatically" mark. Run over SSH:
 
 ```bash {filename="bash"}
 cp /opt/lib/opkg/status /opt/lib/opkg/status.bak
 sed -i '/^Package: dnsmasq-full$/,/^$/{/^Auto-Installed:/d}' /opt/lib/opkg/status
 ```
 
-{{< only keenetic >}} If the package is already gone and you turned on `opkg dns-override`, devices in your network are left without DNS: the router still hands their queries to dnsmasq, which is gone. The keen-pbr Web UI offers two ways out:
+{{< only keenetic >}} If the package is already gone and you turned on `opkg dns-override`, devices in your network are left without DNS: the router still hands their queries to dnsmasq, which is gone. The keen-pbr-sx Web UI offers two ways out:
 
 - **Keep dnsmasq.**\
   Install it again with `opkg install dnsmasq-full`.
@@ -156,17 +156,17 @@ What to check after the upgrade:
   - `iproute.process_router_traffic` is now `false`: route rules apply to devices in your network, not to the router's own traffic.
   - `--log-target` is `both` for all commands. The init scripts from the package pass `--log-target syslog`.
 - **Fields that no longer work.**\
-  `dns.system_resolver`, `dns.dns_test_server` and `daemon.resolver_ready_timeout_seconds`; the log warns if they are set. Use `intercept.dns.marker` instead of `dns.dns_test_server`. The old `outbounds`, `candidates` and `weight` fields in `outbound_groups` are replaced by `members`. Old configs keep working: keen-pbr rewrites them to the new format once (comments and key order are not kept).
+  `dns.system_resolver`, `dns.dns_test_server` and `daemon.resolver_ready_timeout_seconds`; the log warns if they are set. Use `intercept.dns.marker` instead of `dns.dns_test_server`. The old `outbounds`, `candidates` and `weight` fields in `outbound_groups` are replaced by `members`. Old configs keep working: keen-pbr-sx rewrites them to the new format once (comments and key order are not kept).
 - **New `version` field.**\
-  It holds the keen-pbr version the config was written for. keen-pbr sets it when you save the config in the Web UI. If you edit the file by hand, leave it in place.
+  It holds the keen-pbr-sx version the config was written for. keen-pbr-sx sets it when you save the config in the Web UI. If you edit the file by hand, leave it in place.
 - **DNS check domain.**\
   For a manual check, run `nslookup check.keen-pbr.fyi` instead of `nslookup check.keen.pbr`. See [Troubleshooting]({{< relref "/docs/troubleshooting" >}}).
 
-If your scripts or other programs work with keen-pbr:
+If your scripts or other programs work with keen-pbr-sx:
 
-- The `keen-pbr resolver-config-hash` command does nothing and always succeeds.
-- `keen-pbr generate-resolver-config` accepts `dnsmasq` instead of `dnsmasq-ipset` and `dnsmasq-nftset`.
-- `keen-pbr status` exits with code 1 if any check failed or the problems include an error.
+- The `keen-pbr-sx resolver-config-hash` command does nothing and always succeeds.
+- `keen-pbr-sx generate-resolver-config` accepts `dnsmasq` instead of `dnsmasq-ipset` and `dnsmasq-nftset`.
+- `keen-pbr-sx status` exits with code 1 if any check failed or the problems include an error.
 - `GET /api/dns/test?show=all` (and `show=full`) works only when API authentication is enabled.
 - New API endpoints: `GET /metrics`, `GET /api/health/issues`, `GET /api/config/defaults`. `GET /api/status/events` also sends problems, routing state, authentication state and config changes.
 
@@ -182,9 +182,9 @@ _25 August 2026_
 ### Fixes
 
 - **Switching open connections.**\
-  When the selected link in a `urltest` or `icmptest` group stops working, keen-pbr now clears the {{< term "conntrack" >}} entries of open connections, and devices reopen them through the new link, over IPv4 and IPv6. Before, connections stayed on the dead link. If the old link still works at the time of the switch, the `conntrack_on_switch` setting applies.
+  When the selected link in a `urltest` or `icmptest` group stops working, keen-pbr-sx now clears the {{< term "conntrack" >}} entries of open connections, and devices reopen them through the new link, over IPv4 and IPv6. Before, connections stayed on the dead link. If the old link still works at the time of the switch, the `conntrack_on_switch` setting applies.
 - Fixed the display of member states in `urltest` and `icmptest` groups (primary, backup, flaky, unavailable).
-- keen-pbr waits for dnsmasq to be ready for as long as `daemon.resolver_ready_timeout_seconds` says, not always five seconds.
+- keen-pbr-sx waits for dnsmasq to be ready for as long as `daemon.resolver_ready_timeout_seconds` says, not always five seconds.
 
 ## 3.3.0 {#v3-3-0}
 
@@ -194,7 +194,7 @@ _21 August 2026_
 
 - **Large IP lists.**\
   You can raise the {{< term "ipset" >}} size with `ipset_hashsize` and `ipset_maxelem`: **General** > **Settings** > **Advanced routing settings**.
-- On `SIGUSR1` keen-pbr no longer reloads the address lists. `daemon.reuse_static_sets_on_runtime_refresh: false` brings the old behavior back.
+- On `SIGUSR1` keen-pbr-sx no longer reloads the address lists. `daemon.reuse_static_sets_on_runtime_refresh: false` brings the old behavior back.
 - **Config rollback.**\
   If a config fails to apply, you can go back to the previous one.
 - The Web UI reconnects by itself when the connection to the router is lost.
@@ -204,7 +204,7 @@ _21 August 2026_
 ### Fixes
 
 - **CPU load at idle.**\
-  Fixed: keen-pbr polled state all the time and used about 20% of the CPU (measured on a mipsel router). The state is now updated on events.
+  Fixed: keen-pbr-sx polled state all the time and used about 20% of the CPU (measured on a mipsel router). The state is now updated on events.
 - Removed one cause of the `Fatal error: control socket timeout waiting for socket ack` error, which kept a large config from applying and dnsmasq from starting on slow routers.
 
 ### Breaking Changes {#upgrading-from-32x}
@@ -223,12 +223,12 @@ _15 August 2026. Version 3.2.0 was never released._
 - **The `icmptest` outbound.**\
   Checks links with a ping ({{< term "ICMP" >}}) instead of loading a URL. See [icmptest]({{< relref "/docs/configuration/outbounds#icmptest" >}}).
 - You can give the router a name, and it is shown in the Web UI.
-- The route check in the Web UI was redone. `keen-pbr test-routing` prints plain text instead of JSON.
+- The route check in the Web UI was redone. `keen-pbr-sx test-routing` prints plain text instead of JSON.
 - Unapplied config changes can be discarded in the Web UI and through the API.
 - The Web UI now has links to the documentation.
 - You can change the order of route rules by dragging.
 - **RAW or mangle.** {{< only keenetic >}}\
-  In `/opt/etc/keen-pbr/defaults` you can pick the table in which devices' IPv4 traffic is marked. RAW is not flushed when Keenetic rebuilds its firewall and connections do not break, but it works only for devices with the **Default policy**. {{< term "mangle" >}} suits any policy from **Connection priorities**, but the rules disappear while the firewall is being rebuilt. See [RAW or mangle]({{< relref "/docs/getting-started/installation/keenetic#raw-or-mangle" >}}).
+  In `/opt/etc/keen-pbr-sx/defaults` you can pick the table in which devices' IPv4 traffic is marked. RAW is not flushed when Keenetic rebuilds its firewall and connections do not break, but it works only for devices with the **Default policy**. {{< term "mangle" >}} suits any policy from **Connection priorities**, but the rules disappear while the firewall is being rebuilt. See [RAW or mangle]({{< relref "/docs/getting-started/installation/keenetic#raw-or-mangle" >}}).
 - Packages for Debian 11 (Bullseye), 12 (Bookworm) and 13 (Trixie).
 - The full package got smaller.
 - The package repository moved from GitHub Pages to a separate paid host.
@@ -236,7 +236,7 @@ _15 August 2026. Version 3.2.0 was never released._
 ### Fixes
 
 - **Start after a router reboot.** {{< only keenetic >}}\
-  Fixed: keen-pbr started before {{< term "RCI" >}} and might fail to start. The service now waits for RCI. [Details](https://t.me/keen_pbr/1/3041)
+  Fixed: keen-pbr-sx started before {{< term "RCI" >}} and might fail to start. The service now waits for RCI. [Details](https://t.me/keen_pbr/1/3041)
 - {{< only keenetic >}} Fixed rules with a {{< term "DSCP" >}} condition: the `xt_dscp` module is now loaded automatically.
 - Fixed a resource leak in the Web UI update stream.
 
@@ -259,9 +259,9 @@ _25 July 2026_
 ### What's new
 
 - **Safe config apply.**\
-  keen-pbr first checks the new config and applies it, waits for dnsmasq to confirm, and only then saves it to disk. If something goes wrong, the file on disk stays as it was.
+  keen-pbr-sx first checks the new config and applies it, waits for dnsmasq to confirm, and only then saves it to disk. If something goes wrong, the file on disk stays as it was.
 - **Apply without gaps.**\
-  nftables changes in a single transaction, and iptables and ipset are replaced without clearing them first, so traffic does not bypass the rules while a config is applied. keen-pbr removes only its own routes and rules and leaves others alone.
+  nftables changes in a single transaction, and iptables and ipset are replaced without clearing them first, so traffic does not bypass the rules while a config is applied. keen-pbr-sx removes only its own routes and rules and leaves others alone.
 - **Strict mode.**\
   If no link works, traffic is blocked with an `unreachable` or `blackhole` route.
 - The router's own DNS queries go through `detour` too.
@@ -276,9 +276,9 @@ _25 July 2026_
 - On start, stop, restart and config apply you can see which stage the service is in.
 - **Detailed diagnostics.**\
   You can see whether the config in memory matches the config on disk, whether dnsmasq got the current config, and which cache files are missing.
-- `keen-pbr status` takes its data from the running service.
+- `keen-pbr-sx status` takes its data from the running service.
 - **Marks in the RAW table.** {{< only keenetic >}}\
-  Devices' IPv4 traffic is marked in the RAW table. Keenetic does not rebuild it, so games and calls drop less often. If RAW is not available, keen-pbr warns you and uses {{< term "mangle" >}}.
+  Devices' IPv4 traffic is marked in the RAW table. Keenetic does not rebuild it, so games and calls drop less often. If RAW is not available, keen-pbr-sx warns you and uses {{< term "mangle" >}}.
 - {{< only keenetic >}} Next to the system interface names, the Web UI shows their names from Keenetic.
 - The package now depends on `conntrack`.
 - In the API, the `apply`, `start`, `stop` and `restart` commands reply with `202` and an operation number. If such a command is already running, the next one gets `409`.
@@ -294,18 +294,18 @@ _29 June 2026_
 
 ### Fixes
 
-- {{< only keenetic >}} Fixed the IPv6 support check in iptables mode: keen-pbr could decide that IPv6 is not supported ([#139](https://github.com/maksimkurb/keen-pbr/issues/139)).
+- {{< only keenetic >}} Fixed the IPv6 support check in iptables mode: keen-pbr-sx could decide that IPv6 is not supported ([#139](https://github.com/maksimkurb/keen-pbr/issues/139)).
 
 ## 3.0.6 (beta) {#v3-0-6}
 
-_3 June 2026. Version 3.0.5 was never released: it had a bug that kept keen-pbr from installing on OpenWrt 25.x._
+_3 June 2026. Version 3.0.5 was never released: it had a bug that kept keen-pbr-sx from installing on OpenWrt 25.x._
 
 ### Fixes
 
-- Fixed problems that `keen-pbr status` reported while everything was fine in the Web UI.
+- Fixed problems that `keen-pbr-sx status` reported while everything was fine in the Web UI.
 - A `urltest` link selected for both IPv4 and IPv6 is no longer treated as an error.
-- `keen-pbr status` marks rules that pass traffic through unchanged as `PASS`.
-- With IPv6 turned off, `keen-pbr status` no longer shows IPv6 sets.
+- `keen-pbr-sx status` marks rules that pass traffic through unchanged as `PASS`.
+- With IPv6 turned off, `keen-pbr-sx status` no longer shows IPv6 sets.
 - {{< only openwrt >}} Fixed the `.apk` packages and the repository index for OpenWrt 25.x.
 - Fixed IPv6 detection with old versions of `ip6tables-restore` ([#138](https://github.com/maksimkurb/keen-pbr/issues/138)).
 
@@ -316,10 +316,10 @@ _27 May 2026_
 ### What's new
 
 - **The `daemon.ipv6_enabled` setting.**\
-  For networks without IPv6: with `false`, keen-pbr creates no IPv6 rules. If IPv6 is on but the system does not support it, keen-pbr says so in the log and works with IPv4 only.
+  For networks without IPv6: with `false`, keen-pbr-sx creates no IPv6 rules. If IPv6 is on but the system does not support it, keen-pbr-sx says so in the log and works with IPv4 only.
 - **Config reference check.**\
-  Before applying, keen-pbr finds references that lead nowhere: a rule pointing to a missing list or outbound, a DNS rule pointing to a missing list or server, an `interface` outbound without an interface, a route check without an address.
-- dnsmasq state is checked every 5 seconds instead of 30. When lists or DNS change, keen-pbr reloads dnsmasq and checks the result right away.
+  Before applying, keen-pbr-sx finds references that lead nowhere: a rule pointing to a missing list or outbound, a DNS rule pointing to a missing list or server, an `interface` outbound without an interface, a route check without an address.
+- dnsmasq state is checked every 5 seconds instead of 30. When lists or DNS change, keen-pbr-sx reloads dnsmasq and checks the result right away.
 - **Bulk actions.**\
   In the Web UI tables you can select several rows and act on all of them at once.
 - **What changes on delete.**\
@@ -336,8 +336,8 @@ _27 May 2026_
 
 - A URL list with inline entries no longer loses them when it is loaded from the cache.
 - Fixed the Web UI on iPhone and in Safari on macOS.
-- Fixed interface tracking: after a network error keen-pbr stopped noticing interface changes.
-- The reload and stop commands find the service by its PID file and no longer touch other running keen-pbr processes.
+- Fixed interface tracking: after a network error keen-pbr-sx stopped noticing interface changes.
+- The reload and stop commands find the service by its PID file and no longer touch other running keen-pbr-sx processes.
 - Fixed simultaneous DNS checks that interfered with each other.
 
 ## 3.0.3 (beta) {#v3-0-3}
@@ -359,7 +359,7 @@ _10 May 2026_
 - **IPv6 leaking past the VPN.**\
   Fixed: the missing IPv6 routes were added, and for `urltest` an `unreachable` route was added for when no link works.
 - Fixed checking links over IPv6.
-- Fixed keen-pbr crashing when the router has no internet.
+- Fixed keen-pbr-sx crashing when the router has no internet.
 - Fixed the handling of the `urltest` check timeout and the priority of `unreachable` routes.
 - {{< only nftables >}} Fixed port forwarding when the request comes from an address in a list.
 - Fixed the display of list auto-update: the Web UI showed it as on when it was off.
@@ -372,7 +372,7 @@ _26 April 2026_
 ### Breaking Changes {#upgrading-from-301}
 
 - **New repository address.** {{< only openwrt >}}\
-  Packages are now built per CPU architecture, not per router model. If keen-pbr is already installed on OpenWrt, change the repository address in the package manager settings. See [Installing on OpenWrt]({{< relref "/docs/getting-started/installation/openwrt" >}}).
+  Packages are now built per CPU architecture, not per router model. If keen-pbr-sx is already installed on OpenWrt, change the repository address in the package manager settings. See [Installing on OpenWrt]({{< relref "/docs/getting-started/installation/openwrt" >}}).
 
 ### Fixes
 
@@ -395,7 +395,7 @@ _25 April 2026_
   Addresses are resolved through dnsmasq, not the ISP's DNS. Before, the check could get a reply forged by the ISP and show a wrong route.
 - {{< only openwrt >}} Fixed nftables rules disappearing.
 - **fw4 support.** {{< only openwrt >}}\
-  The firewall integration was redone: on newer OpenWrt versions the `/etc/hotplug.d/firewall/70-keen-pbr` script stopped running.
+  The firewall integration was redone: on newer OpenWrt versions the `/etc/hotplug.d/firewall/70-keen-pbr-sx` script stopped running.
 - {{< only openwrt >}} `dnsmasq-full` was added to the package dependencies. Fixed writing to the system log.
 - {{< only keenetic >}} Fixed starting on old NDMS 2.x firmware with `keenetic`-type DNS.
 - {{< only keenetic >}} {{< term "DoT" >}} DNS servers from Keenetic settings are now used.
@@ -408,12 +408,12 @@ _25 April 2026_
 
 _22 April 2026_
 
-keen-pbr was rewritten from scratch. Version 2.x worked only on Keenetic and Netcraze, version 3 can also work on OpenWrt and Debian.
+keen-pbr-sx was rewritten from scratch. Version 2.x worked only on Keenetic and Netcraze, version 3 can also work on OpenWrt and Debian.
 
 - **Web UI and REST API.**\
   The Web UI is easy to use from a phone too.
 - **Link checks (`urltest`).**\
-  keen-pbr checks by itself whether a link has internet and switches traffic to another one when it fails. It works with any VPN, including one installed through opkg, for example AmneziaWG-Go. Version 2.x learned a link's state only from the Keenetic API.
+  keen-pbr-sx checks by itself whether a link has internet and switches traffic to another one when it fails. It works with any VPN, including one installed through opkg, for example AmneziaWG-Go. Version 2.x learned a link's state only from the Keenetic API.
 - **New rule conditions.**\
   Ports and source and destination addresses, exclusions with `!`, rules without lists. For example, you can exclude one TV from routing or send all traffic of one device to a VPN.
 - **Inbound interface filter.**\
@@ -429,9 +429,9 @@ keen-pbr was rewritten from scratch. Version 2.x worked only on Keenetic and Net
 
 How to move from 2.x: [Upgrade from 2.x]({{< relref "/docs/getting-started/upgrade-from-2x" >}}).
 
-## keen-pbr 2.x {#v2}
+## keen-pbr-sx 2.x {#v2}
 
-Versions for Keenetic and Netcraze. The config is in TOML format, in the `keen-pbr.conf` file.
+Versions for Keenetic and Netcraze. The config is in TOML format, in the `keen-pbr-sx.conf` file.
 
 ### 2.2.1 {#v2-2-1}
 
@@ -440,14 +440,14 @@ _10 June 2025_
 - If the Keenetic API returned no data for an interface but the system sees it as up, the interface is treated as working.
 - **Own DNS server for ipset.**\
   The `override_dns` option in `[ipset.routing]` sets a separate DNS server for the domains of that ipset.
-- If an interface from the config is missing, keen-pbr keeps working.
-- `keen-pbr self-check` now finds IPv6 `blackhole` routes correctly.
+- If an interface from the config is missing, keen-pbr-sx keeps working.
+- `keen-pbr-sx self-check` now finds IPv6 `blackhole` routes correctly.
 
 ### 2.1.4 {#v2-1-4}
 
 _11 May 2025_
 
-- The `keen-pbr dns` command shows the DNS servers from the Keenetic profile.
+- The `keen-pbr-sx dns` command shows the DNS servers from the Keenetic profile.
 - **DoH and DoT from Keenetic.**\
   The `use_keenetic_dns` option turns on {{< term "DoH" >}} and {{< term "DoT" >}} from the Keenetic settings, and `fallback_dns` sets a DNS server for when the {{< term "RCI" >}} query fails.
 - **Default policy only.**\
@@ -472,7 +472,7 @@ _16 February 2025_
 - **New name.**\
   The project was renamed from keenetic-pbr to keen-pbr, and the repository address changed. How to upgrade from 1.x is in the [GitHub release notes](https://github.com/maksimkurb/keen-pbr/releases/tag/v2.0.1).
 - **No files in dnsmasq.d.**\
-  keen-pbr no longer writes files to `/opt/etc/dnsmasq.d/`: dnsmasq gets the lists from keen-pbr at startup. Because of this dnsmasq starts more slowly: about 3.5 seconds for 43 thousand domains on a Keenetic Viva.
+  keen-pbr-sx no longer writes files to `/opt/etc/dnsmasq.d/`: dnsmasq gets the lists from keen-pbr-sx at startup. Because of this dnsmasq starts more slowly: about 3.5 seconds for 43 thousand domains on a Keenetic Viva.
 - **A separate section for lists.**\
   Lists are set in the `[[list]]` section, and one list can be used in several ipsets.
 - New commands: `print-dnsmasq-config` and `upgrade-config`. The second one upgrades an old config by itself when the package is upgraded.

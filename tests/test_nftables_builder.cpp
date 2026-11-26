@@ -815,7 +815,7 @@ static PrefilterFixture prefilter_with_interfaces(
 
 TEST_CASE("NftablesFirewall cleanup propagates delete failure") {
   const auto directory = std::filesystem::temp_directory_path() /
-                         ("keen-pbr-nft-cleanup-" +
+                         ("keen-pbr-sx-nft-cleanup-" +
                           std::to_string(static_cast<long long>(getpid())));
   std::filesystem::remove_all(directory);
   std::filesystem::create_directories(directory);

@@ -26,9 +26,9 @@
 namespace keen_pbr3 {
 
 namespace {
-// How often the daemon verifies that dnsmasq still serves the keen-pbr config.
+// How often the daemon verifies that dnsmasq still serves the keen-pbr-sx config.
 constexpr auto kDnsmasqCheckInterval = std::chrono::seconds{30};
-constexpr const char* kInterfaceForwardScript = "/opt/usr/lib/keen-pbr/interface-forward.sh";
+constexpr const char* kInterfaceForwardScript = "/opt/usr/lib/keen-pbr-sx/interface-forward.sh";
 
 void sync_interface_forward_rules(bool remove) {
     if (access(kInterfaceForwardScript, X_OK) != 0) return;
@@ -57,7 +57,7 @@ private:
 // restarted because of it.
 std::string dnsmasq_apply_reason(std::string_view lifecycle_reason) {
     if (lifecycle_reason == "startup complete" || lifecycle_reason == "runtime started") {
-        return "keen-pbr runtime started";
+        return "keen-pbr-sx runtime started";
     }
     if (lifecycle_reason == "config apply verified" || lifecycle_reason == "config apply complete") {
         return "config applied";
@@ -1015,6 +1015,8 @@ void Daemon::register_urltest_outbounds() {
                                                     trace_id);
             });
     }
+    urltest_manager_->set_ipv6_enabled(
+        config_.daemon.value_or(DaemonConfig{}).ipv6_enabled.value_or(config_defaults::ipv6_enabled));
 
     for (const auto& ob : config_.outbounds.value_or(std::vector<Outbound>{})) {
         if (ob.type == OutboundType::URLTEST || ob.type == OutboundType::ICMPTEST) {
@@ -1380,9 +1382,14 @@ PreparedRuntimeInputs Daemon::prepare_runtime_inputs(const Config& config) {
 
 void Daemon::apply_prepared_runtime_inputs(PreparedRuntimeInputs prepared,
                                            bool publish_active_snapshot,
-                                           bool defer_dnsmasq_sync) {
+                                           bool defer_dnsmasq_sync,
+                                           bool finish_runtime) {
     reconcile_prepared_runtime(std::move(prepared));
-    complete_running_runtime("config apply complete", defer_dnsmasq_sync);
+    // Callers that still have a durable commit to finish leave the runtime
+    // in `applying` and complete it once, after that commit.
+    if (finish_runtime) {
+        complete_running_runtime("config apply complete", defer_dnsmasq_sync);
+    }
     if (publish_active_snapshot) {
         config_store_.replace_active(config_, outbound_marks_);
         publish_runtime_state();

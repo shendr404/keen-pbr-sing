@@ -22,7 +22,7 @@ struct TempDir {
     std::filesystem::path path;
     TempDir() {
         path = std::filesystem::temp_directory_path() /
-               ("keen-pbr-test-dnsmasq-manager-" + std::to_string(::getpid()));
+               ("keen-pbr-sx-test-dnsmasq-manager-" + std::to_string(::getpid()));
         std::filesystem::remove_all(path);
         std::filesystem::create_directories(path);
     }
@@ -307,7 +307,7 @@ Config make_config_without_dns_rules() {
     })");
 }
 
-// dnsmasq lost the keen-pbr config (e.g. restarted without the drop-in).
+// dnsmasq lost the keen-pbr-sx config (e.g. restarted without the drop-in).
 void lose_config(Rig& rig) { rig.fake.serve_missing(); }
 
 } // namespace
@@ -397,7 +397,7 @@ TEST_CASE("dnsmasq manager: failed explicit apply does not use the repair budget
     CHECK(status.last_apply_ts.has_value());
     CHECK(status.repair_attempt == 1);
     CHECK(status.repair_reason ==
-          "the keen-pbr config is missing from dnsmasq (TXT config-hash.keen.pbr not found)");
+          "the keen-pbr-sx config is missing from dnsmasq (TXT config-hash.keen.pbr not found)");
 }
 
 TEST_CASE("dnsmasq manager: switching to none removes the config") {
@@ -587,8 +587,8 @@ TEST_CASE("dnsmasq manager: apply with TXT still missing points at the drop-in")
     CHECK(status.state == DnsmasqSyncState::Error);
     CHECK(status.probe_state == DnsmasqProbeState::Missing);
     CHECK(status.last_error ==
-          "dnsmasq is running without the keen-pbr config (TXT config-hash.keen.pbr missing); "
-          "dnsmasq did not run the keen-pbr conf-script");
+          "dnsmasq is running without the keen-pbr-sx config (TXT config-hash.keen.pbr missing); "
+          "dnsmasq did not run the keen-pbr-sx conf-script");
 }
 
 TEST_CASE("dnsmasq manager: dnsmasq reloading a different config is reported") {
@@ -781,7 +781,7 @@ TEST_CASE("dnsmasq manager: flapping dnsmasq is repaired with growing waits, the
     CHECK(status.repair_attempt == 1);
     CHECK(status.next_repair_ts.has_value());
     CHECK(status.repair_reason ==
-          "the keen-pbr config is missing from dnsmasq (TXT config-hash.keen.pbr not found)");
+          "the keen-pbr-sx config is missing from dnsmasq (TXT config-hash.keen.pbr not found)");
     rig.fake.now_ms = t1 + kRepairDelayMs - 1;
     run_check(rig);
     CHECK(rig.fake.applies() == 2);

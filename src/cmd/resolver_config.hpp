@@ -5,7 +5,7 @@
 
 namespace keen_pbr3 {
 
-// `keen-pbr generate-resolver-config dnsmasq`: the output of dnsmasq's
+// `keen-pbr-sx generate-resolver-config dnsmasq`: the output of dnsmasq's
 // conf-script.  Decides from the config file alone (never from daemon state):
 //   - dns.resolver_integration = dnsmasq: the generated config; when it has no
 //     default upstream, the server= lines of `fallback_path` are appended;

@@ -43,7 +43,7 @@ import { getApiErrorMessage } from "@/lib/api-errors"
 
 const HIGHLIGHT_MS = 1800
 // The dnsmasq-missing window opens by itself once per browser session.
-const DNSMASQ_MISSING_SHOWN_KEY = "keen-pbr.overview.dnsmasqMissingShown"
+const DNSMASQ_MISSING_SHOWN_KEY = "keen-pbr-sx.overview.dnsmasqMissingShown"
 
 function readSessionFlag(key: string): boolean {
   try {

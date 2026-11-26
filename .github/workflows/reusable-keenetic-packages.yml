@@ -95,8 +95,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for package in keen-pbr keen-pbr-headless; do
-            find build/packages/keenetic -name "${package}_*.ipk" -print -quit | grep -q . || exit 1
+          sh tests/test_package_lib_files.sh
+          lib="$GITHUB_WORKSPACE/packages/keenetic/keen-pbr-sx/files/opt/usr/lib/keen-pbr-sx"
+          for package in keen-pbr-sx keen-pbr-sx-headless; do
+            ipk=$(find build/packages/keenetic -name "${package}_*.ipk" -print -quit)
+            [ -n "$ipk" ]
+            sh build_scripts/check-package-data.sh "$ipk" opt/usr/lib/keen-pbr-sx "$lib"
           done
       - name: Upload packaged artifacts
         uses: actions/upload-artifact@v6

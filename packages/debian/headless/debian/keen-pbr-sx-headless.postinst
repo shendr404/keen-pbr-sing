@@ -1,0 +1,58 @@
+#!/bin/sh
+
+set -e
+
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl daemon-reload >/dev/null 2>&1 || true
+fi
+
+# $2 is the previously configured version (empty on a fresh install).
+case "$1" in
+    configure)
+        if [ -n "$2" ] && dpkg --compare-versions "$2" lt 3.4.0; then
+            echo "What's new in 3.4.0: https://keen-pbr.fyi/docs/changelog/#v3-4-0"
+        fi
+        ;;
+esac
+
+if [ -d /etc/keen-pbr ] && [ ! -f /etc/keen-pbr-sx/.migrated-from-keen-pbr ]; then
+    mkdir -p /etc/keen-pbr-sx
+    if [ -f /etc/keen-pbr/config.json ]; then
+        _copy=0
+        if [ ! -f /etc/keen-pbr-sx/config.json ]; then
+            _copy=1
+        elif [ -f /etc/keen-pbr-sx/config.example.json ] && cmp -s /etc/keen-pbr-sx/config.json /etc/keen-pbr-sx/config.example.json; then
+            _copy=1
+        fi
+        if [ "$_copy" = 1 ]; then
+            sed \
+                -e 's#/etc/keen-pbr-sx#@@K@@#g' \
+                -e 's#/usr/lib/keen-pbr-sx#@@L@@#g' \
+                -e 's#/var/run/keen-pbr-sx#@@R@@#g' \
+                -e 's#/var/cache/keen-pbr-sx#@@C@@#g' \
+                -e 's#/etc/keen-pbr#/etc/keen-pbr-sx#g' \
+                -e 's#/usr/lib/keen-pbr#/usr/lib/keen-pbr-sx#g' \
+                -e 's#/usr/sbin/keen-pbr#/usr/sbin/keen-pbr-sx#g' \
+                -e 's#/var/run/keen-pbr#/var/run/keen-pbr-sx#g' \
+                -e 's#/var/cache/keen-pbr#/var/cache/keen-pbr-sx#g' \
+                -e 's#@@K@@#/etc/keen-pbr-sx#g' \
+                -e 's#@@L@@#/usr/lib/keen-pbr-sx#g' \
+                -e 's#@@R@@#/var/run/keen-pbr-sx#g' \
+                -e 's#@@C@@#/var/cache/keen-pbr-sx#g' \
+                /etc/keen-pbr/config.json > /etc/keen-pbr-sx/config.json.migrating \
+                && mv /etc/keen-pbr-sx/config.json.migrating /etc/keen-pbr-sx/config.json
+        fi
+    fi
+    if [ -f /etc/keen-pbr/sing-box-links.json ] && [ ! -e /etc/keen-pbr-sx/sing-box-links.json ]; then
+        cp /etc/keen-pbr/sing-box-links.json /etc/keen-pbr-sx/sing-box-links.json
+    fi
+    : > /etc/keen-pbr-sx/.migrated-from-keen-pbr
+fi
+
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl disable --now keen-pbr >/dev/null 2>&1 || true
+    systemctl enable keen-pbr-sx >/dev/null 2>&1 || true
+    systemctl start keen-pbr-sx >/dev/null 2>&1 || true
+fi
+
+exit 0

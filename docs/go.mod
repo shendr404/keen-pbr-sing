@@ -1,4 +1,4 @@
-module github.com/shendr404/keen-pbr-sing/docs
+module github.com/shendr404/keen-pbr-sx/docs
 
 go 1.23.4
 

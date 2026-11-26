@@ -31,7 +31,7 @@ prepare_tree() {
 mkdir -p "$RELEASE_DIR"
 bash "$WORKSPACE/build_scripts/ensure-frontend-dist.sh" "$WORKSPACE" "$FRONTEND_DIST" generic
 
-BUILD_ROOT="$(mktemp -d /tmp/keen-pbr-debian.XXXXXX)"
+BUILD_ROOT="$(mktemp -d /tmp/keen-pbr-sx-debian.XXXXXX)"
 trap 'rm -rf "$BUILD_ROOT"' EXIT
 
 for variant in $DEBIAN_VARIANTS; do
@@ -54,8 +54,8 @@ for variant in $DEBIAN_VARIANTS; do
     )
 done
 
-find "$BUILD_ROOT" -maxdepth 1 -type f \( -name 'keen-pbr_*_*.deb' -o -name 'keen-pbr-headless_*_*.deb' \
-    -o -name 'keen-pbr-dbgsym_*_*.ddeb' -o -name 'keen-pbr-headless-dbgsym_*_*.ddeb' \) \
+find "$BUILD_ROOT" -maxdepth 1 -type f \( -name 'keen-pbr-sx_*_*.deb' -o -name 'keen-pbr-sx-headless_*_*.deb' \
+    -o -name 'keen-pbr-sx-dbgsym_*_*.ddeb' -o -name 'keen-pbr-sx-headless-dbgsym_*_*.ddeb' \) \
     -exec cp -t "$RELEASE_DIR" {} +
 
 bash "$WORKSPACE/build_scripts/collect-debian.sh" "$RELEASE_DIR" "$DEBIAN_VERSION"

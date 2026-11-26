@@ -117,6 +117,19 @@ HttpTransportResponse LibcurlHttpTransport::perform(const HttpTransportRequest& 
     setopt(curl.get(), CURLOPT_SOCKOPTFUNCTION, sockopt_callback);
     setopt(curl.get(), CURLOPT_SOCKOPTDATA, &context);
     setopt(curl.get(), CURLOPT_ERRORBUFFER, error_buffer);
+    long ip_resolve = CURL_IPRESOLVE_WHATEVER;
+    switch (request.ip_resolve) {
+    case HttpIpResolve::v4:
+        ip_resolve = CURL_IPRESOLVE_V4;
+        break;
+    case HttpIpResolve::v6:
+        ip_resolve = CURL_IPRESOLVE_V6;
+        break;
+    case HttpIpResolve::whatever:
+        ip_resolve = CURL_IPRESOLVE_WHATEVER;
+        break;
+    }
+    setopt(curl.get(), CURLOPT_IPRESOLVE, ip_resolve);
     if (request.method == "POST") {
         setopt(curl.get(), CURLOPT_POST, 1L);
         setopt(curl.get(), CURLOPT_POSTFIELDS, request.body.c_str());

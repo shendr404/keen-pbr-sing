@@ -134,6 +134,17 @@ Authority split_authority(const std::string& body) {
     return {user, host, port};
 }
 
+bool supported_transport(const std::string& type) {
+    return type.empty() || type == "tcp" || type == "none" || type == "ws" || type == "grpc" ||
+           type == "http" || type == "httpupgrade" || type == "quic";
+}
+
+void ensure_reality_utls(nlohmann::json& tls) {
+    if (!tls.contains("utls")) {
+        tls["utls"] = {{"enabled", true}, {"fingerprint", "chrome"}};
+    }
+}
+
 nlohmann::json tls_object(const std::string& query, bool enabled) {
     nlohmann::json tls{{"enabled", enabled}};
     const auto sni = query_value(query, "sni");
@@ -151,25 +162,46 @@ nlohmann::json tls_object(const std::string& query, bool enabled) {
         if (!sid.empty()) reality["short_id"] = sid;
         tls["reality"] = std::move(reality);
         tls["enabled"] = true;
+        // sing-box reality requires uTLS. Share links often omit fp.
+        ensure_reality_utls(tls);
     }
     return tls;
 }
 
 void add_transport(nlohmann::json& outbound, const std::string& query) {
     const auto type = query_value(query, "type");
-    if (type.empty() || type == "tcp") return;
-    nlohmann::json transport{{"type", type == "http" ? "http" : type}};
+    if (!supported_transport(type)) throw UnsupportedProxyTransport(type);
+    if (type.empty() || type == "tcp" || type == "none") return;
+    nlohmann::json transport{{"type", type}};
     const auto path = query_value(query, "path");
-    if (!path.empty()) transport["path"] = path;
+    if (!path.empty() && type != "quic") transport["path"] = path;
     const auto host = query_value(query, "host");
     if (type == "ws" && !host.empty()) {
         transport["headers"] = {{"Host", host}};
+    } else if (type == "http" && !host.empty()) {
+        transport["host"] = nlohmann::json::array({host});
+    } else if (type == "httpupgrade" && !host.empty()) {
+        transport["host"] = host;
     }
     if (type == "grpc") {
         const auto service = query_value(query, "serviceName");
         if (!service.empty()) transport["service_name"] = service;
     }
     outbound["transport"] = std::move(transport);
+}
+
+std::string encryption_scheme(const std::string& encryption) {
+    const auto dot = encryption.find('.');
+    auto scheme = dot == std::string::npos ? encryption : encryption.substr(0, dot);
+    if (scheme.empty()) scheme = encryption;
+    if (scheme.size() > 64) scheme.resize(64);
+    return scheme;
+}
+
+void reject_vless_encryption(const std::string& encryption, const std::string& name, const std::string& server,
+                             int port) {
+    if (encryption.empty() || encryption == "none") return;
+    throw UnsupportedVlessEncryption(encryption_scheme(encryption), name, server, port);
 }
 
 ParsedProxyLink finish(ParsedProxyLink parsed, const std::string& name, const std::string& fallback) {
@@ -209,6 +241,8 @@ ParsedProxyLink parse_standard(const std::string& protocol, const std::string& r
         if (security != "none") outbound["tls"] = tls_object(query, security != "none" && !security.empty() ? true : !query_value(query, "sni").empty());
         if (security == "tls" || security == "reality") outbound["tls"]["enabled"] = true;
         add_transport(outbound, query);
+        const auto node_name = name.empty() ? authority.host : name;
+        reject_vless_encryption(query_value(query, "encryption"), node_name, authority.host, authority.port);
     } else if (protocol == "trojan") {
         if (authority.user.empty()) throw std::runtime_error("trojan link has no password");
         outbound["password"] = authority.user;
@@ -287,13 +321,18 @@ ParsedProxyLink parse_vmess(const std::string& rest) {
         {"alter_id", 0},
     };
     const auto net = raw.value("net", "tcp");
-    if (net != "tcp") {
+    if (!supported_transport(net)) throw UnsupportedProxyTransport(net);
+    if (net != "tcp" && net != "none") {
         nlohmann::json transport{{"type", net}};
         if (raw.contains("path") && raw["path"].is_string() && !raw["path"].get<std::string>().empty()) {
             transport["path"] = raw["path"];
         }
         if (net == "ws" && raw.contains("host") && raw["host"].is_string()) {
             transport["headers"] = {{"Host", raw["host"]}};
+        } else if (net == "http" && raw.contains("host") && raw["host"].is_string()) {
+            transport["host"] = nlohmann::json::array({raw["host"]});
+        } else if (net == "httpupgrade" && raw.contains("host") && raw["host"].is_string()) {
+            transport["host"] = raw["host"];
         }
         parsed.outbound["transport"] = std::move(transport);
     }
@@ -319,6 +358,10 @@ nlohmann::json clash_proxy_to_outbound(const nlohmann::json& proxy) {
         outbound["method"] = proxy.at("cipher").get<std::string>();
         outbound["password"] = proxy.at("password").get<std::string>();
     } else if (type == "vmess" || type == "vless") {
+        if (type == "vless") {
+            reject_vless_encryption(proxy.value("encryption", ""), proxy.value("name", proxy.value("server", "")),
+                                    proxy.value("server", ""), proxy.value("port", 0));
+        }
         outbound["uuid"] = proxy.value("uuid", proxy.value("password", ""));
         if (proxy.contains("alterId")) outbound["alter_id"] = proxy["alterId"];
     } else if (type == "trojan" || type == "hysteria2") {
@@ -332,17 +375,24 @@ nlohmann::json clash_proxy_to_outbound(const nlohmann::json& proxy) {
         if (proxy.contains("sni")) tls_json["server_name"] = proxy["sni"];
         else if (proxy.contains("servername")) tls_json["server_name"] = proxy["servername"];
         if (proxy.value("skip-cert-verify", false)) tls_json["insecure"] = true;
-        if (proxy.contains("reality-opts") && proxy["reality-opts"].is_object()) {
+        const bool reality = proxy.contains("reality-opts") && proxy["reality-opts"].is_object();
+        if (reality) {
             tls_json["reality"] = {
                 {"enabled", true},
                 {"public_key", proxy["reality-opts"].value("public-key", "")},
                 {"short_id", proxy["reality-opts"].value("short-id", "")},
             };
         }
+        if (proxy.contains("client-fingerprint") && proxy["client-fingerprint"].is_string()) {
+            tls_json["utls"] = {{"enabled", true}, {"fingerprint", proxy["client-fingerprint"]}};
+        } else if (reality) {
+            ensure_reality_utls(tls_json);
+        }
         outbound["tls"] = std::move(tls_json);
     }
     const auto network = proxy.value("network", "");
-    if (!network.empty() && network != "tcp") {
+    if (!supported_transport(network)) throw UnsupportedProxyTransport(network);
+    if (!network.empty() && network != "tcp" && network != "none") {
         nlohmann::json transport{{"type", network}};
         if (proxy.contains("ws-opts") && proxy["ws-opts"].is_object()) {
             if (proxy["ws-opts"].contains("path")) transport["path"] = proxy["ws-opts"]["path"];
@@ -412,17 +462,47 @@ ParsedProxyLink parse_proxy_link(const std::string& raw_link) {
     throw std::runtime_error("unsupported proxy scheme");
 }
 
-std::vector<SubscriptionNode> parse_subscription(const std::string& body, std::size_t* skipped) {
-    std::size_t local_skipped = 0;
+static void note_skip(SubscriptionParseInfo& info, const std::string& transport, SkippedSubscriptionNode node = {}) {
+    ++info.skipped;
+    if (!transport.empty()) ++info.unsupported_transports[transport];
+    if (node.reason.empty()) {
+        node.reason = transport.empty() ? "subscription line was skipped"
+                                        : "transport " + transport + " is not supported by sing-box";
+    }
+    info.skipped_nodes.push_back(std::move(node));
+}
+
+static std::string link_fragment(const std::string& line) {
+    const auto hash = line.rfind('#');
+    if (hash == std::string::npos) return {};
+    return percent_decode(line.substr(hash + 1));
+}
+
+static std::string transport_of(const nlohmann::json& outbound) {
+    if (!outbound.contains("transport") || !outbound["transport"].is_object()) return {};
+    return outbound["transport"].value("type", "");
+}
+
+std::vector<SubscriptionNode> parse_subscription(const std::string& body, SubscriptionParseInfo* info) {
+    SubscriptionParseInfo local;
     std::vector<SubscriptionNode> nodes;
     const auto add_link = [&](const std::string& line) {
         try {
             SubscriptionNode node;
             node.link = parse_proxy_link(line);
             node.id = proxy_node_id(node.link);
+            for (const auto& warning : node.link.warnings) {
+                if (warning.find("encryption") != std::string::npos) ++local.encryption_ignored;
+            }
             nodes.push_back(std::move(node));
-        } catch (const std::runtime_error&) {
-            ++local_skipped;
+        } catch (const UnsupportedVlessEncryption& error) {
+            auto skipped_name = error.name().empty() ? link_fragment(line) : error.name();
+            note_skip(local, {}, SkippedSubscriptionNode{std::move(skipped_name), "vless", error.server(), error.port(),
+                                                         error.what()});
+        } catch (const UnsupportedProxyTransport& error) {
+            note_skip(local, error.transport(), SkippedSubscriptionNode{link_fragment(line), {}, {}, 0, error.what()});
+        } catch (const std::runtime_error& error) {
+            note_skip(local, {}, SkippedSubscriptionNode{link_fragment(line), {}, {}, 0, error.what()});
         }
     };
     const auto trimmed = trim(body);
@@ -433,19 +513,43 @@ std::vector<SubscriptionNode> parse_subscription(const std::string& body, std::s
                 const auto type = outbound.value("type", "");
                 if (type != "vless" && type != "vmess" && type != "trojan" &&
                     type != "shadowsocks" && type != "hysteria2") {
-                    ++local_skipped;
+                    note_skip(local, {},
+                              SkippedSubscriptionNode{outbound.value("tag", ""), type, outbound.value("server", ""),
+                                                      outbound.value("server_port", 0), "subscription line was skipped"});
+                    continue;
+                }
+                const auto transport = transport_of(outbound);
+                if (!supported_transport(transport)) {
+                    note_skip(local, transport,
+                              SkippedSubscriptionNode{outbound.value("tag", ""), type, outbound.value("server", ""),
+                                                      outbound.value("server_port", 0), {}});
                     continue;
                 }
                 if (!outbound.contains("server") || !outbound.contains("server_port")) {
-                    ++local_skipped;
+                    note_skip(local, {},
+                              SkippedSubscriptionNode{outbound.value("tag", ""), type, {}, 0,
+                                                      "subscription line was skipped"});
                     continue;
                 }
+                if (type == "vless" && outbound.contains("encryption") && outbound["encryption"].is_string()) {
+                    const auto encryption = outbound["encryption"].get<std::string>();
+                    if (!encryption.empty() && encryption != "none") {
+                        note_skip(local, {},
+                                  SkippedSubscriptionNode{outbound.value("tag", ""), "vless", outbound.value("server", ""),
+                                                          outbound.value("server_port", 0),
+                                                          UnsupportedVlessEncryption(encryption_scheme(encryption), {}, {}, 0)
+                                                              .what()});
+                        continue;
+                    }
+                }
+                auto copy = outbound;
+                copy.erase("encryption");
                 SubscriptionNode node;
                 node.link.protocol = type;
-                node.link.server = outbound.at("server").get<std::string>();
-                node.link.port = outbound.at("server_port").get<int>();
-                node.link.name = outbound.value("tag", node.link.server);
-                node.link.outbound = outbound;
+                node.link.server = copy.at("server").get<std::string>();
+                node.link.port = copy.at("server_port").get<int>();
+                node.link.name = copy.value("tag", node.link.server);
+                node.link.outbound = std::move(copy);
                 node.id = proxy_node_id(node.link);
                 nodes.push_back(std::move(node));
             }
@@ -453,7 +557,12 @@ std::vector<SubscriptionNode> parse_subscription(const std::string& body, std::s
             for (const auto& proxy : doc["proxies"]) {
                 try {
                     if (!proxy.is_object() || !proxy.contains("server") || !proxy.contains("port")) {
-                        ++local_skipped;
+                        note_skip(local, {},
+                                  SkippedSubscriptionNode{proxy.is_object() ? proxy.value("name", "") : "",
+                                                          proxy.is_object() ? proxy.value("type", "") : "",
+                                                          proxy.is_object() ? proxy.value("server", "") : "",
+                                                          proxy.is_object() ? proxy.value("port", 0) : 0,
+                                                          "subscription line was skipped"});
                         continue;
                     }
                     SubscriptionNode node;
@@ -464,8 +573,19 @@ std::vector<SubscriptionNode> parse_subscription(const std::string& body, std::s
                     node.link.name = proxy.value("name", node.link.server);
                     node.id = proxy_node_id(node.link);
                     nodes.push_back(std::move(node));
-                } catch (const std::exception&) {
-                    ++local_skipped;
+                } catch (const UnsupportedVlessEncryption& error) {
+                    note_skip(local, {},
+                              SkippedSubscriptionNode{error.name().empty() ? proxy.value("name", "") : error.name(),
+                                                      "vless", error.server().empty() ? proxy.value("server", "") : error.server(),
+                                                      error.port() == 0 ? proxy.value("port", 0) : error.port(), error.what()});
+                } catch (const UnsupportedProxyTransport& error) {
+                    note_skip(local, error.transport(),
+                              SkippedSubscriptionNode{proxy.value("name", ""), proxy.value("type", ""),
+                                                      proxy.value("server", ""), proxy.value("port", 0), error.what()});
+                } catch (const std::exception& error) {
+                    note_skip(local, {},
+                              SkippedSubscriptionNode{proxy.value("name", ""), proxy.value("type", ""),
+                                                      proxy.value("server", ""), proxy.value("port", 0), error.what()});
                 }
             }
         } else {
@@ -483,7 +603,7 @@ std::vector<SubscriptionNode> parse_subscription(const std::string& body, std::s
             pos = end + 1;
         }
     }
-    if (skipped != nullptr) *skipped = local_skipped;
+    if (info != nullptr) *info = local;
     if (nodes.empty()) throw std::runtime_error("subscription did not contain a usable proxy");
     return nodes;
 }

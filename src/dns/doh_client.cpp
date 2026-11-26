@@ -255,7 +255,7 @@ struct DohClient::Impl {
                   setopt(easy, CURLOPT_SOCKOPTDATA, &transfer) &&
                   setopt(easy, CURLOPT_ERRORBUFFER, transfer.error) &&
                   setopt(easy, CURLOPT_HTTPHEADER, headers) &&
-                  setopt(easy, CURLOPT_USERAGENT, "keen-pbr") &&
+                  setopt(easy, CURLOPT_USERAGENT, "keen-pbr-sx") &&
                   setopt(easy, CURLOPT_POST, 1L) &&
                   setopt(easy, CURLOPT_FOLLOWLOCATION, 0L) &&
                   setopt(easy, CURLOPT_TCP_KEEPALIVE, 1L) &&

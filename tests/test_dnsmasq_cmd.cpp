@@ -10,7 +10,7 @@ DnsmasqInstance make_instance(const std::string& selector, pid_t pid, const std:
     DnsmasqInstance in;
     in.hook.selector = selector;
     in.hook.dropin_dir = dir;
-    in.hook.dropin_file = dir + "/keen-pbr.conf";
+    in.hook.dropin_file = dir + "/keen-pbr-sx.conf";
     ProcessInfo p;
     p.pid = pid;
     p.exe = "/usr/sbin/dnsmasq";
@@ -58,7 +58,7 @@ TEST_CASE("dnsmasq_cmd: text layout for selected and unselected instance") {
         "    enabled:     yes\n"
         "    endpoint:    127.0.0.1:53 (stamp_verified)\n"
         "    listeners:   udp+tcp 0.0.0.0:53\n"
-        "    keen-pbr:    installed, loaded hash 3f2a9c0e1b7d4a55c6e8f0a1b2c3d4e5\n"
+        "    keen-pbr-sx:    installed, loaded hash 3f2a9c0e1b7d4a55c6e8f0a1b2c3d4e5\n"
         "    conf-dir:    /tmp/dnsmasq.cfg01411c.d (included)\n"
         "    problem:     none\n"
         "\n"
@@ -67,7 +67,7 @@ TEST_CASE("dnsmasq_cmd: text layout for selected and unselected instance") {
         "    enabled:     yes\n"
         "    endpoint:    192.168.50.1:53 (responding)\n"
         "    listeners:   udp+tcp 192.168.50.1:53\n"
-        "    keen-pbr:    not installed\n"
+        "    keen-pbr-sx:    not installed\n"
         "    conf-dir:    /tmp/dnsmasq.guest.d (included)\n"
         "    problem:     none\n"
         "\n"
@@ -90,7 +90,7 @@ TEST_CASE("dnsmasq_cmd: unknown values, foreign drop-in, problem and warnings") 
     CHECK(text.find("    running:     no\n") != std::string::npos);
     CHECK(text.find("    endpoint:    -\n") != std::string::npos);
     CHECK(text.find("    listeners:   -\n") != std::string::npos);
-    CHECK(text.find("foreign file at /tmp/dnsmasq.guest.d/keen-pbr.conf") != std::string::npos);
+    CHECK(text.find("foreign file at /tmp/dnsmasq.guest.d/keen-pbr-sx.conf") != std::string::npos);
     CHECK(text.find("(not included)") != std::string::npos);
     CHECK(text.find("    problem:     DNSMASQ_NOT_RUNNING: no process\n") != std::string::npos);
     CHECK(text.find("warning: something odd\n") != std::string::npos);

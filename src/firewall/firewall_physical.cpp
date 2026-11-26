@@ -1256,7 +1256,7 @@ PhysicalRuleset parse_iptables_save(std::string_view output,
     if (!chain_id.has_value()) continue; // foreign chain
     auto parsed = parser.parse(2);
     if (!is_owned_role(chain_id->role)) {
-      // System chain: keep only hook rules into keen-pbr chains, but count
+      // System chain: keep only hook rules into keen-pbr-sx chains, but count
       // every rule so the position of a pinned jump is its real index.
       const uint32_t position = builtin_rules[builtin_slot(*chain_id)]++;
       bool hook = false;

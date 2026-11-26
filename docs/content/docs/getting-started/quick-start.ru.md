@@ -6,10 +6,10 @@ weight: 2
 После этого руководства выбранный сайт будет открываться через VPN, а весь остальной трафик пойдёт как раньше. Понадобится готовый VPN-интерфейс на роутере (например, `tun0` или `wg0`).
 
 {{< callout type="info" >}}
-Если VPN на роутере ещё нет, настройте его по инструкции для вашей системы: [Keenetic / NetCraze](https://help.keenetic.com/hc/ru/articles/360010592379), [OpenWrt](https://openwrt.org/docs/guide-user/services/vpn/wireguard/start), [Debian](https://wiki.debian.org/WireGuard). В веб-интерфейсе keen-pbr интерфейс выбирается из списка. Узнать имена всех интерфейсов в консоли можно командой `ip addr`: VPN-интерфейс — тот, у которого адрес из вашей VPN-сети.
+Если VPN на роутере ещё нет, настройте его по инструкции для вашей системы: [Keenetic / NetCraze](https://help.keenetic.com/hc/ru/articles/360010592379), [OpenWrt](https://openwrt.org/docs/guide-user/services/vpn/wireguard/start), [Debian](https://wiki.debian.org/WireGuard). В веб-интерфейсе keen-pbr-sx интерфейс выбирается из списка. Узнать имена всех интерфейсов в консоли можно командой `ip addr`: VPN-интерфейс — тот, у которого адрес из вашей VPN-сети.
 {{< /callout >}}
 
-Если вы установили полный пакет, начните с веб-интерфейса. Если у вас `keen-pbr-headless` или вы привыкли править файлы, используйте вкладку JSON.
+Если вы установили полный пакет, начните с веб-интерфейса. Если у вас `keen-pbr-sx-headless` или вы привыкли править файлы, используйте вкладку JSON.
 
 Настройка состоит из трёх шагов:
 
@@ -38,7 +38,7 @@ graph LR;
 {{< tabs >}}
 {{< tab name="Веб-интерфейс" selected=true >}}
 {{< callout type="info" >}}
-Если вы установили `keen-pbr-headless`, см. метод конфигурации **JSON**.
+Если вы установили `keen-pbr-sx-headless`, см. метод конфигурации **JSON**.
 {{< /callout >}}
 
 <p>
@@ -104,7 +104,7 @@ Outbound `wan` уже существует: это обычный выход в 
 3. Для проверки из командной строки выполните на роутере:
 
 ```bash {filename="bash"}
-keen-pbr test-routing ifconfig.co
+keen-pbr-sx test-routing ifconfig.co
 ```
 
 В таблице результата столбцы `Expected Outbound` и `Actual Outbound` должны показывать `vpn`, а в последнем столбце должно быть `OK`.
@@ -114,13 +114,13 @@ keen-pbr test-routing ifconfig.co
 {{< /tab >}}
 {{< tab name="JSON" >}}
 
-Используйте этот путь, если вы установили `keen-pbr-headless` или предпочитаете редактировать файл конфигурации напрямую.
+Используйте этот путь, если вы установили `keen-pbr-sx-headless` или предпочитаете редактировать файл конфигурации напрямую.
 
 Расположение файла конфигурации:
 
-- Keenetic / NetCraze: `/opt/etc/keen-pbr/config.json`
-- OpenWrt: `/etc/keen-pbr/config.json`
-- Debian: `/etc/keen-pbr/config.json`
+- Keenetic / NetCraze: `/opt/etc/keen-pbr-sx/config.json`
+- OpenWrt: `/etc/keen-pbr-sx/config.json`
+- Debian: `/etc/keen-pbr-sx/config.json`
 
 В файле уже есть outbounds `wan`, `block` и `direct_local`, список `local_networks` и правило для него. Добавьте к ним outbound `vpn`, списки и правила, как в примере ниже. Остальные разделы (`daemon`, `dns`, `fwmark`, `iproute`, `lists_autoupdate`, `api`) оставьте как есть.
 
@@ -167,7 +167,7 @@ keen-pbr test-routing ifconfig.co
       "url": "https://example.com/my-list.lst"
     },
     "my_local_file_list": { // список из файла на роутере
-      "file": "/etc/keen-pbr/local.lst" // укажите путь к своему файлу
+      "file": "/etc/keen-pbr-sx/local.lst" // укажите путь к своему файлу
     }
   },
   "route": {
@@ -205,17 +205,17 @@ keen-pbr test-routing ifconfig.co
 {{< tabs >}}
 {{< tab name="Keenetic / NetCraze" selected=true >}}
 ```bash {filename="bash"}
-/opt/etc/init.d/S80keen-pbr restart
+/opt/etc/init.d/S80keen-pbr-sx restart
 ```
 {{< /tab >}}
 {{< tab name="OpenWrt" >}}
 ```bash {filename="bash"}
-service keen-pbr restart
+service keen-pbr-sx restart
 ```
 {{< /tab >}}
 {{< tab name="Debian" >}}
 ```bash {filename="bash"}
-systemctl restart keen-pbr
+systemctl restart keen-pbr-sx
 ```
 {{< /tab >}}
 {{< /tabs >}}
@@ -223,12 +223,12 @@ systemctl restart keen-pbr
 Очистите DNS-кэш на вашем устройстве (`ipconfig /flushdns` на Windows, `sudo resolvectl flush-caches` на Linux, переподключение к Wi-Fi на телефоне) и проверьте результат на роутере:
 
 ```bash {filename="bash"}
-keen-pbr test-routing ifconfig.co
+keen-pbr-sx test-routing ifconfig.co
 ```
 
 В столбцах `Expected Outbound` и `Actual Outbound` должен быть `vpn`, а в последнем столбце — `OK`.
 
-Для более общей проверки выполните `keen-pbr status`.
+Для более общей проверки выполните `keen-pbr-sx status`.
 
 {{< /tab >}}
 {{< /tabs >}}

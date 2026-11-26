@@ -5,9 +5,9 @@ cascade:
   type: docs
 ---
 
-keen-pbr helps you send selected sites and services through a VPN while the rest of your traffic keeps using the normal connection.
+keen-pbr-sx helps you send selected sites and services through a VPN while the rest of your traffic keeps using the normal connection.
 
-**New here?** Start with [Getting Started]({{< relref "/docs/getting-started" >}}) for package installation and first setup, or jump straight to [Quick Start]({{< relref "/docs/getting-started/quick-start" >}}) if keen-pbr is already installed.
+**New here?** Start with [Getting Started]({{< relref "/docs/getting-started" >}}) for package installation and first setup, or jump straight to [Quick Start]({{< relref "/docs/getting-started/quick-start" >}}) if keen-pbr-sx is already installed.
 
 For the full configuration reference, see [Configuration]({{< relref "/docs/configuration" >}}).
 
@@ -19,4 +19,4 @@ If something is not working, see [Troubleshooting]({{< relref "/docs/troubleshoo
 
 Building packages and compiling from source are covered in [Developer]({{< relref "/docs/developer" >}}).
 
-Keenetic packages are distributed through [GitHub Releases](https://github.com/shendr404/keen-pbr-sing/releases) and [unsigned opkg feeds](https://shendr404.github.io/keen-pbr-sing/keenetic/).
+Keenetic packages are distributed through [GitHub Releases](https://github.com/shendr404/keen-pbr-sx/releases) and [unsigned opkg feeds](https://shendr404.github.io/keen-pbr-sx/keenetic/).

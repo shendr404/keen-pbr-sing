@@ -171,7 +171,7 @@ def create_worktree(repo: Path, sha: str, output_root: Path | None) -> tuple[Pat
         root = output_root.resolve()
         root.mkdir(parents=True, exist_ok=False)
     else:
-        root = Path(tempfile.mkdtemp(prefix="keen-pbr-crash-"))
+        root = Path(tempfile.mkdtemp(prefix="keen-pbr-sx-crash-"))
     worktree = root / "source"
     command(["git", "worktree", "add", "--detach", str(worktree), sha], cwd=repo)
     return root, worktree
@@ -180,11 +180,11 @@ def create_worktree(repo: Path, sha: str, output_root: Path | None) -> tuple[Pat
 def artifact_name(args: argparse.Namespace) -> str:
     if args.platform == "keenetic":
         return (
-            f"keen-pbr_{args.version}-{args.build}_keenetic_"
+            f"keen-pbr-sx_{args.version}-{args.build}_keenetic_"
             f"{args.arch}_{args.variant}.debug"
         )
     return (
-        f"keen-pbr_{args.version}-{args.build}_openwrt_{args.target_version}_"
+        f"keen-pbr-sx_{args.version}-{args.build}_openwrt_{args.target_version}_"
         f"{args.arch}_{args.variant}.debug"
     )
 
@@ -415,14 +415,14 @@ def analyze_addresses(
         elif explicit_bias is not None and in_load_range(runtime - explicit_bias, elf):
             candidates.append(("explicit-load-bias", runtime - explicit_bias))
             result["load_bias"] = hex(explicit_bias)
-        elif mapping and Path(str(mapping["path"])).name == "keen-pbr":
+        elif mapping and Path(str(mapping["path"])).name == "keen-pbr-sx":
             bias = derive_main_bias(mapping, elf)
             if bias is not None and in_load_range(runtime - bias, elf):
                 candidates.append(("maps-derived-load-bias", runtime - bias))
                 result["load_bias"] = hex(bias)
 
         if not candidates:
-            result["status"] = "unresolved-outside-keen-pbr"
+            result["status"] = "unresolved-outside-keen-pbr-sx"
             result["reason"] = (
                 "address is outside the debug ELF PT_LOAD ranges and no proven Keen PBR load bias is available"
             )

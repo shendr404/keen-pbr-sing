@@ -60,7 +60,7 @@ DnsTestView view_for(const httplib::Request& request, bool auth_enabled) {
     }
 
     const auto show = request.get_param_value("show");
-    if (show == "keen-pbr") {
+    if (show == "keen-pbr" || show == "keen-pbr-sx") {
         return {marker_filter, true};
     }
     if (show == "all" || show == "full") {
@@ -74,7 +74,7 @@ DnsTestView view_for(const httplib::Request& request, bool auth_enabled) {
     }
 
     throw ApiError(
-        "Invalid query parameter 'show'; expected 'keen-pbr' (default), 'all', or 'full'",
+        "Invalid query parameter 'show'; expected 'keen-pbr', 'keen-pbr-sx', 'all', or 'full'",
         400);
 }
 

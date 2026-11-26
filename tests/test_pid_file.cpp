@@ -15,7 +15,7 @@ namespace {
 class TempDirectory {
 public:
     TempDirectory() {
-        char pattern[] = "/tmp/keen-pbr-pid-XXXXXX";
+        char pattern[] = "/tmp/keen-pbr-sx-pid-XXXXXX";
         const char* path = ::mkdtemp(pattern);
         if (!path) throw std::runtime_error("mkdtemp failed");
         path_ = path;

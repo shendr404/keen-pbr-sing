@@ -1,7 +1,7 @@
 #include "service_health.hpp"
 #include "../dns/doh_support.hpp"
 
-#include <keen-pbr/version.hpp>
+#include <keen-pbr-sx/version.hpp>
 #include <nlohmann/json.hpp>
 
 namespace keen_pbr3 {

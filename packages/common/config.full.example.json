@@ -2,8 +2,8 @@
   "version": "3.4.0",
   "device_name": "",
   "daemon": {
-    "pid_file": "/var/run/keen-pbr.pid",
-    "cache_dir": "/var/cache/keen-pbr",
+    "pid_file": "/var/run/keen-pbr-sx.pid",
+    "cache_dir": "/var/cache/keen-pbr-sx",
     "strict_enforcement": false
   },
 

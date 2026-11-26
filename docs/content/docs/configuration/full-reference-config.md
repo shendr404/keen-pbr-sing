@@ -13,25 +13,25 @@ List names, outbound tags, and DNS server tags must match `^[a-z][a-z0-9_]*$` an
 
 ```json {filename="config.json"}
 {
-  // keen-pbr version this config was written for (X.Y.Z).
+  // keen-pbr-sx version this config was written for (X.Y.Z).
   // Set automatically when you save from the Web UI; keep it when editing by hand.
   "version": "3.4.0",
 
-  // Optional device label shown in the browser title and beneath the keen-pbr logo.
-  // Maximum length: 128 characters. Default: empty (the standard keen-pbr
+  // Optional device label shown in the browser title and beneath the keen-pbr-sx logo.
+  // Maximum length: 128 characters. Default: empty (the standard keen-pbr-sx
   // branding is used).
   "device_name": "Home router",
 
-  // General keen-pbr service settings.
+  // General keen-pbr-sx service settings.
   // All fields in this section are optional.
   "daemon": {
     // Path to the PID file (the file holding the service's process number).
     // Default: no file is written when omitted.
-    "pid_file": "/var/run/keen-pbr.pid",
+    "pid_file": "/var/run/keen-pbr-sx.pid",
 
     // Directory used for remote-list cache files and cache metadata.
-    // Default: "/var/cache/keen-pbr".
-    "cache_dir": "/var/cache/keen-pbr",
+    // Default: "/var/cache/keen-pbr-sx".
+    "cache_dir": "/var/cache/keen-pbr-sx",
 
     // Which firewall to use.
     // Supported values: "auto", "iptables", "nftables".
@@ -63,7 +63,7 @@ List names, outbound tags, and DNS server tags must match `^[a-z][a-z0-9_]*$` an
     "reuse_static_sets_on_runtime_refresh": true,
 
     // Route IPv6 traffic. Default: true (also when set to null).
-    // If the system has no IPv6 support, keen-pbr logs an error and continues
+    // If the system has no IPv6 support, keen-pbr-sx logs an error and continues
     // in IPv4-only mode.
     "ipv6_enabled": true,
 
@@ -81,11 +81,11 @@ List names, outbound tags, and DNS server tags must match `^[a-z][a-z0-9_]*$` an
     "max_file_size_bytes": 8388608,
 
     // How many bytes of iptables/nft output to read when checking firewall rules
-    // (`keen-pbr status`, status page). 0 means no limit.
+    // (`keen-pbr-sx status`, status page). 0 means no limit.
     // Default: 262144.
     "firewall_verify_max_bytes": 262144,
 
-    // How many seconds to wait for keen-pbr's helper scripts (for example the
+    // How many seconds to wait for keen-pbr-sx's helper scripts (for example the
     // dnsmasq script) before stopping them. Minimum: 1. Default: 30.
     "exec_timeout_seconds": 30,
 
@@ -95,7 +95,7 @@ List names, outbound tags, and DNS server tags must match `^[a-z][a-z0-9_]*$` an
   },
 
   // Embedded HTTP API and web UI settings.
-  // WARNING: This section is NOT available in keen-pbr-headless package
+  // WARNING: This section is NOT available in keen-pbr-sx-headless package
   "api": {
     // Enable or disable the HTTP API and the web UI.
     // Default: false.
@@ -122,7 +122,7 @@ List names, outbound tags, and DNS server tags must match `^[a-z][a-z0-9_]*$` an
 
     // Password login for the API and the web UI. Default: disabled.
     // With enabled: true, password_hash is required: create it with
-    // `keen-pbr hash-password --update` or in the web UI (Security).
+    // `keen-pbr-sx hash-password --update` or in the web UI (Security).
     "authentication": {
       "enabled": false
     },
@@ -209,7 +209,7 @@ List names, outbound tags, and DNS server tags must match `^[a-z][a-z0-9_]*$` an
 
     {
       // "ignore" keeps matching traffic on the system's normal routing;
-      // keen-pbr does not touch it.
+      // keen-pbr-sx does not touch it.
       "type": "ignore",
 
       // Unique outbound tag.
@@ -268,7 +268,7 @@ List names, outbound tags, and DNS server tags must match `^[a-z][a-z0-9_]*$` an
           ]
         },
         {
-          // If the first group does not work, keen-pbr switches to this one.
+          // If the first group does not work, keen-pbr-sx switches to this one.
           // If no link works at all, traffic is blocked.
           "members": [{ "outbound": "wan" }]
         }
@@ -414,7 +414,7 @@ List names, outbound tags, and DNS server tags must match `^[a-z][a-z0-9_]*$` an
   
     "local_file_list": {
       // Local list file path.
-      "file": "/etc/keen-pbr/local.lst",
+      "file": "/etc/keen-pbr-sx/local.lst",
       
       // Minimum lifetime of IPs learned through DNS and L7 interception.
       // Omitted, 0, and values below 1000 ms use intercept.min_ttl_ms.
@@ -429,7 +429,7 @@ List names, outbound tags, and DNS server tags must match `^[a-z][a-z0-9_]*$` an
       // but separate lists are usually easier to maintain.
       "domains": ["intranet.example"],
       "ip_cidrs": ["192.168.50.0/24"],
-      "file": "/etc/keen-pbr/mixed.lst",
+      "file": "/etc/keen-pbr-sx/mixed.lst",
       "url": "https://example.com/mixed.lst",
       "detour": "vpn",
       // ttl_ms applies to domain sources in this list. See the inline_domains
@@ -441,7 +441,7 @@ List names, outbound tags, and DNS server tags must match `^[a-z][a-z0-9_]*$` an
   // DNS configuration. Interception fills dynamic sets without a resolver.
   "dns": {
     // Optional: per-list DNS servers via dnsmasq.
-    // Default: "none" (keen-pbr does not touch the system resolver).
+    // Default: "none" (keen-pbr-sx does not touch the system resolver).
     // Set to "dnsmasq" to resolve domains from specific lists through chosen
     // DNS servers. With "none", dns.rules and fallback are not used and a
     // warning is logged.
@@ -450,7 +450,7 @@ List names, outbound tags, and DNS server tags must match `^[a-z][a-z0-9_]*$` an
     // Which dnsmasq instance to use: "uci:<section>" (OpenWrt),
     // "entware:default" (Keenetic) or "systemd:<unit>.service" (Debian).
     // Default: empty, the instance is chosen automatically. Fill it in only if
-    // `keen-pbr resolver dnsmasq detect` finds several instances.
+    // `keen-pbr-sx resolver dnsmasq detect` finds several instances.
     "dnsmasq_instance": "uci:cfg01411c",
 
     // Built-in DNS proxy for lists with several DNS servers or with DoH.
@@ -501,7 +501,7 @@ List names, outbound tags, and DNS server tags must match `^[a-z][a-z0-9_]*$` an
         "type": "doh",
         "address": "https://dns.google/dns-query",
 
-        // Optional IP addresses of the server. When set, keen-pbr connects only
+        // Optional IP addresses of the server. When set, keen-pbr-sx connects only
         // to them and does not look the server up through the bootstrap servers.
         // Default: not set, the address is looked up.
         "ips": ["8.8.8.8", "8.8.4.4"]
@@ -621,7 +621,7 @@ List names, outbound tags, and DNS server tags must match `^[a-z][a-z0-9_]*$` an
   // Routing rules.
   "route": {
     // Optional ingress interface filter.
-    // If omitted or empty, keen-pbr processes packets from any interface.
+    // If omitted or empty, keen-pbr-sx processes packets from any interface.
     // Default: no filter.
     "inbound_interfaces": ["br0", "wg-lan"],
 

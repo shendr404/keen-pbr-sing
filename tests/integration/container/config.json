@@ -1,5 +1,5 @@
 {
-  "daemon": {"cache_dir": "/var/cache/keen-pbr", "firewall_backend": "BACKEND", "strict_enforcement": true},
+  "daemon": {"cache_dir": "/var/cache/keen-pbr-sx", "firewall_backend": "BACKEND", "strict_enforcement": true},
   "api": {"enabled": true, "listen": "0.0.0.0:12121"},
   "fwmark": {"start": "0x00010000", "mask": "0x00ff0000"},
   "iproute": {"table_start": 150},

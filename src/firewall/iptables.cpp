@@ -1979,7 +1979,7 @@ void IptablesFirewall::cleanup_rules_impl(bool sweep_live_state) {
         mangle_snapshots[ipv6] = inspect_table(command, "mangle", ipv6);
 
     // A live-state sweep deliberately handles the current and the retired
-    // layouts.  This is limited to named keen-pbr chains and hooks; no table
+    // layouts.  This is limited to named keen-pbr-sx chains and hooks; no table
     // is flushed.  Hooks go first so no chain is referenced when deleted, and
     // retired dispatchers go before the generation chains they reference.
     if (sweep_live_state || raw) {

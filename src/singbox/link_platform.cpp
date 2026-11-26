@@ -3,6 +3,7 @@
 #include "../http/http_client.hpp"
 #include "../util/safe_exec.hpp"
 
+#include <chrono>
 #include <cstdlib>
 #include <fstream>
 
@@ -17,11 +18,11 @@ SingboxLinkService make_singbox_link_service() {
     return SingboxLinkService(
         paths,
         [bin = paths.singbox_bin](const std::string& config, std::string* error) {
-            // sing-box may print config values on error. Do not keep child output,
-            // including in the command-failure diagnostic journal.
+            // Keep a bounded merged stderr so the UI can show the FATAL/ERROR line.
+            // format_singbox_check_error redacts uuids, passwords and keys.
             const auto result = safe_exec_capture_with_timeouts(
-                {bin, "check", "-c", config}, safe_exec_timeouts(), true, 0, true, false);
-            if (error) *error = result.timed_out ? "timed out" : "invalid configuration or binary unavailable";
+                {bin, "check", "-c", config}, safe_exec_timeouts(), false, std::size_t{2} * 1024U, true, true);
+            if (error) *error = result.timed_out ? "timed out" : result.stdout_output;
             return result.exit_code;
         },
         {},

@@ -14,7 +14,7 @@
 
 namespace keen_pbr3 {
 
-// Routing table IDs that must never be used for keen-pbr outbound tables.
+// Routing table IDs that must never be used for keen-pbr-sx outbound tables.
 static constexpr uint32_t RESERVED_TABLE_UNSPEC         = 0;
 static constexpr uint32_t RESERVED_TABLE_PRELOCAL       = 128;
 static constexpr uint32_t RESERVED_TABLE_BLOCK_LOW      = 250;
