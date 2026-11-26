@@ -400,7 +400,7 @@ void print_service_header(const api::HealthResponse& service) {
         }
         std::cout << ")";
     }
-    std::cout << " - keen-pbr " << service.version << " (build " << service.build << ")\n";
+    std::cout << " - keen-pbr-sx " << service.version << " (build " << service.build << ")\n";
     if (service.config_is_draft) {
         std::cout << "Config: unsaved draft changes are pending\n";
     }
@@ -413,7 +413,7 @@ void print_service_header(const api::HealthResponse& service) {
 
 void print_header(const RoutingHealthReport& report, const std::string& config_path,
                   const DaemonHealthDetails* details) {
-    std::cout << "keen-pbr status - config: " << config_path << "\n";
+    std::cout << "keen-pbr-sx status - config: " << config_path << "\n";
     if (details && details->service) print_service_header(*details->service);
     if (report.firewall_backend.has_value()) {
         std::cout << "Firewall backend: " << firewall_backend_name(*report.firewall_backend) << "\n";

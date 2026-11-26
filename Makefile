@@ -52,8 +52,8 @@ generate: ## Regenerate src/api/generated/api_types.hpp from docs/openapi.yaml (
 
 test: ## Build and run unit tests (doctest)
 	cmake -S . -B $(GCC_BUILD_DIR) $(GCC_CMAKE_FLAGS) -DBUILD_TESTS=ON
-	cmake --build $(GCC_BUILD_DIR) --parallel $(BUILD_JOBS) --target keen-pbr keen-pbr-tests crash-diagnostics-smoke
-	KEEN_PBR_TEST_DNSMASQ="$$(command -v dnsmasq || true)" $(GCC_BUILD_DIR)/tests/keen-pbr-tests
+	cmake --build $(GCC_BUILD_DIR) --parallel $(BUILD_JOBS) --target keen-pbr-sx keen-pbr-sx-tests crash-diagnostics-smoke
+	KEEN_PBR_TEST_DNSMASQ="$$(command -v dnsmasq || true)" $(GCC_BUILD_DIR)/tests/keen-pbr-sx-tests
 	$(GCC_BUILD_DIR)/tests/crash-diagnostics-smoke
 	python3 -m unittest tests/integration/test_case_engine.py
 	python3 -m unittest tests/integration/test_netns_harness.py
@@ -63,7 +63,7 @@ test: ## Build and run unit tests (doctest)
 	sh tests/test_keenetic_kernel_modules.sh
 	sh tests/test_cleanup_firewall.sh
 	sh tests/test_interface_forward.sh
-	KEEN_PBR_RESOLVER_BIN="$(GCC_BUILD_DIR)/keen-pbr" sh tests/test_dnsmasq_hooks.sh
+	KEEN_PBR_RESOLVER_BIN="$(GCC_BUILD_DIR)/keen-pbr-sx" sh tests/test_dnsmasq_hooks.sh
 	python3 tests/check_firewall_dependencies.py
 
 INTEGRATION_BACKEND ?= all
@@ -76,17 +76,17 @@ NETNS_INTEGRATION_CMAKE_FLAGS := \
 	-DKEEN_PBR_TARGET_OS:STRING=debian \
 	-DKEEN_PBR_TARGET_VERSION:STRING=rootless-netns \
 	-DKEEN_PBR_BUILD_VARIANT:STRING=full \
-	-DKEEN_PBR_DEFAULT_CONFIG_PATH:STRING=/run/keen-pbr-it/config.json \
-	-DKEEN_PBR_CONTROL_SOCKET:STRING=/run/keen-pbr/control.sock \
+	-DKEEN_PBR_DEFAULT_CONFIG_PATH:STRING=/run/keen-pbr-sx-it/config.json \
+	-DKEEN_PBR_CONTROL_SOCKET:STRING=/run/keen-pbr-sx/control.sock \
 	-DKEEN_PBR_FRONTEND_ROOT:STRING=/mnt/repo/frontend/dist \
 	-DKEEN_PBR_DNSMASQ_HOOK:STRING=/mnt/repo/tests/integration/netns/dnsmasq-hook.sh
 
 integration-netns-build: ## Build the native Debian-flavoured binary for rootless netns integration tests
 	cmake -S . -B $(NETNS_INTEGRATION_BUILD_DIR) $(GCC_CMAKE_FLAGS) $(NETNS_INTEGRATION_CMAKE_FLAGS)
-	cmake --build $(NETNS_INTEGRATION_BUILD_DIR) --parallel $(BUILD_JOBS) --target keen-pbr
+	cmake --build $(NETNS_INTEGRATION_BUILD_DIR) --parallel $(BUILD_JOBS) --target keen-pbr-sx
 
 ifeq ($(strip $(INTEGRATION_BIN)),)
-INTEGRATION_TEST_BIN := $(abspath $(NETNS_INTEGRATION_BUILD_DIR)/keen-pbr)
+INTEGRATION_TEST_BIN := $(abspath $(NETNS_INTEGRATION_BUILD_DIR)/keen-pbr-sx)
 integration-tests: integration-netns-build
 else
 INTEGRATION_TEST_BIN := $(INTEGRATION_BIN)
@@ -104,11 +104,11 @@ integration-tests-nftables: ## Run rootless integration tests with the nftables 
 
 clang-build: ## Configure and compile with Clang in a host-only build dir
 	cmake -S . -B $(CLANG_BUILD_DIR) $(CLANG_CMAKE_FLAGS) $(CLANG_FEATURE_CMAKE_FLAGS)
-	cmake --build $(CLANG_BUILD_DIR) --parallel $(BUILD_JOBS) --target keen-pbr
+	cmake --build $(CLANG_BUILD_DIR) --parallel $(BUILD_JOBS) --target keen-pbr-sx
 
 clang-check: ## Compile with Clang thread-safety analysis enabled; never runs binaries
 	cmake -S . -B $(CLANG_BUILD_DIR) $(CLANG_CMAKE_FLAGS) $(CLANG_FEATURE_CMAKE_FLAGS) -DBUILD_TESTS=ON -DENABLE_THREAD_SAFETY_ANALYSIS=ON
-	cmake --build $(CLANG_BUILD_DIR) --parallel $(BUILD_JOBS) --target keen-pbr keen-pbr-tests thread-safety-smoke
+	cmake --build $(CLANG_BUILD_DIR) --parallel $(BUILD_JOBS) --target keen-pbr-sx keen-pbr-sx-tests thread-safety-smoke
 
 CLANGD_TIDY_ARGS ?=
 
@@ -129,8 +129,8 @@ distclean: ## Remove all build artifacts including downloaded SDKs
 CROSS_TOOLCHAIN_DIR   := build/cross-toolchain
 CROSS_TOOLCHAIN_STAMP := $(CROSS_TOOLCHAIN_DIR)/.stamp-extracted
 CROSS_BUILD_DIR       := build/cmake-aarch64
-CROSS_BIN             := $(DIST_DIR)/keen-pbr-aarch64
-CROSS_DEBUG_BIN       := $(DIST_DIR)/keen-pbr-aarch64.debug
+CROSS_BIN             := $(DIST_DIR)/keen-pbr-sx-aarch64
+CROSS_DEBUG_BIN       := $(DIST_DIR)/keen-pbr-sx-aarch64.debug
 CROSS_OBJCOPY         := $(shell ls $(CROSS_TOOLCHAIN_DIR)/toolchain-*/bin/aarch64-openwrt-linux-musl-objcopy 2>/dev/null | head -1)
 # runas.so (LD_PRELOAD'd by the compiler wrapper) uses STAGING_DIR to redirect
 # the compiler's baked-in absolute sysroot paths to the actual extracted location.
@@ -146,7 +146,7 @@ OPENWRT_TARGET_VERSION ?= $(shell printf '%s\n' "$(OPENWRT_SDK_URL)" | sed -n 's
 ROUTER_HOST ?=
 ROUTER_USER ?= root
 ROUTER_PORT ?= 22
-ROUTER_DEST ?= /tmp/keen-pbr
+ROUTER_DEST ?= /tmp/keen-pbr-sx
 
 cross-setup: ## Download OpenWrt SDK and build cross-compile deps (no Docker; requires OPENWRT_SDK_URL)
 	@test -n "$(OPENWRT_SDK_URL)" || { \
@@ -171,10 +171,10 @@ cross-build: $(CROSS_TOOLCHAIN_STAMP) ## Cross-compile for aarch64_cortex-a53 di
 	STAGING_DIR=$(CROSS_STAGING_DIR) cmake --build $(CROSS_BUILD_DIR) -j$(shell nproc)
 	@mkdir -p $(DIST_DIR)
 	# Extract full debug symbols into a separate .debug file (stays on the host)
-	$(CROSS_OBJCOPY) --only-keep-debug --compress-debug-sections=zlib $(CROSS_BUILD_DIR)/keen-pbr $(CROSS_DEBUG_BIN)
+	$(CROSS_OBJCOPY) --only-keep-debug --compress-debug-sections=zlib $(CROSS_BUILD_DIR)/keen-pbr-sx $(CROSS_DEBUG_BIN)
 	# Strip DWARF from deployed binary; raw crash PCs still resolve against host-side .debug.
 	$(CROSS_OBJCOPY) --strip-debug --add-gnu-debuglink=$(CROSS_DEBUG_BIN) \
-		$(CROSS_BUILD_DIR)/keen-pbr $(CROSS_BIN)
+		$(CROSS_BUILD_DIR)/keen-pbr-sx $(CROSS_BIN)
 	sh build_scripts/verify-debug-artifact.sh $(CROSS_BIN) $(CROSS_DEBUG_BIN) \
 		$(patsubst %objcopy,%readelf,$(CROSS_OBJCOPY)) \
 		$(patsubst %objcopy,%nm,$(CROSS_OBJCOPY)) \

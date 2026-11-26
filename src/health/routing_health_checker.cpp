@@ -38,7 +38,7 @@ bool route_matches(const RouteSpec& expected, const DumpedRoute& actual) {
 }
 
 // Whether the owned entry chain and its hook exist.  iptables: the
-// PREROUTING classification chain and a builtin PREROUTING jump into keen-pbr (the
+// PREROUTING classification chain and a builtin PREROUTING jump into keen-pbr-sx (the
 // parser only keeps those); nftables: the prerouting base chain, whose hook is
 // a chain attribute.
 FirewallChainCheck firewall_chain_from_snapshot(const FirewallSnapshot& snapshot) {

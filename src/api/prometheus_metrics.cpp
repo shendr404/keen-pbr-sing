@@ -1,6 +1,6 @@
 #include "prometheus_metrics.hpp"
 
-#include <keen-pbr/version.hpp>
+#include <keen-pbr-sx/version.hpp>
 
 #include <algorithm>
 #include <iomanip>
@@ -372,7 +372,7 @@ std::string prometheus_metrics(const InterceptCounters* counters,
     }
     if (!daemon.firewall_counters.skip_marked_packets.empty()) {
         header(out, "keen_pbr_skip_marked_packets_total", "counter",
-               "Packets that bypassed keen-pbr because they already carried a mark "
+               "Packets that bypassed keen-pbr-sx because they already carried a mark "
                "(daemon.skip_marked_packets); restarts from zero when the firewall rules are rebuilt.");
         for (const auto& [family, packets] : daemon.firewall_counters.skip_marked_packets) {
             sample(out, "keen_pbr_skip_marked_packets_total", label("family", family), packets);

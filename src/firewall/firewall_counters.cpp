@@ -163,7 +163,7 @@ void aggregate_firewall_counters(const std::vector<IptablesCounterRule>& rules,
     // Candidate rules are the cascade's MARK rules; the CONNMARK save and the
     // RETURN carry the same comment but are not classifications.
     if (rule.target != "MARK" || !rule.mark_value.has_value()) continue;
-    // Any keen-pbr MARK rule, not only balance candidates.  A foreign MARK
+    // Any keen-pbr-sx MARK rule, not only balance candidates.  A foreign MARK
     // that happens to use the same value is left out: it has no kpbr comment.
     if (starts_with(rule.comment, kFirewallRuleCommentPrefix)) {
       const auto marked = index.mark_outbound.find(*rule.mark_value);

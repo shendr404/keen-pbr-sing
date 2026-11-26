@@ -39,7 +39,7 @@ struct FakeProc {
 
     FakeProc() {
         dir = std::filesystem::temp_directory_path() /
-              ("keen-pbr-intercept-probe-" + std::to_string(::getpid()) + "-" +
+              ("keen-pbr-sx-intercept-probe-" + std::to_string(::getpid()) + "-" +
                std::to_string(counter()++));
         std::filesystem::create_directories(dir);
         env.ip_targets = (dir / "ip_targets").string();

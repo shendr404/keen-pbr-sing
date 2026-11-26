@@ -307,7 +307,7 @@ test("a retained successful operation is distinct from current kernel absence", 
     ],
   })
   expect(html).toContain(
-    "keen-pbr has already added or refreshed this IP in the ipset."
+    "keen-pbr-sx has already added or refreshed this IP in the ipset."
   )
   expect(html).toContain("Last time 0 s ago.")
   expect(html).toContain("It is not in the ipset now")
@@ -326,7 +326,7 @@ test("no retained operation is not presented as proof that an IP was never added
     ],
   })
   expect(html).toContain(
-    "keen-pbr has no record of adding this IP to the ipset."
+    "keen-pbr-sx has no record of adding this IP to the ipset."
   )
   expect(html).not.toContain("Last time")
 })
@@ -344,7 +344,7 @@ test("untracked history remains distinct from an empty tracked cache", () => {
     ],
   })
   expect(html).toContain("Writes are not tracked for this ipset.")
-  expect(html).not.toContain("keen-pbr has no record of adding")
+  expect(html).not.toContain("keen-pbr-sx has no record of adding")
 })
 
 const v6 = "2001:db8::1"

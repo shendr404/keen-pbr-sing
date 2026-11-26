@@ -23,7 +23,7 @@ TEST_IP6 = "2001:db8:100::10"
 CONTAINER_DIR = pathlib.Path(__file__).resolve().parent
 BASE_CONFIG = CONTAINER_DIR / "config.json"
 TOPOLOGY = CONTAINER_DIR / "topology.sh"
-CONFIG_PATH = pathlib.Path(os.environ.get("KPBR_CONFIG_PATH", "/etc/keen-pbr/config.json"))
+CONFIG_PATH = pathlib.Path(os.environ.get("KPBR_CONFIG_PATH", "/etc/keen-pbr-sx/config.json"))
 REMOTE_CONTAINER_DIR = "/mnt/payload/tests/integration/container"
 
 
@@ -300,7 +300,7 @@ def baseline_config(backend: str) -> dict:
 
 
 def cleanup_owned_state(context: SystemContext) -> None:
-    context.run("systemctl", "stop", "keen-pbr.service", "dnsmasq.service", check=False)
+    context.run("systemctl", "stop", "keen-pbr-sx.service", "dnsmasq.service", check=False)
     context.run("nft", "delete", "table", "inet", "KeenPbrTable", check=False)
     for binary in ("iptables", "ip6tables"):
         context.run(binary, "-t", "mangle", "-D", "PREROUTING", "-j", "KeenPbrTable",
@@ -332,18 +332,18 @@ def setup_case(context: SystemContext, _case) -> None:
     CONFIG_PATH.write_text(json.dumps(baseline_config(context.backend), indent=2) + "\n",
                            encoding="utf-8")
     # Plain forwarding resolver: reset its upstream to the harness default.
-    runtime = pathlib.Path(os.environ.get("KPBR_RUNTIME", "/run/keen-pbr-it"))
+    runtime = pathlib.Path(os.environ.get("KPBR_RUNTIME", "/run/keen-pbr-sx-it"))
     (runtime / "dnsmasq-upstream.conf").unlink(missing_ok=True)
     # Test dnsmasq hook state: drop-in, call log and failure switch.
-    (runtime / "dnsmasq.d" / "keen-pbr-upstream-dns.conf").unlink(missing_ok=True)
+    (runtime / "dnsmasq.d" / "keen-pbr-sx-upstream-dns.conf").unlink(missing_ok=True)
     (runtime / "dnsmasq-hook.log").unlink(missing_ok=True)
     (runtime / "dnsmasq-hook.fail").unlink(missing_ok=True)
     (runtime / "dnsmasq-hook.nodropin").unlink(missing_ok=True)
-    context.run("systemctl", "reset-failed", "dnsmasq.service", "keen-pbr.service",
+    context.run("systemctl", "reset-failed", "dnsmasq.service", "keen-pbr-sx.service",
                 check=False)
     context.run("systemctl", "restart", "dnsmasq.service")
-    context.run("systemctl", "start", "keen-pbr.service")
-    context.wait_for("keen-pbr service health", context.health_running)
+    context.run("systemctl", "start", "keen-pbr-sx.service")
+    context.wait_for("keen-pbr-sx service health", context.health_running)
     assert context.run("systemctl", "is-active", "dnsmasq.service").stdout.strip() == "active"
 
 
@@ -354,8 +354,8 @@ def teardown_case(context: SystemContext, _case) -> None:
 
 def diagnostics(context: SystemContext, _case) -> str:
     commands = [
-        ("systemctl", "--no-pager", "--full", "status", "keen-pbr.service", "dnsmasq.service"),
-        ("journalctl", "--no-pager", "-n", "160", "-u", "keen-pbr.service", "-u", "dnsmasq.service"),
+        ("systemctl", "--no-pager", "--full", "status", "keen-pbr-sx.service", "dnsmasq.service"),
+        ("journalctl", "--no-pager", "-n", "160", "-u", "keen-pbr-sx.service", "-u", "dnsmasq.service"),
         ("ip", "-4", "rule", "show"), ("ip", "-6", "rule", "show"),
         ("ip", "-4", "route", "show", "table", "all"),
         ("ip", "-6", "route", "show", "table", "all"),

@@ -5,7 +5,7 @@
 #          <workspace-dir> <sdk-dir> <release-dir> \
 #          <tag> <architecture> [pkgarch]
 #
-# <workspace-dir>  Root of the keen-pbr source tree (contains version.mk)
+# <workspace-dir>  Root of the keen-pbr-sx source tree (contains version.mk)
 # <sdk-dir>        Extracted OpenWrt SDK directory (built packages are in sdk-dir/bin/)
 # <release-dir>    Directory where repository-layout artifacts are written (created if absent)
 # <tag>            OpenWrt version string, e.g. "24.10.4"
@@ -31,7 +31,7 @@ mkdir -p "$DEBUG_DEST_ROOT"
 # ── Copy packages ──────────────────────────────────────────────────────────────
 
 _copy_pkg() {
-    local name_prefix="$1"  # "keen-pbr" or "keen-pbr-headless"
+    local name_prefix="$1"  # "keen-pbr-sx" or "keen-pbr-sx-headless"
     find "$SDK_DIR/bin" -type f \( -name "${name_prefix}_*.ipk" -o -name "${name_prefix}-[0-9]*.apk" \) | while read -r f; do
         EXT="${f##*.}"
         PKG_ARCH="$FIXED_PKGARCH"
@@ -54,12 +54,12 @@ _copy_pkg() {
     done
 }
 
-_copy_pkg "keen-pbr"
-_copy_pkg "keen-pbr-headless"
+_copy_pkg "keen-pbr-sx"
+_copy_pkg "keen-pbr-sx-headless"
 
-find "$SDK_DIR/build_dir" -type f -path '*/debug-artifacts/*/keen-pbr.debug' | while read -r f; do
+find "$SDK_DIR/build_dir" -type f -path '*/debug-artifacts/*/keen-pbr-sx.debug' | while read -r f; do
     variant="$(basename "$(dirname "$f")")"
-    cp "$f" "$DEBUG_DEST_ROOT/keen-pbr_${VERSION_RELEASE}_openwrt_${TAG}_${ARCHITECTURE}_${variant}.debug"
+    cp "$f" "$DEBUG_DEST_ROOT/keen-pbr-sx_${VERSION_RELEASE}_openwrt_${TAG}_${ARCHITECTURE}_${variant}.debug"
 done
 
 # ── IPK: generate Packages index per architecture ────────────────────────────
@@ -83,7 +83,7 @@ EOF
         ARCH_DIR_NAME=$(basename "$ARCH_DIR")
         PKG_ARCH="${ARCH_DIR_NAME}"
         mapfile -t ARCH_IPKS < <(find "$ARCH_DIR" -maxdepth 1 -type f \
-            -name "keen-pbr*_openwrt_${TAG}_${ARCHITECTURE}.ipk" -printf '%f\n' | sort)
+            -name "keen-pbr-sx*_openwrt_${TAG}_${ARCHITECTURE}.ipk" -printf '%f\n' | sort)
         if [ "${#ARCH_IPKS[@]}" -gt 0 ]; then
             TMP_DIR=$(mktemp -d)
             for f in "${ARCH_IPKS[@]}"; do
@@ -130,13 +130,13 @@ if [ ! -x "$APK_BIN" ]; then
 fi
 
 if [ -n "$APK_BIN" ] && find "$RELEASE_DIR/openwrt/${TAG}" -type f \
-        -name "keen-pbr*.apk" 2>/dev/null | grep -q .; then
+        -name "keen-pbr-sx*.apk" 2>/dev/null | grep -q .; then
     rm -f "$APK_SIGNING_MARKER"
     for ARCH_DIR in $(find "$RELEASE_DIR/openwrt/${TAG}" -mindepth 1 -maxdepth 1 -type d | sort); do
         ARCH_DIR_NAME=$(basename "$ARCH_DIR")
         PKG_ARCH="${ARCH_DIR_NAME}"
         mapfile -t ARCH_APKS < <(find "$ARCH_DIR" -maxdepth 1 -type f \
-            -name "keen-pbr*.apk" -printf '%f\n' | sort)
+            -name "keen-pbr-sx*.apk" -printf '%f\n' | sort)
         if [ "${#ARCH_APKS[@]}" -gt 0 ]; then
             tmp_dir="$(mktemp -d)"
             for apk_file in "${ARCH_APKS[@]}"; do

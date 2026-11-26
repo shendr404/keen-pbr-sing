@@ -5,7 +5,7 @@ aliases:
   - /docs/getting-started/compilation/
 ---
 
-This page is for developers and package maintainers who want to build keen-pbr from source. If you just need a ready-made package, see [installation]({{< relref "/docs/getting-started" >}}).
+This page is for developers and package maintainers who want to build keen-pbr-sx from source. If you just need a ready-made package, see [installation]({{< relref "/docs/getting-started" >}}).
 
 ## Prerequisites
 
@@ -41,7 +41,7 @@ A `Makefile` wraps all build steps:
 ```bash {filename="bash"}
 # Clone the repository with submodules
 git clone --recurse-submodules https://github.com/shendr404/keen-pbr-sx.git
-cd keen-pbr
+cd keen-pbr-sx
 
 # Build
 make
@@ -60,7 +60,7 @@ make setup    # cmake -S . -B cmake-build-gcc
 make build    # cmake --build cmake-build-gcc
 ```
 
-The binary is produced at `cmake-build-gcc/keen-pbr`. The Clang targets (`make clang-build`) build into `cmake-build-clang`.
+The binary is produced at `cmake-build-gcc/keen-pbr-sx`. The Clang targets (`make clang-build`) build into `cmake-build-clang`.
 
 Run `make help` to see all build and packaging targets.
 
@@ -76,7 +76,7 @@ Pass options when configuring with `cmake`:
 | `KEEN_PBR_USE_LIBUNWIND` | `ON` | Look for and use `libunwind` for crash diagnostics. Debian builds require it when enabled; OpenWrt and Keenetic use register-only diagnostics when it is missing or disabled. |
 | `BUILD_TESTS` | `OFF` | Build unit tests (`make test` turns it on itself) |
 
-Example: build without the HTTP server (like the `keen-pbr-headless` package):
+Example: build without the HTTP server (like the `keen-pbr-sx-headless` package):
 
 ```bash {filename="bash"}
 cmake -S . -B cmake-build-gcc -DWITH_API=OFF
@@ -109,12 +109,12 @@ make debian-builder-image
 
 The finished packages (full and `headless`) appear in `build/packages/`:
 
-- `build/packages/debian/<debian-version>/<architecture>/keen-pbr_<version>_debian_<architecture>.deb`
-- `build/packages/debian/<debian-version>/<architecture>/keen-pbr-headless_<version>_debian_<architecture>.deb`
+- `build/packages/debian/<debian-version>/<architecture>/keen-pbr-sx_<version>_debian_<architecture>.deb`
+- `build/packages/debian/<debian-version>/<architecture>/keen-pbr-sx-headless_<version>_debian_<architecture>.deb`
 
 The published repository also contains packages for Ubuntu: Ubuntu noble (24.04) uses the Debian bookworm packages, and Ubuntu resolute (26.04) uses the Debian trixie packages.
 
-For the full package, the web interface is built with `bun`. Installing the package enables and starts the `keen-pbr` service (a `systemd` unit); the configuration lives in `/etc/keen-pbr`.
+For the full package, the web interface is built with `bun`. Installing the package enables and starts the `keen-pbr-sx` service (a `systemd` unit); the configuration lives in `/etc/keen-pbr-sx`.
 
 ## Router Package Builds
 
@@ -139,7 +139,7 @@ Behavior:
 
 - It uses the prebuilt `ghcr.io/maksimkurb/entware-builder:<config>` image.
 - The repository is mounted into the container at `/workspace`.
-- Packages (`keen-pbr` and `keen-pbr-headless`) are copied to `build/packages/keenetic/<version>/<architecture>/`, for example `keen-pbr_<version>_keenetic_mipsel-3.4.ipk`.
+- Packages (`keen-pbr-sx` and `keen-pbr-sx-headless`) are copied to `build/packages/keenetic/<version>/<architecture>/`, for example `keen-pbr-sx_<version>_keenetic_mipsel-3.4.ipk`.
 
 ### OpenWrt
 
@@ -180,25 +180,25 @@ Copy the built package to your router and install it (replace `192.168.1.1` with
 
 ```bash {filename="bash"}
 # Keenetic example
-scp build/packages/keenetic/<keenetic_version>/<pkg_arch>/keen-pbr_<version>_keenetic_<config>.ipk root@192.168.1.1:/tmp/
-ssh root@192.168.1.1 opkg install /tmp/keen-pbr_<version>_keenetic_<config>.ipk
+scp build/packages/keenetic/<keenetic_version>/<pkg_arch>/keen-pbr-sx_<version>_keenetic_<config>.ipk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 opkg install /tmp/keen-pbr-sx_<version>_keenetic_<config>.ipk
 
 # OpenWrt .ipk example
-scp build/packages/openwrt/<openwrt_version>/<pkg_arch>/keen-pbr_<version>_openwrt_<openwrt_version>_<architecture>.ipk root@192.168.1.1:/tmp/
-ssh root@192.168.1.1 opkg install /tmp/keen-pbr_<version>_openwrt_<openwrt_version>_<architecture>.ipk
+scp build/packages/openwrt/<openwrt_version>/<pkg_arch>/keen-pbr-sx_<version>_openwrt_<openwrt_version>_<architecture>.ipk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 opkg install /tmp/keen-pbr-sx_<version>_openwrt_<openwrt_version>_<architecture>.ipk
 
 # OpenWrt .apk example
 # the .apk file keeps the name the OpenWrt SDK gave it
-scp build/packages/openwrt/<openwrt_version>/<pkg_arch>/keen-pbr-<version>.apk root@192.168.1.1:/tmp/
-ssh root@192.168.1.1 apk add --allow-untrusted /tmp/keen-pbr-<version>.apk
+scp build/packages/openwrt/<openwrt_version>/<pkg_arch>/keen-pbr-sx-<version>.apk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 apk add --allow-untrusted /tmp/keen-pbr-sx-<version>.apk
 ```
 
 After installation the service is usually already running. If not, start it on the router:
 
 ```bash {filename="bash"}
 # Keenetic
-/opt/etc/init.d/S80keen-pbr start
+/opt/etc/init.d/S80keen-pbr-sx start
 
 # OpenWrt
-service keen-pbr start
+service keen-pbr-sx start
 ```

@@ -4,7 +4,7 @@
 set -eu
 
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-tmp_root=$(mktemp -d "${TMPDIR:-/tmp}/keen-pbr-dnsmasq-hooks.XXXXXX")
+tmp_root=$(mktemp -d "${TMPDIR:-/tmp}/keen-pbr-sx-dnsmasq-hooks.XXXXXX")
 trap 'rm -rf "$tmp_root"' EXIT HUP INT TERM
 
 fail() {
@@ -12,15 +12,15 @@ fail() {
     exit 1
 }
 
-owrt_hook="$repo_root/packages/openwrt/keen-pbr/files/usr/lib/keen-pbr/dnsmasq-hook.sh"
-keen_dir="$repo_root/packages/keenetic/keen-pbr/files/opt"
-keen_hook="$keen_dir/usr/lib/keen-pbr/dnsmasq-hook.sh"
-keen_sh="$keen_dir/usr/lib/keen-pbr/dnsmasq.sh"
-keen_recommended="$keen_dir/usr/lib/keen-pbr/dnsmasq.recommended.conf"
-owrt_init="$repo_root/packages/openwrt/keen-pbr/files/etc/init.d/keen-pbr-dnsmasq"
-deb_sh="$repo_root/packages/debian/files/usr/lib/keen-pbr/dnsmasq.sh"
-deb_recommended="$repo_root/packages/debian/files/usr/lib/keen-pbr/dnsmasq.recommended.conf"
-deb_hook="$repo_root/packages/debian/files/usr/lib/keen-pbr/dnsmasq-hook.sh"
+owrt_hook="$repo_root/packages/openwrt/keen-pbr-sx/files/usr/lib/keen-pbr-sx/dnsmasq-hook.sh"
+keen_dir="$repo_root/packages/keenetic/keen-pbr-sx/files/opt"
+keen_hook="$keen_dir/usr/lib/keen-pbr-sx/dnsmasq-hook.sh"
+keen_sh="$keen_dir/usr/lib/keen-pbr-sx/dnsmasq.sh"
+keen_recommended="$keen_dir/usr/lib/keen-pbr-sx/dnsmasq.recommended.conf"
+owrt_init="$repo_root/packages/openwrt/keen-pbr-sx/files/etc/init.d/keen-pbr-sx-dnsmasq"
+deb_sh="$repo_root/packages/debian/files/usr/lib/keen-pbr-sx/dnsmasq.sh"
+deb_recommended="$repo_root/packages/debian/files/usr/lib/keen-pbr-sx/dnsmasq.recommended.conf"
+deb_hook="$repo_root/packages/debian/files/usr/lib/keen-pbr-sx/dnsmasq-hook.sh"
 
 for f in "$owrt_hook" "$keen_hook" "$keen_sh" "$deb_hook" "$deb_sh"; do
     sh -n "$f" || fail "syntax error in $f"
@@ -124,16 +124,16 @@ owrt_setup() {
     guestdir="$tmp_root/owrt/x/guest.d"
     export FAKE_UCI_DB="$tmp_root/uci.db" FAKE_UCI_LOG="$tmp_root/uci.log"
     export TMP_ROOT="$tmp_root/owrt/tmp"
-    export CACHE_DIR="$tmp_root/owrt/cache" CONFIG_DIR="$tmp_root/owrt/etc-keen-pbr"
-    export LEGACY_RUN_DIR="$tmp_root/owrt/run-keen-pbr"
-    export KEEN_PBR_BIN=/usr/sbin/keen-pbr
+    export CACHE_DIR="$tmp_root/owrt/cache" CONFIG_DIR="$tmp_root/owrt/etc-keen-pbr-sx"
+    export LEGACY_RUN_DIR="$tmp_root/owrt/run-keen-pbr-sx"
+    export KEEN_PBR_BIN=/usr/sbin/keen-pbr-sx
     export LOCK_DIR="$tmp_root/hook.lock" DNSMASQ_BIN=/usr/sbin/dnsmasq
     unset INIT_SCRIPT
     : > "$tmp_root/uci.log"
     run() { PATH="$fake_bin:$PATH" UCI="$fake_bin/uci" sh "$owrt_hook" "$@"; }
-    f1="$confdir/keen-pbr.conf"
-    f2="$guestdir/keen-pbr.conf"
-    want='conf-script=/usr/sbin/keen-pbr generate-resolver-config dnsmasq'
+    f1="$confdir/keen-pbr-sx.conf"
+    f2="$guestdir/keen-pbr-sx.conf"
+    want='conf-script=/usr/sbin/keen-pbr-sx generate-resolver-config dnsmasq'
 }
 
 test_openwrt() {
@@ -172,7 +172,7 @@ EOT
     [ ! -e "$f2" ] || fail "owrt: apply wrote into another section's confdir"
     [ ! -d "$TMP_ROOT/dnsmasq.guest.d" ] || fail "owrt: apply created the guest default dir"
     [ "$(grep -c "^dhcp.cfg01.addnmount=$CONFIG_DIR\$" "$FAKE_UCI_DB")" = 1 ] || fail "owrt: pre-existing mount duplicated"
-    grep -qxF "dhcp.cfg01.addnmount=/usr/sbin/keen-pbr" "$FAKE_UCI_DB" || fail "owrt: bin mount missing"
+    grep -qxF "dhcp.cfg01.addnmount=/usr/sbin/keen-pbr-sx" "$FAKE_UCI_DB" || fail "owrt: bin mount missing"
     grep -qxF "dhcp.cfg01.addnmount=$CACHE_DIR" "$FAKE_UCI_DB" || fail "owrt: cache mount missing"
     [ "$(grep -c '^dhcp.cfg01.addnmount=' "$FAKE_UCI_DB")" = 3 ] || fail "owrt: addnmount should list exactly three paths"
     ! grep -q '^dhcp.guest.addnmount' "$FAKE_UCI_DB" || fail "owrt: guest got mounts"
@@ -285,14 +285,14 @@ EOT
 }
 
 # State left by 3.3.1: the whole server list in kpbr_server (scoped entries
-# too), four mounts including /var/run/keen-pbr, a drop-in with the same line.
+# too), four mounts including /var/run/keen-pbr-sx, a drop-in with the same line.
 test_openwrt_upgrade_from_331() {
     owrt_setup
     cat > "$FAKE_UCI_DB" <<EOT
 dhcp.cfg01=dnsmasq
 dhcp.cfg01.kpbr_server=1.1.1.1
 dhcp.cfg01.kpbr_server=/lan/192.168.1.1
-dhcp.cfg01.addnmount=/usr/sbin/keen-pbr
+dhcp.cfg01.addnmount=/usr/sbin/keen-pbr-sx
 dhcp.cfg01.addnmount=$CONFIG_DIR
 dhcp.cfg01.addnmount=$CACHE_DIR
 dhcp.cfg01.addnmount=$LEGACY_RUN_DIR
@@ -339,7 +339,7 @@ test_openwrt_boot() {
     grep -q '^START=18$' "$owrt_init" || fail "owrt boot: START must be 18 (dnsmasq is 19)"
     cat > "$FAKE_UCI_DB" <<EOT
 dhcp.cfg01=dnsmasq
-dhcp.cfg01.addnmount=/usr/sbin/keen-pbr
+dhcp.cfg01.addnmount=/usr/sbin/keen-pbr-sx
 dhcp.cfg01.addnmount=$LEGACY_RUN_DIR
 dhcp.guest=dnsmasq
 dhcp.guest.confdir=$guestdir,*.conf
@@ -361,7 +361,7 @@ EOT
     [ "$(cat "$f1")" = other ] || fail "owrt boot: overwrote a foreign drop-in"
 }
 
-# Package removal: every section, no selector, never keen-pbr itself.
+# Package removal: every section, no selector, never keen-pbr-sx itself.
 test_openwrt_uninstall() {
     owrt_setup
     cat > "$FAKE_UCI_DB" <<EOT
@@ -388,7 +388,7 @@ EOT
     grep -qxF "dhcp.cfg01.addnmount=$CONFIG_DIR" "$FAKE_UCI_DB" && fail "owrt uninstall: left $CONFIG_DIR mounted"
     grep -qxF "dhcp.cfg01.addnmount=/some/user/mount" "$FAKE_UCI_DB" || fail "owrt uninstall: removed a mount that is not ours"
     [ "$(grep -c '^dhcp.cfg01.addnmount=' "$FAKE_UCI_DB")" = 1 ] || fail "owrt uninstall: mounts left"
-    ! grep -q 'addnmount=/usr/sbin/keen-pbr\|addnmount='"$CACHE_DIR" "$FAKE_UCI_DB" || fail "owrt uninstall: our mounts left"
+    ! grep -q 'addnmount=/usr/sbin/keen-pbr-sx\|addnmount='"$CACHE_DIR" "$FAKE_UCI_DB" || fail "owrt uninstall: our mounts left"
     grep -qxF "dhcp.cfg01.server=1.1.1.1" "$FAKE_UCI_DB" || fail "owrt uninstall: server not returned"
     grep -qxF "dhcp.cfg01.server=/lan/192.168.1.1" "$FAKE_UCI_DB" || fail "owrt uninstall: scoped server lost"
     ! grep -q 'kpbr_server' "$FAKE_UCI_DB" || fail "owrt uninstall: stash left"
@@ -398,7 +398,7 @@ EOT
 
     # A foreign drop-in stays; nothing left means no restart and no commit.
     mkdir -p "$(dirname "$f1")"
-    printf 'conf-script=/usr/lib/keen-pbr/x\nserver=9.9.9.9\n' > "$f1"
+    printf 'conf-script=/usr/lib/keen-pbr-sx/x\nserver=9.9.9.9\n' > "$f1"
     reset_restarts; c=$(commits)
     run uninstall || fail "owrt uninstall: second run failed"
     [ -f "$f1" ] || fail "owrt uninstall: removed a foreign drop-in"
@@ -409,7 +409,7 @@ EOT
     cat > "$FAKE_UCI_DB" <<EOT
 dhcp.cfg01=dnsmasq
 dhcp.cfg01.kpbr_server=1.1.1.1
-dhcp.cfg01.addnmount=/usr/sbin/keen-pbr
+dhcp.cfg01.addnmount=/usr/sbin/keen-pbr-sx
 dhcp.cfg01.addnmount=$LEGACY_RUN_DIR
 EOT
     run uninstall || fail "owrt uninstall: 3.3.1 state failed"
@@ -426,7 +426,7 @@ keen_setup() {
     export DNSMASQ_CONF="$kroot/dnsmasq.conf" INIT_SCRIPT="$kroot/S56dnsmasq"
     export RECOMMENDED_CONF="$kroot/dnsmasq.recommended.conf"
     export FALLBACK_CONF="$kroot/fallback.conf"
-    export DNSMASQ_SH=/opt/usr/lib/keen-pbr/dnsmasq.sh
+    export DNSMASQ_SH=/opt/usr/lib/keen-pbr-sx/dnsmasq.sh
     export LOCK_DIR="$tmp_root/hook.lock"
     backup="$DNSMASQ_CONF.backup-keenpbr"
     # Fake dnsmasq: `--test` fails when the file holds "bad-option".
@@ -436,14 +436,14 @@ keen_setup() {
     : > "$INIT_SCRIPT"
     printf 'server=8.8.8.8\nserver=8.8.4.4\n' > "$FALLBACK_CONF"
     run() { sh "$keen_hook" "$@"; }
-    block_text='# BEGIN keen-pbr managed block
-# Do not remove the following line, it is required for keen-pbr to function properly.
-conf-script=/opt/usr/lib/keen-pbr/dnsmasq.sh dnsmasq-config-entry
-# END keen-pbr managed block'
-    fb_block='# BEGIN keen-pbr fallback upstream (added on removal; replace or remove)
+    block_text='# BEGIN keen-pbr-sx managed block
+# Do not remove the following line, it is required for keen-pbr-sx to function properly.
+conf-script=/opt/usr/lib/keen-pbr-sx/dnsmasq.sh dnsmasq-config-entry
+# END keen-pbr-sx managed block'
+    fb_block='# BEGIN keen-pbr-sx fallback upstream (added on removal; replace or remove)
 server=8.8.8.8
 server=8.8.4.4
-# END keen-pbr fallback upstream'
+# END keen-pbr-sx fallback upstream'
 }
 
 test_keenetic() {
@@ -473,7 +473,7 @@ test_keenetic() {
 
     # First apply appends the 3.3.1 block once and restarts.
     run apply entware:default --default-upstreams=yes || fail "keenetic: apply failed"
-    [ "$(grep -c 'BEGIN keen-pbr managed block' "$DNSMASQ_CONF")" = 1 ] || fail "keenetic: block count"
+    [ "$(grep -c 'BEGIN keen-pbr-sx managed block' "$DNSMASQ_CONF")" = 1 ] || fail "keenetic: block count"
     grep -qxF "$block_text" "$DNSMASQ_CONF" || true
     [ "$(grep -v '^$' "$DNSMASQ_CONF" | tail -n 4)" = "$block_text" ] || fail "keenetic: block text differs from 3.3.1"
     grep -qxF 'server=1.1.1.1' "$DNSMASQ_CONF" || fail "keenetic: user config lost"
@@ -497,9 +497,9 @@ test_keenetic() {
 
     # A block that lost its conf-script line is restored, not duplicated, and
     # the previous file is kept beside it.
-    printf 'user=nobody\n# BEGIN keen-pbr managed block\nfoo\n' > "$DNSMASQ_CONF"
+    printf 'user=nobody\n# BEGIN keen-pbr-sx managed block\nfoo\n' > "$DNSMASQ_CONF"
     run apply entware:default || fail "keenetic: damaged block should be repaired"
-    [ "$(grep -c 'BEGIN keen-pbr managed block' "$DNSMASQ_CONF")" = 1 ] || fail "keenetic: damaged block duplicated"
+    [ "$(grep -c 'BEGIN keen-pbr-sx managed block' "$DNSMASQ_CONF")" = 1 ] || fail "keenetic: damaged block duplicated"
     grep -qxF "conf-script=$DNSMASQ_SH dnsmasq-config-entry" "$DNSMASQ_CONF" || fail "keenetic: conf-script line not restored"
     grep -qxF 'user=nobody' "$DNSMASQ_CONF" || fail "keenetic: user line lost during repair"
     grep -qxF 'foo' "$DNSMASQ_CONF.backup-keenpbr-confscript" || fail "keenetic: repair did not keep a backup"
@@ -554,14 +554,14 @@ test_keenetic_uninstall() {
     # Without no-resolv the block is just removed.
     printf 'user=nobody\n\n%s\nlog-async\n' "$block_text" > "$DNSMASQ_CONF"
     run uninstall || fail "keenetic uninstall: run (no no-resolv) failed"
-    ! grep -q 'keen-pbr' "$DNSMASQ_CONF" || fail "keenetic uninstall: no-resolv absent but the block was replaced"
+    ! grep -q 'keen-pbr-sx' "$DNSMASQ_CONF" || fail "keenetic uninstall: no-resolv absent but the block was replaced"
     grep -qxF 'log-async' "$DNSMASQ_CONF" || fail "keenetic uninstall: user config lost"
 
     # no-resolv with an upstream of its own: just removed.
     for own in 'server=1.1.1.1' 'servers-file=/opt/etc/servers'; do
         printf 'no-resolv\n%s\n\n%s\n' "$own" "$block_text" > "$DNSMASQ_CONF"
         run uninstall || fail "keenetic uninstall: run ($own) failed"
-        ! grep -q 'keen-pbr' "$DNSMASQ_CONF" || fail "keenetic uninstall: fallback added although dnsmasq has $own"
+        ! grep -q 'keen-pbr-sx' "$DNSMASQ_CONF" || fail "keenetic uninstall: fallback added although dnsmasq has $own"
         grep -qxF "$own" "$DNSMASQ_CONF" || fail "keenetic uninstall: lost $own"
     done
 
@@ -570,7 +570,7 @@ test_keenetic_uninstall() {
     FALLBACK_CONF=/nonexistent run uninstall || fail "keenetic uninstall: run (no fallback file) failed"
     grep -qxF 'server=8.8.8.8' "$DNSMASQ_CONF" || fail "keenetic uninstall: built-in fallback missing"
 
-    # A dnsmasq.conf keen-pbr never changed is left alone.
+    # A dnsmasq.conf keen-pbr-sx never changed is left alone.
     printf 'no-resolv\nuser=nobody\n' > "$DNSMASQ_CONF"
     cp "$DNSMASQ_CONF" "$kroot/conf.before"
     reset_restarts
@@ -581,24 +581,24 @@ test_keenetic_uninstall() {
     # The fallback block left behind does not stop a later install, and does not stay.
     printf 'no-resolv\n\n%s\n' "$fb_block" > "$DNSMASQ_CONF"
     run apply entware:default || fail "keenetic uninstall: reinstall failed"
-    grep -q 'BEGIN keen-pbr managed block' "$DNSMASQ_CONF" || fail "keenetic uninstall: reinstall did not add the block"
+    grep -q 'BEGIN keen-pbr-sx managed block' "$DNSMASQ_CONF" || fail "keenetic uninstall: reinstall did not add the block"
     ! grep -q 'fallback upstream' "$DNSMASQ_CONF" || fail "keenetic uninstall: reinstall left the fallback block"
 
     # A fallback already in the file is not duplicated next to a new one.
     printf 'no-resolv\n\n%s\n\n%s\n%s\n' "$fb_block" "$block_text" "$fb_block" > "$DNSMASQ_CONF"
     reset_restarts
     run uninstall || fail "keenetic uninstall: duplicate fallback run failed"
-    [ "$(grep -c 'BEGIN keen-pbr fallback' "$DNSMASQ_CONF")" = 1 ] || fail "keenetic uninstall: fallback block duplicated"
+    [ "$(grep -c 'BEGIN keen-pbr-sx fallback' "$DNSMASQ_CONF")" = 1 ] || fail "keenetic uninstall: fallback block duplicated"
     ! grep -q 'managed block' "$DNSMASQ_CONF" || fail "keenetic uninstall: managed block left beside fallback"
 
     # reinstall-hook restores the managed block and does not restart by itself.
     reset_restarts
     run reinstall-hook || fail "keenetic reinstall-hook failed"
-    grep -q 'BEGIN keen-pbr managed block' "$DNSMASQ_CONF" || fail "keenetic reinstall-hook: managed block missing"
+    grep -q 'BEGIN keen-pbr-sx managed block' "$DNSMASQ_CONF" || fail "keenetic reinstall-hook: managed block missing"
     ! grep -q 'fallback upstream' "$DNSMASQ_CONF" || fail "keenetic reinstall-hook: fallback left"
     [ "$(restarts)" = 0 ] || fail "keenetic reinstall-hook: restarted dnsmasq"
     run reinstall-hook || fail "keenetic reinstall-hook: second run failed"
-    [ "$(grep -c 'BEGIN keen-pbr managed block' "$DNSMASQ_CONF")" = 1 ] || fail "keenetic reinstall-hook: duplicated the block"
+    [ "$(grep -c 'BEGIN keen-pbr-sx managed block' "$DNSMASQ_CONF")" = 1 ] || fail "keenetic reinstall-hook: duplicated the block"
 
     # status keeps its one-line result and warns on stderr when ndnproxy holds :53.
     [ "$(run status)" = installed ] || fail "keenetic status: stdout changed"
@@ -616,7 +616,7 @@ test_keenetic_recommended() {
     keen_setup
     cp "$keen_recommended" "$RECOMMENDED_CONF"
     # The shipped file carries the managed block and no ipset-era cache TTL.
-    grep -qxF 'conf-script=/opt/usr/lib/keen-pbr/dnsmasq.sh dnsmasq-config-entry' "$keen_recommended" ||
+    grep -qxF 'conf-script=/opt/usr/lib/keen-pbr-sx/dnsmasq.sh dnsmasq-config-entry' "$keen_recommended" ||
         fail "keenetic recommended: managed block missing"
     ! grep -q 'max-cache-ttl\|ipset' "$keen_recommended" || fail "keenetic recommended: ipset-era settings left"
     grep -q '^no-resolv' "$keen_recommended" || fail "keenetic recommended: no-resolv missing"
@@ -648,7 +648,7 @@ test_keenetic_recommended() {
     cmp -s "$DNSMASQ_CONF" "$kroot/conf.before" || fail "keenetic recommended: changed dnsmasq.conf after a failed test"
     [ ! -e "$backup" ] || fail "keenetic recommended: made a backup after a failed test"
     [ "$(restarts)" = 0 ] || fail "keenetic recommended: restarted after a failed test"
-    [ -z "$(ls "$kroot" | grep 'keen-pbr-new')" ] || fail "keenetic recommended: temp file left"
+    [ -z "$(ls "$kroot" | grep 'keen-pbr-sx-new')" ] || fail "keenetic recommended: temp file left"
 
     # Success: backup of the old file, new file, one restart.
     cp "$keen_recommended" "$RECOMMENDED_CONF"
@@ -679,13 +679,13 @@ test_keenetic_entry_script() {
     keen_setup
     fb='server=8.8.8.8
 server=8.8.4.4'
-    printf '#!/bin/sh\ncase "${FAKE_BIN:-ok}" in\n  ok) echo "server=/example.org/10.0.0.1"; echo "# stamp" ;;\n  fail) echo "partial"; exit 1 ;;\nesac\n' > "$kroot/keen-pbr"
-    chmod +x "$kroot/keen-pbr"
+    printf '#!/bin/sh\ncase "${FAKE_BIN:-ok}" in\n  ok) echo "server=/example.org/10.0.0.1"; echo "# stamp" ;;\n  fail) echo "partial"; exit 1 ;;\nesac\n' > "$kroot/keen-pbr-sx"
+    chmod +x "$kroot/keen-pbr-sx"
     entry() {
-        KEEN_PBR_BIN="${BIN:-$kroot/keen-pbr}" sh "$keen_sh" dnsmasq-config-entry 2>/dev/null
+        KEEN_PBR_BIN="${BIN:-$kroot/keen-pbr-sx}" sh "$keen_sh" dnsmasq-config-entry 2>/dev/null
     }
     [ "$(entry)" = 'server=/example.org/10.0.0.1
-# stamp' ] || fail "keenetic entry: should print only keen-pbr's output"
+# stamp' ] || fail "keenetic entry: should print only keen-pbr-sx's output"
     [ "$(FAKE_BIN=fail entry)" = "partial
 $fb" ] || fail "keenetic entry: a failing binary should be followed by the fallback servers"
     [ "$(BIN=$kroot/missing entry)" = "$fb" ] || fail "keenetic entry: a missing binary should print the fallback servers"
@@ -700,27 +700,27 @@ deb_setup() {
     rm -rf "$droot"
     mkdir -p "$droot/etc/dnsmasq.d" "$droot/bin"
     export DNSMASQ_CONF_DIR="$droot/etc/dnsmasq.d" DEFAULT_CONF="$droot/etc/dnsmasq.conf"
-    export KEEN_CONF_DIR="$droot/etc/keen-pbr/dnsmasq.d"
+    export KEEN_CONF_DIR="$droot/etc/keen-pbr-sx/dnsmasq.d"
     unset LEGACY_CONF
     printf 'user=dnsmasq\n' > "$DEFAULT_CONF"
     export RECOMMENDED_CONF="$droot/recommended.conf" FALLBACK_CONF="$droot/fallback.conf"
     export LOCK_DIR="$tmp_root/hook.lock"
-    f="$KEEN_CONF_DIR/keen-pbr.conf"
-    legacy="$DNSMASQ_CONF_DIR/keen-pbr.conf"
-    block="# BEGIN keen-pbr managed block
+    f="$KEEN_CONF_DIR/keen-pbr-sx.conf"
+    legacy="$DNSMASQ_CONF_DIR/keen-pbr-sx.conf"
+    block="# BEGIN keen-pbr-sx managed block
 conf-dir=$KEEN_CONF_DIR/,*.conf
-# END keen-pbr managed block"
-    want='conf-script=/usr/lib/keen-pbr/dnsmasq.sh dnsmasq-config-entry'
+# END keen-pbr-sx managed block"
+    want='conf-script=/usr/lib/keen-pbr-sx/dnsmasq.sh dnsmasq-config-entry'
     backup="$DEFAULT_CONF.backup-keenpbr"
     printf 'server=8.8.8.8\nserver=8.8.4.4\n' > "$FALLBACK_CONF"
     printf '#!/bin/sh\nfor a in "$@"; do case "$a" in --conf-file=*) f="${a#--conf-file=}" ;; esac; done\nif grep -q bad-option "$f"; then echo "dnsmasq: bad option at line 3 of $f" >&2; exit 1; fi\nexit 0\n' > "$droot/bin/dnsmasq"
     chmod +x "$droot/bin/dnsmasq"
     export DNSMASQ_BIN="$droot/bin/dnsmasq"
     run() { PATH="$droot/bin:$PATH" sh "$deb_hook" "$@"; }
-    fb_body='# BEGIN keen-pbr fallback upstream (added on removal; replace or remove)
+    fb_body='# BEGIN keen-pbr-sx fallback upstream (added on removal; replace or remove)
 server=8.8.8.8
 server=8.8.4.4
-# END keen-pbr fallback upstream'
+# END keen-pbr-sx fallback upstream'
 }
 
 test_debian() {
@@ -744,7 +744,7 @@ test_debian() {
     reset_restarts
     run apply systemd:dnsmasq.service --default-upstreams=yes || fail "debian: apply failed"
     [ "$(cat "$f")" = "$want" ] || fail "debian: conf file wrong"
-    [ "$(sed -n '2,$p' "$DEFAULT_CONF" | grep -c '^# BEGIN keen-pbr managed block')" = 1 ] || fail "debian: block not added once"
+    [ "$(sed -n '2,$p' "$DEFAULT_CONF" | grep -c '^# BEGIN keen-pbr-sx managed block')" = 1 ] || fail "debian: block not added once"
     grep -qxF "conf-dir=$KEEN_CONF_DIR/,*.conf" "$DEFAULT_CONF" || fail "debian: conf-dir line missing"
     [ "$(restarts)" = 1 ] || fail "debian: apply should restart once"
     [ "$(run status)" = installed ] || fail "debian: status"
@@ -754,7 +754,7 @@ test_debian() {
     touch -t 200001010000 "$f" "$DEFAULT_CONF"
     run apply systemd:dnsmasq.service || fail "debian: second apply failed"
     [ "$(touched "$f" "$DEFAULT_CONF")" = 0 ] || fail "debian: second apply rewrote a file"
-    [ "$(grep -c '^# BEGIN keen-pbr managed block' "$DEFAULT_CONF")" = 1 ] || fail "debian: second apply added another block"
+    [ "$(grep -c '^# BEGIN keen-pbr-sx managed block' "$DEFAULT_CONF")" = 1 ] || fail "debian: second apply added another block"
     [ "$(restarts)" = 2 ] || fail "debian: second apply should restart again"
 
     # Remove (integration off): no file changes, one restart.
@@ -772,11 +772,11 @@ test_debian() {
     rm -f "$f"
 
     # A damaged block (no conf-dir line) is not papered over.
-    printf '# BEGIN keen-pbr managed block\n# END keen-pbr managed block\n' > "$DEFAULT_CONF"
+    printf '# BEGIN keen-pbr-sx managed block\n# END keen-pbr-sx managed block\n' > "$DEFAULT_CONF"
     [ "$(rc_of run apply systemd:dnsmasq.service)" = 1 ] || fail "debian: damaged block should exit 1"
     printf 'user=dnsmasq\n' > "$DEFAULT_CONF"
 
-    # 3.3.1 entry: removed when it holds only keen-pbr lines.
+    # 3.3.1 entry: removed when it holds only keen-pbr-sx lines.
     rm -rf "$KEEN_CONF_DIR"
     printf '%s\n' "$want" > "$legacy"
     run inspect | grep -qxF 'dropin_state=absent' || fail "debian: legacy entry should need apply"
@@ -827,7 +827,7 @@ test_debian_uninstall() {
     [ -d "$LOCK_DIR" ] || fail "debian uninstall: removed somebody else's lock"
     rm -rf "$LOCK_DIR"
     [ ! -e "$f" ] && [ ! -d "$KEEN_CONF_DIR" ] || fail "debian uninstall: entry or folder left"
-    ! grep -q 'keen-pbr' "$DEFAULT_CONF" || fail "debian uninstall: block left: $(cat "$DEFAULT_CONF")"
+    ! grep -q 'keen-pbr-sx' "$DEFAULT_CONF" || fail "debian uninstall: block left: $(cat "$DEFAULT_CONF")"
     grep -qx 'user=dnsmasq' "$DEFAULT_CONF" || fail "debian uninstall: user lines lost"
     [ "$(restarts)" = 1 ] || fail "debian uninstall: should restart once"
     reset_restarts
@@ -843,12 +843,12 @@ test_debian_uninstall() {
     run uninstall || fail "debian uninstall: run (no-resolv) failed"
     [ ! -e "$f" ] || fail "debian uninstall: entry left (no-resolv)"
     grep -qxF "$(printf '%s' "$fb_body" | sed -n 1p)" "$DEFAULT_CONF" || fail "debian uninstall: fallback block missing: $(cat "$DEFAULT_CONF")"
-    [ "$(sed -n '/^# BEGIN keen-pbr fallback/,/^# END keen-pbr fallback/p' "$DEFAULT_CONF")" = "$fb_body" ] || fail "debian uninstall: wrong fallback block"
+    [ "$(sed -n '/^# BEGIN keen-pbr-sx fallback/,/^# END keen-pbr-sx fallback/p' "$DEFAULT_CONF")" = "$fb_body" ] || fail "debian uninstall: wrong fallback block"
     ! grep -q 'managed block' "$DEFAULT_CONF" || fail "debian uninstall: managed block left (no-resolv)"
     [ "$(restarts)" = 1 ] || fail "debian uninstall: no-resolv case should restart once"
     reset_restarts
     run uninstall || fail "debian uninstall: repeat (no-resolv) failed"
-    [ "$(grep -c 'BEGIN keen-pbr fallback' "$DEFAULT_CONF")" = 1 ] && [ "$(restarts)" = 0 ] || fail "debian uninstall: repeat changed something"
+    [ "$(grep -c 'BEGIN keen-pbr-sx fallback' "$DEFAULT_CONF")" = 1 ] && [ "$(restarts)" = 0 ] || fail "debian uninstall: repeat changed something"
     # A reinstall adds the managed block again.
     run apply systemd:dnsmasq.service || fail "debian uninstall: reinstall failed"
     [ "$(cat "$f")" = "$want" ] || fail "debian uninstall: reinstall did not restore the entry"
@@ -858,12 +858,12 @@ test_debian_uninstall() {
     printf 'no-resolv\nserver=1.1.1.1\n' > "$DEFAULT_CONF"
     run apply systemd:dnsmasq.service || fail "debian uninstall: apply (own upstream) failed"
     run uninstall || fail "debian uninstall: run (own upstream) failed"
-    ! grep -q 'keen-pbr' "$DEFAULT_CONF" || fail "debian uninstall: added fallback although dnsmasq has an upstream"
+    ! grep -q 'keen-pbr-sx' "$DEFAULT_CONF" || fail "debian uninstall: added fallback although dnsmasq has an upstream"
     printf 'no-resolv\n' > "$DEFAULT_CONF"
     printf 'server=9.9.9.9\n' > "$DNSMASQ_CONF_DIR/user.conf"
     run apply systemd:dnsmasq.service || fail "debian uninstall: apply (user drop-in) failed"
     run uninstall || fail "debian uninstall: run (user drop-in) failed"
-    ! grep -q 'keen-pbr' "$DEFAULT_CONF" || fail "debian uninstall: added fallback next to a user upstream"
+    ! grep -q 'keen-pbr-sx' "$DEFAULT_CONF" || fail "debian uninstall: added fallback next to a user upstream"
     [ -f "$DNSMASQ_CONF_DIR/user.conf" ] || fail "debian uninstall: removed a user file"
     rm -f "$DNSMASQ_CONF_DIR/user.conf"
 
@@ -901,12 +901,12 @@ test_debian_recommended() {
     cp "$deb_recommended" "$RECOMMENDED_CONF"
     ! grep -q 'max-cache-ttl\|ipset' "$deb_recommended" || fail "debian recommended: ipset-era settings left"
     grep -q '^no-resolv' "$deb_recommended" || fail "debian recommended: no-resolv missing"
-    grep -qxF '# BEGIN keen-pbr managed block' "$deb_recommended" &&
-        grep -qxF 'conf-dir=/etc/keen-pbr/dnsmasq.d/,*.conf' "$deb_recommended" &&
-        grep -qxF '# END keen-pbr managed block' "$deb_recommended" || fail "debian recommended: the managed block is missing"
+    grep -qxF '# BEGIN keen-pbr-sx managed block' "$deb_recommended" &&
+        grep -qxF 'conf-dir=/etc/keen-pbr-sx/dnsmasq.d/,*.conf' "$deb_recommended" &&
+        grep -qxF '# END keen-pbr-sx managed block' "$deb_recommended" || fail "debian recommended: the managed block is missing"
 
     # Identical file and the entry already there: nothing is written.
-    sed "s#/etc/keen-pbr/dnsmasq.d#$KEEN_CONF_DIR#" "$deb_recommended" > "$RECOMMENDED_CONF"
+    sed "s#/etc/keen-pbr-sx/dnsmasq.d#$KEEN_CONF_DIR#" "$deb_recommended" > "$RECOMMENDED_CONF"
     cp "$RECOMMENDED_CONF" "$DEFAULT_CONF"
     run apply systemd:dnsmasq.service || fail "debian recommended: apply failed"
     cmp -s "$DEFAULT_CONF" "$RECOMMENDED_CONF" || fail "debian recommended: apply changed the recommended config"
@@ -930,8 +930,8 @@ test_debian_recommended() {
     [ ! -e "$backup" ] && [ ! -e "$f" ] && [ ! -d "$KEEN_CONF_DIR" ] && [ "$(restarts)" = 0 ] || fail "debian recommended: side effects after a failed test"
 
     # Success: the folder file exists during the test, backup, new file, one restart.
-    sed "s#/etc/keen-pbr/dnsmasq.d#$KEEN_CONF_DIR#" "$deb_recommended" > "$RECOMMENDED_CONF"
-    printf '#!/bin/sh\nfor a in "$@"; do case "$a" in --conf-file=*) c="${a#--conf-file=}" ;; esac; done\nd=$(sed -n "s/^conf-dir=\\(.*\\)\\/,\\*.conf$/\\1/p" "$c")\n[ -f "$d/keen-pbr.conf" ] || { echo "dnsmasq: no entry in $d" >&2; exit 1; }\nexit 0\n' > "$droot/bin/dnsmasq"
+    sed "s#/etc/keen-pbr-sx/dnsmasq.d#$KEEN_CONF_DIR#" "$deb_recommended" > "$RECOMMENDED_CONF"
+    printf '#!/bin/sh\nfor a in "$@"; do case "$a" in --conf-file=*) c="${a#--conf-file=}" ;; esac; done\nd=$(sed -n "s/^conf-dir=\\(.*\\)\\/,\\*.conf$/\\1/p" "$c")\n[ -f "$d/keen-pbr-sx.conf" ] || { echo "dnsmasq: no entry in $d" >&2; exit 1; }\nexit 0\n' > "$droot/bin/dnsmasq"
     out=$(run install-recommended-config) || fail "debian recommended: install failed"
     cmp -s "$DEFAULT_CONF" "$RECOMMENDED_CONF" || fail "debian recommended: dnsmasq.conf is not the recommended file"
     cmp -s "$backup" "$droot/conf.before" || fail "debian recommended: the backup is not the old file"
@@ -951,12 +951,12 @@ test_debian_entry_script() {
     deb_setup
     fb='server=8.8.8.8
 server=8.8.4.4'
-    printf '#!/bin/sh\ncase "${FAKE_BIN:-ok}" in\n  ok) echo "server=/example.org/10.0.0.1" ;;\n  fail) echo "partial"; exit 1 ;;\nesac\n' > "$droot/keen-pbr"
-    chmod +x "$droot/keen-pbr"
+    printf '#!/bin/sh\ncase "${FAKE_BIN:-ok}" in\n  ok) echo "server=/example.org/10.0.0.1" ;;\n  fail) echo "partial"; exit 1 ;;\nesac\n' > "$droot/keen-pbr-sx"
+    chmod +x "$droot/keen-pbr-sx"
     entry() {
-        KEEN_PBR_BIN="${BIN:-$droot/keen-pbr}" sh "$deb_sh" dnsmasq-config-entry 2>/dev/null
+        KEEN_PBR_BIN="${BIN:-$droot/keen-pbr-sx}" sh "$deb_sh" dnsmasq-config-entry 2>/dev/null
     }
-    [ "$(entry)" = 'server=/example.org/10.0.0.1' ] || fail "debian entry: should print only keen-pbr's output"
+    [ "$(entry)" = 'server=/example.org/10.0.0.1' ] || fail "debian entry: should print only keen-pbr-sx's output"
     [ "$(FAKE_BIN=fail entry)" = "partial
 $fb" ] || fail "debian entry: a failing binary should be followed by the fallback servers"
     [ "$(BIN=$droot/missing entry)" = "$fb" ] || fail "debian entry: a missing binary should print the fallback servers"
@@ -1000,7 +1000,7 @@ EOF
     sed 's/"dnsmasq"/"none"/' "$enabled_config" > "$disabled_config"
     output=$(PATH="$empty_path" "$resolver_bin" --config "$disabled_config" \
         generate-resolver-config dnsmasq) || fail "resolver: disabled generation failed"
-    printf '%s\n' "$output" | grep -qx '# keen-pbr: dnsmasq management is switched off' ||
+    printf '%s\n' "$output" | grep -qx '# keen-pbr-sx: dnsmasq management is switched off' ||
         fail "resolver: disabled integration output is wrong"
     ! printf '%s\n' "$output" | grep -q 'example.com' || fail "resolver: disabled output has DNS rules"
     printf '%s\n' "$output" | grep -Eq '^txt-record=config-hash\.keen\.pbr,0{32}\|' ||
@@ -1013,7 +1013,7 @@ EOF
         generate-resolver-config dnsmasq) || rc=$?
     [ "$rc" = 0 ] || fail "resolver: invalid config changed conf-script exit status"
     case "$output" in
-        '# keen-pbr: generate-resolver-config failed:'*) ;;
+        '# keen-pbr-sx: generate-resolver-config failed:'*) ;;
         *) fail "resolver: invalid config did not produce a failure comment" ;;
     esac
     printf '%s\n' "$output" | grep -Eq '^txt-record=config-hash\.keen\.pbr,0{32}\|' ||

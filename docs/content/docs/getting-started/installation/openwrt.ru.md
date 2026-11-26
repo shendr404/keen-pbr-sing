@@ -14,7 +14,7 @@ weight: 2
 - OpenWrt 25.x и новее: `apk`
 - OpenWrt 24.x и старше: `opkg`
 
-### Установите keen-pbr
+### Установите keen-pbr-sx
 
 1. Подключитесь к роутеру по SSH.
 2. Соберите пакет нужной архитектуры по инструкции [Сборка из исходного кода]({{< relref "/docs/developer/build-from-source" >}}).
@@ -23,25 +23,25 @@ weight: 2
 ```bash {filename="bash"}
 # OpenWrt 25.x и новее
 apk update
-apk add keen-pbr
+apk add keen-pbr-sx
 
 # версия без веб-интерфейса и API:
-# apk add keen-pbr-headless
+# apk add keen-pbr-sx-headless
 ```
 
 ```bash {filename="bash"}
 # OpenWrt 24.x и старше
 opkg update
-opkg install keen-pbr
+opkg install keen-pbr-sx
 
 # версия без веб-интерфейса и API:
-# opkg install keen-pbr-headless
+# opkg install keen-pbr-sx-headless
 ```
 
-Конфигурация лежит в `/etc/keen-pbr/config.json`. Сервис запускается сам при каждой загрузке роутера.
+Конфигурация лежит в `/etc/keen-pbr-sx/config.json`. Сервис запускается сам при каждой загрузке роутера.
 
 {{< callout type="info" >}}
-`keen-pbr-headless` занимает меньше места: около 1,2 МБ вместо 2,8 МБ. Веб-интерфейса и API в нём нет, настраивать придётся через файл конфигурации. Если сомневаетесь, ставьте обычный `keen-pbr`.
+`keen-pbr-sx-headless` занимает меньше места: около 1,2 МБ вместо 2,8 МБ. Веб-интерфейса и API в нём нет, настраивать придётся через файл конфигурации. Если сомневаетесь, ставьте обычный `keen-pbr-sx`.
 {{< /callout >}}
 
 {{< callout type="warning" >}}
@@ -51,7 +51,7 @@ opkg install keen-pbr
 ### Проверьте, что сервис запущен
 
 ```bash {filename="bash"}
-service keen-pbr status
+service keen-pbr-sx status
 ```
 
 Если всё в порядке, команда напишет `running`.
@@ -62,10 +62,10 @@ service keen-pbr status
 
 ### Настройте первые правила
 
-Перейдите к [Быстрому старту]({{< relref "/docs/getting-started/quick-start" >}}) и откройте вкладку **Веб-интерфейс**. Если поставили `keen-pbr-headless`, откройте вкладку **JSON**.
+Перейдите к [Быстрому старту]({{< relref "/docs/getting-started/quick-start" >}}) и откройте вкладку **Веб-интерфейс**. Если поставили `keen-pbr-sx-headless`, откройте вкладку **JSON**.
 
 {{< callout type="info" >}}
-Если готовых пакетов для вашей платформы нет, соберите keen-pbr сами: [Сборка из исходного кода]({{< relref "/docs/developer/build-from-source" >}}).
+Если готовых пакетов для вашей платформы нет, соберите keen-pbr-sx сами: [Сборка из исходного кода]({{< relref "/docs/developer/build-from-source" >}}).
 {{< /callout >}}
 
 {{% /steps %}}
@@ -73,24 +73,24 @@ service keen-pbr status
 ## Команды для управления сервисом
 
 ```bash {filename="bash"}
-service keen-pbr start
-service keen-pbr restart
-service keen-pbr status
-service keen-pbr enable
+service keen-pbr-sx start
+service keen-pbr-sx restart
+service keen-pbr-sx status
+service keen-pbr-sx enable
 ```
 
 `enable` включает автозапуск при загрузке роутера.
 
 ## Отдельные DNS-серверы для списков (dnsmasq) {#dnsmasq}
 
-В OpenWrt dnsmasq уже работает как DNS-сервер роутера. Для маршрутизации keen-pbr он не нужен. Стоит ли отдать его под управление keen-pbr, читайте в разделе [Нужен ли dnsmasq?]({{< relref "/docs/configuration/dns#do-i-need-dnsmasq" >}}).
+В OpenWrt dnsmasq уже работает как DNS-сервер роутера. Для маршрутизации keen-pbr-sx он не нужен. Стоит ли отдать его под управление keen-pbr-sx, читайте в разделе [Нужен ли dnsmasq?]({{< relref "/docs/configuration/dns#do-i-need-dnsmasq" >}}).
 
 ### Включение {#dnsmasq-install}
 
 В веб-интерфейсе откройте **Общее** > **Настройки** > **Управление локальным DNS-сервером** и включите **Управлять конфигурацией dnsmasq**.
 
-Пока управление включено и заданы **Основные DNS-серверы**, keen-pbr убирает из списка в `/etc/config/dhcp` (в LuCI **DNS forwardings**) серверы без домена. Серверы для отдельных доменов, например `/lan/192.168.1.1`, остаются. Убранные серверы вернутся, когда вы выключите управление или очистите эти серверы.
+Пока управление включено и заданы **Основные DNS-серверы**, keen-pbr-sx убирает из списка в `/etc/config/dhcp` (в LuCI **DNS forwardings**) серверы без домена. Серверы для отдельных доменов, например `/lan/192.168.1.1`, остаются. Убранные серверы вернутся, когда вы выключите управление или очистите эти серверы.
 
 ### Вернуть как было {#dnsmasq-rollback}
 
-Выключите **Управлять конфигурацией dnsmasq** и примените конфигурацию. keen-pbr перезапустит dnsmasq и вернёт убранные серверы.
+Выключите **Управлять конфигурацией dnsmasq** и примените конфигурацию. keen-pbr-sx перезапустит dnsmasq и вернёт убранные серверы.

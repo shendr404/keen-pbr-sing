@@ -184,7 +184,7 @@ inline const char* command_failure_log_path() {
     if (const char* test_path = std::getenv("KEEN_PBR_CMDFAIL_LOG_PATH")) {
         return test_path;
     }
-    return "/tmp/keen-pbr-cmdfail.log";
+    return "/tmp/keen-pbr-sx-cmdfail.log";
 }
 
 inline void record_command_failure(const std::string& command,

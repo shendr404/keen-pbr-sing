@@ -31,7 +31,7 @@
 // chains and ignores raw mode: iptables KeenPbrDnsHold (hook postrouting) and
 // KeenPbrSniff (hooks forward and output, one shared chain, equal rules not
 // repeated) in mangle per enabled family; nft base chains dns_hold,
-// sniff_fwd and sniff_out of the keen-pbr table, present only when non-empty.
+// sniff_fwd and sniff_out of the keen-pbr-sx table, present only when non-empty.
 //
 // Source NAT (MasqueradeAction, IPv4 only) has its own chain as well:
 // iptables KeenPbrSnat in nat (hook postrouting), nft nat base chain snat;

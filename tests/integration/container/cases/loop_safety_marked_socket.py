@@ -6,7 +6,7 @@ from .routing_common import apply, router_probe, routing_config
 
 # WAN fixtures listen on 18080,19000,19010,19011,19020 only.
 RULES = [{"outbound": "wan_pbr", "dest_addr": f"{TEST_IP}/32"}]
-# A mark outside keen-pbr's fwmark mask (0x00ff0000) that no ip rule routes, like
+# A mark outside keen-pbr-sx's fwmark mask (0x00ff0000) that no ip rule routes, like
 # a WireGuard fwmark or an xray sockopt mark on a tunnel client's own socket.
 CLIENT_MARK = 0x1
 

@@ -83,7 +83,7 @@ main all
         env = {
             "KPBR_SANDBOX_SOURCE_ONLY": "1",
             "KPBR_SOURCE_ROOT": "/tmp",
-            "KPBR_SOURCE_BIN": "/tmp/keen-pbr",
+            "KPBR_SOURCE_BIN": "/tmp/keen-pbr-sx",
             "KPBR_HOST_UID": "1000",
             "KPBR_HOST_GID": "1000",
             "KPBR_HOST_NETNS": "net:[1]",

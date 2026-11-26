@@ -3,7 +3,7 @@ title: Lists
 weight: 2
 ---
 
-A list is a set of sites or IP ranges. keen-pbr sends traffic to them according to your [route rules]({{< relref "/docs/configuration/route-rules" >}}).
+A list is a set of sites or IP ranges. keen-pbr-sx sends traffic to them according to your [route rules]({{< relref "/docs/configuration/route-rules" >}}).
 
 **In the Web UI:** open **Routing** > **Lists** and click **Add list**. Enter a name and pick a source: **URL**, **File on device** or **Domains / IPs**. Then click **Apply** in the draft bar.
 
@@ -36,7 +36,7 @@ Domains are written the same way in every source. `google.com` covers the domain
 
 URL lists are downloaded only over HTTP or HTTPS, including from addresses on your local network.
 
-New URL lists are downloaded in the background right after the configuration is applied, already through the chosen `detour`. Until a list is downloaded, its rule affects nothing. If the download fails, the warnings show "List 'name' is not downloaded yet" with the error text, and keen-pbr keeps retrying. As soon as a urltest or icmptest outbound picks a working link, the retry runs immediately.
+New URL lists are downloaded in the background right after the configuration is applied, already through the chosen `detour`. Until a list is downloaded, its rule affects nothing. If the download fails, the warnings show "List 'name' is not downloaded yet" with the error text, and keen-pbr-sx keeps retrying. As soon as a urltest or icmptest outbound picks a working link, the retry runs immediately.
 
 A local file must be a regular file (not a symlink). File size is limited by `daemon.max_file_size_bytes` (8 MiB by default), and line length by 4096 bytes.
 
@@ -62,11 +62,11 @@ A file from `url` or `file` has one entry per line:
 
 ### Remote URL list {#remote-url-list}
 
-One domain is often not enough: YouTube, for example, serves video from `googlevideo.com` and images from `ytimg.com`. A ready-made list is easier. The [v2fly/domain-list-community](https://github.com/v2fly/domain-list-community) project keeps such lists; the one for YouTube is [data/youtube](https://github.com/v2fly/domain-list-community/blob/master/data/youtube). In keen-pbr, use the link to the raw file (the **Raw** button on GitHub), as in the example below.
+One domain is often not enough: YouTube, for example, serves video from `googlevideo.com` and images from `ytimg.com`. A ready-made list is easier. The [v2fly/domain-list-community](https://github.com/v2fly/domain-list-community) project keeps such lists; the one for YouTube is [data/youtube](https://github.com/v2fly/domain-list-community/blob/master/data/youtube). In keen-pbr-sx, use the link to the raw file (the **Raw** button on GitHub), as in the example below.
 
 In the web UI: **Routing** > **Lists** > **Add list**, source **URL**.
 
-Some lines in v2fly lists carry extra markers (`full:…`, `… @cn`). keen-pbr skips such lines and logs a warning about them; the other domains work.
+Some lines in v2fly lists carry extra markers (`full:…`, `… @cn`). keen-pbr-sx skips such lines and logs a warning about them; the other domains work.
 
 ```json { filename="config.json" }
 {
@@ -121,7 +121,7 @@ Each entry covers the domain and all its subdomains.
 {
   "lists": {
     "local_list": {
-      "file": "/etc/keen-pbr/my-list.txt"
+      "file": "/etc/keen-pbr-sx/my-list.txt"
     }
   }
 }

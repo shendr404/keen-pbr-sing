@@ -11,7 +11,7 @@ ARCHITECTURES = {
     "mipsel-3.4", "mips-3.4", "aarch64-3.10", "armv7-3.2", "x64-3.2"
 }
 PATTERN = re.compile(
-    r"^(keen-pbr(?:-headless)?)_[^_]+_keenetic_(3[.]4|3[.]10|3[.]2)_(mipsel|mips|aarch64|armv7|x64)[.]ipk$"
+    r"^(keen-pbr-sx(?:-headless)?)_[^_]+_keenetic_(3[.]4|3[.]10|3[.]2)_(mipsel|mips|aarch64|armv7|x64)[.]ipk$"
 )
 
 
@@ -41,7 +41,7 @@ def build(source: Path, output: Path) -> None:
     if set(variants) != ARCHITECTURES:
         raise ValueError(f"Missing architectures: {sorted(ARCHITECTURES - set(variants))}")
     for config, present in variants.items():
-        if present != {"keen-pbr", "keen-pbr-headless"}:
+        if present != {"keen-pbr-sx", "keen-pbr-sx-headless"}:
             raise ValueError(f"Missing full/headless package in {config}: {present}")
         dest = output / "keenetic" / config
         module.generate(dest)

@@ -41,12 +41,12 @@ if(NOT KEEN_PBR_RELEASE MATCHES "^[0-9]+$")
   message(FATAL_ERROR "KEEN_PBR_RELEASE must contain only digits")
 endif()
 
-project(keen-pbr VERSION ${KEEN_PBR_VERSION} LANGUAGES C CXX)
+project(keen-pbr-sx VERSION ${KEEN_PBR_VERSION} LANGUAGES C CXX)
 
 include(GNUInstallDirs)
 
 if(DEFINED CMAKE_CXX_STANDARD AND NOT CMAKE_CXX_STANDARD STREQUAL "17")
-  message(FATAL_ERROR "keen-pbr requires CMAKE_CXX_STANDARD=17.")
+  message(FATAL_ERROR "keen-pbr-sx requires CMAKE_CXX_STANDARD=17.")
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
@@ -77,13 +77,13 @@ option(WITH_API "Build with REST API support (cpp-httplib)" ON)
 option(WITH_DOH "Build the DNS-over-HTTPS client (uses the already linked libcurl; DNS server type: doh)" ON)
 option(USE_KEENETIC_API "Enable Keenetic RCI integration (DNS server type: keenetic)" OFF)
 # Platform build for Keenetic OS: the firewall backend is always iptables and
-# keen-pbr never balances (the router's own multipath does).  The nftables
+# keen-pbr-sx never balances (the router's own multipath does).  The nftables
 # backend and the route-balance feature are not compiled.  Independent of
 # USE_KEENETIC_API, which only enables the RCI integration.
 option(KEEN_PBR_PLATFORM_KEENETIC "Build for Keenetic OS: iptables only, no nftables backend, no load balancing" OFF)
 option(ENABLE_THREAD_SAFETY_ANALYSIS "Enable Clang thread-safety diagnostics for project targets" OFF)
 set(KEEN_PBR_ROUTE_PROTOCOL "186" CACHE STRING
-  "Reserved rtnetlink protocol number used to identify keen-pbr routes (1-255)")
+  "Reserved rtnetlink protocol number used to identify keen-pbr-sx routes (1-255)")
 if(NOT KEEN_PBR_ROUTE_PROTOCOL MATCHES "^[1-9][0-9]*$" OR
    KEEN_PBR_ROUTE_PROTOCOL GREATER 255)
   message(FATAL_ERROR "KEEN_PBR_ROUTE_PROTOCOL must be an integer from 1 through 255")
@@ -92,16 +92,16 @@ add_compile_definitions(KEEN_PBR_ROUTE_PROTOCOL=${KEEN_PBR_ROUTE_PROTOCOL})
 if(KEEN_PBR_PLATFORM_KEENETIC)
   add_compile_definitions(KEEN_PBR_PLATFORM_KEENETIC)
 endif()
-set(KEEN_PBR_DEFAULT_CONFIG_PATH "${CMAKE_INSTALL_FULL_SYSCONFDIR}/keen-pbr/config.json" CACHE STRING
-  "Default config file path used by keen-pbr when --config is not passed")
-set(KEEN_PBR_FRONTEND_ROOT "${CMAKE_INSTALL_FULL_DATADIR}/keen-pbr/frontend" CACHE STRING
+set(KEEN_PBR_DEFAULT_CONFIG_PATH "${CMAKE_INSTALL_FULL_SYSCONFDIR}/keen-pbr-sx/config.json" CACHE STRING
+  "Default config file path used by keen-pbr-sx when --config is not passed")
+set(KEEN_PBR_FRONTEND_ROOT "${CMAKE_INSTALL_FULL_DATADIR}/keen-pbr-sx/frontend" CACHE STRING
   "Default frontend static root served by API (SPA assets)")
-set(KEEN_PBR_CONTROL_SOCKET "/run/keen-pbr/control.sock" CACHE STRING
+set(KEEN_PBR_CONTROL_SOCKET "/run/keen-pbr-sx/control.sock" CACHE STRING
   "Unix SOCK_STREAM control socket used by operational CLI commands")
 set(KEEN_PBR_DNSMASQ_HOOK "" CACHE STRING
   "Path of the platform dnsmasq hook script (apply|remove|status); empty disables dnsmasq management")
-set(KEEN_PBR_RESOLVER_FALLBACK_CONFIG "${CMAKE_INSTALL_FULL_SYSCONFDIR}/keen-pbr/dnsmasq-fallback.conf" CACHE STRING
-  "dnsmasq-fallback.conf: server= lines printed to dnsmasq while keen-pbr does not manage it")
+set(KEEN_PBR_RESOLVER_FALLBACK_CONFIG "${CMAKE_INSTALL_FULL_SYSCONFDIR}/keen-pbr-sx/dnsmasq-fallback.conf" CACHE STRING
+  "dnsmasq-fallback.conf: server= lines printed to dnsmasq while keen-pbr-sx does not manage it")
 set(KEEN_PBR_CLEANUP_FIREWALL_SCRIPT "" CACHE STRING
   "Path of cleanup-firewall.sh, run by the crash handler of the service; empty disables it")
 set(KEEN_PBR_TARGET_OS "linux" CACHE STRING
@@ -185,7 +185,7 @@ endif()
 find_library(LIBRESOLV resolv)
 find_library(LIBATOMIC atomic)
 if(NOT LIBRESOLV)
-  message(FATAL_ERROR "libresolv is required for keen-pbr DNS resolution support")
+  message(FATAL_ERROR "libresolv is required for keen-pbr-sx DNS resolution support")
 endif()
 message(STATUS "Found libresolv: ${LIBRESOLV}")
 if(LIBATOMIC)
@@ -452,25 +452,25 @@ endif()
 
 set(KEEN_PBR_GENERATED_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/include")
 configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/include/keen-pbr/version.hpp.in"
-  "${KEEN_PBR_GENERATED_INCLUDE_DIR}/keen-pbr/version.hpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/keen-pbr-sx/version.hpp.in"
+  "${KEEN_PBR_GENERATED_INCLUDE_DIR}/keen-pbr-sx/version.hpp"
   @ONLY
 )
 
 # Executable
-add_executable(keen-pbr ${SOURCES})
-set_target_properties(keen-pbr PROPERTIES
+add_executable(keen-pbr-sx ${SOURCES})
+set_target_properties(keen-pbr-sx PROPERTIES
   CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
   CXX_EXTENSIONS NO
 )
-target_include_directories(keen-pbr PRIVATE
+target_include_directories(keen-pbr-sx PRIVATE
   "${KEEN_PBR_GENERATED_INCLUDE_DIR}"
   include
   src
   third_party/rapidxml
 )
-target_compile_definitions(keen-pbr PRIVATE
+target_compile_definitions(keen-pbr-sx PRIVATE
   KEEN_PBR_DEFAULT_CONFIG_PATH="${KEEN_PBR_DEFAULT_CONFIG_PATH}"
   KEEN_PBR_FRONTEND_ROOT="${KEEN_PBR_FRONTEND_ROOT}"
   KEEN_PBR_CONTROL_SOCKET="${KEEN_PBR_CONTROL_SOCKET}"
@@ -485,9 +485,9 @@ target_compile_definitions(keen-pbr PRIVATE
   KEEN_PBR_GIT_COMMIT="${KEEN_PBR_GIT_COMMIT}"
 )
 if(USE_KEENETIC_API)
-  target_compile_definitions(keen-pbr PRIVATE USE_KEENETIC_API)
+  target_compile_definitions(keen-pbr-sx PRIVATE USE_KEENETIC_API)
 endif()
-target_link_libraries(keen-pbr PRIVATE
+target_link_libraries(keen-pbr-sx PRIVATE
   ${KEEN_PBR_CURL_TARGET}
   PkgConfig::LIBNL
   PkgConfig::LIBNL_ROUTE
@@ -497,31 +497,31 @@ target_link_libraries(keen-pbr PRIVATE
   monocypher
   nlohmann_json::nlohmann_json
 )
-keen_pbr_apply_project_options(keen-pbr)
+keen_pbr_apply_project_options(keen-pbr-sx)
 
 if(LIBATOMIC)
-  target_link_libraries(keen-pbr PRIVATE ${LIBATOMIC})
+  target_link_libraries(keen-pbr-sx PRIVATE ${LIBATOMIC})
 endif()
 
-target_link_libraries(keen-pbr PRIVATE ${LIBRESOLV})
+target_link_libraries(keen-pbr-sx PRIVATE ${LIBRESOLV})
 
 if(WITH_DOH)
-  target_compile_definitions(keen-pbr PRIVATE WITH_DOH)
+  target_compile_definitions(keen-pbr-sx PRIVATE WITH_DOH)
 endif()
 
 if(WITH_API)
-  target_compile_definitions(keen-pbr PRIVATE WITH_API)
-  target_link_libraries(keen-pbr PRIVATE httplib::httplib)
+  target_compile_definitions(keen-pbr-sx PRIVATE WITH_API)
+  target_link_libraries(keen-pbr-sx PRIVATE httplib::httplib)
   if(HTTPLIB_ANL_LIB)
-    target_link_libraries(keen-pbr PRIVATE ${HTTPLIB_ANL_LIB})
+    target_link_libraries(keen-pbr-sx PRIVATE ${HTTPLIB_ANL_LIB})
   endif()
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
-  target_link_libraries(keen-pbr PRIVATE stdc++fs)
+  target_link_libraries(keen-pbr-sx PRIVATE stdc++fs)
 endif()
 
-install(TARGETS keen-pbr RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS keen-pbr-sx RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 if(WITH_API)
   set(KEEN_PBR_PACKAGED_CONFIG "${CMAKE_SOURCE_DIR}/packages/common/config.full.example.json")
@@ -530,10 +530,13 @@ else()
 endif()
 
 install(FILES ${KEEN_PBR_PACKAGED_CONFIG}
-  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/keen-pbr
+  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/keen-pbr-sx
   RENAME config.json)
+install(FILES ${KEEN_PBR_PACKAGED_CONFIG}
+  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/keen-pbr-sx
+  RENAME config.example.json)
 install(FILES ${CMAKE_SOURCE_DIR}/packages/common/local.lst
-  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/keen-pbr)
+  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/keen-pbr-sx)
 
 # Unit tests (optional, requires doctest submodule)
 option(BUILD_TESTS "Build unit tests" OFF)

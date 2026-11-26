@@ -3,7 +3,7 @@
 #include "../src/cmd/resolver_config.hpp"
 #include "../src/dns/dnsmasq_gen.hpp"
 
-#include <keen-pbr/version.hpp>
+#include <keen-pbr-sx/version.hpp>
 
 #include <unistd.h>
 
@@ -20,7 +20,7 @@ struct TempDir {
     std::filesystem::path path;
     TempDir() {
         path = std::filesystem::temp_directory_path() /
-               ("keen-pbr-test-resolver-config-" + std::to_string(::getpid()));
+               ("keen-pbr-sx-test-resolver-config-" + std::to_string(::getpid()));
         std::filesystem::remove_all(path);
         std::filesystem::create_directories(path);
     }
@@ -124,7 +124,7 @@ TEST_CASE("generate-resolver-config: unreadable or invalid config prints the fal
     TempDir dir;
     const auto fallback = dir.write("fallback.conf", kFallbackFile);
     const auto missing = run("dnsmasq", (dir.path / "nope.json").string(), fallback);
-    CHECK(missing.find("# keen-pbr: generate-resolver-config failed") != std::string::npos);
+    CHECK(missing.find("# keen-pbr-sx: generate-resolver-config failed") != std::string::npos);
     CHECK(has_line(missing, "server=9.9.9.9"));
     CHECK(stamp_hash(missing) == kDnsmasqOffStampHash);
 
@@ -142,5 +142,5 @@ TEST_CASE("generate-resolver-config: unreadable or invalid config prints the fal
 TEST_CASE("generate-resolver-config: unknown resolver type is a comment") {
     TempDir dir;
     const auto out = run("unbound", "/nonexistent", "/nonexistent");
-    CHECK(out == "# keen-pbr: unsupported resolver type\n");
+    CHECK(out == "# keen-pbr-sx: unsupported resolver type\n");
 }

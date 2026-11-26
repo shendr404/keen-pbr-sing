@@ -19,7 +19,7 @@ std::string listener_text(const SocketListener& l) {
 }
 
 void print_usage_to_stderr() {
-    std::cerr << "Usage: keen-pbr resolver dnsmasq detect [--json]\n";
+    std::cerr << "Usage: keen-pbr-sx resolver dnsmasq detect [--json]\n";
 }
 
 std::optional<Config> load_config_or_warn(const std::string& config_path, bool warn) {
@@ -91,7 +91,7 @@ std::string format_dnsmasq_detection_text(const DnsmasqDetection& d,
             o << listener_text(in.listeners[i]);
         }
         o << '\n';
-        o << "    keen-pbr:    ";
+        o << "    keen-pbr-sx:    ";
         switch (in.hook.dropin_state) {
             case DropinState::Current:
                 o << "installed";

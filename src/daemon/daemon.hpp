@@ -208,7 +208,7 @@ private:
   void request_routing_health_refresh(std::chrono::steady_clock::duration max_age);
   ServiceHealthState service_health_state();
   api::RuntimeOutboundsResponse runtime_outbounds_state();
-  // Classified health issues (GET /api/health/issues and `keen-pbr status`).
+  // Classified health issues (GET /api/health/issues and `keen-pbr-sx status`).
   api::HealthIssuesResponse health_issues();
   // Same issues from the live inputs and a non-refreshing routing view.
   api::HealthIssuesResponse stream_health_issues();

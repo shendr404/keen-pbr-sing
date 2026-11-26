@@ -17,14 +17,14 @@ Outbound `urltest` или `icmptest` с `"strategy": "balance"` выбирает
 В системе вам нужно настроить {{< term "NAT" >}} на каждом провайдере и `rp_filter` (см. ниже).
 
 {{< callout type="info" >}}
-{{< only iptables >}} Каналы выбираются случайно с заданной вероятностью, поэтому на небольшом числе соединений доли получаются приблизительными. Бэкенду `iptables` нужен модуль ядра `xt_statistic`. Менять `firewall_backend` обычно не нужно: keen-pbr сам выбирает подходящий бэкенд.
+{{< only iptables >}} Каналы выбираются случайно с заданной вероятностью, поэтому на небольшом числе соединений доли получаются приблизительными. Бэкенду `iptables` нужен модуль ядра `xt_statistic`. Менять `firewall_backend` обычно не нужно: keen-pbr-sx сам выбирает подходящий бэкенд.
 {{< /callout >}}
 
 ## Пример
 
 Два подключения: `eth1` (30% новых соединений) и `eth2` (70%), LAN на `eth0`. Если соединения самого хоста тоже нужно балансировать, включите **Общее** > **Настройки** > **Общие** > **Обрабатывать собственный трафик роутера** (виден в режиме настроек **Продвинутый**); по умолчанию балансируется только трафик устройств из LAN. Интерфейсы LAN задаются в поле **Обрабатываемые (входящие) интерфейсы**.
 
-```json { filename="/etc/keen-pbr/config.json" }
+```json { filename="/etc/keen-pbr-sx/config.json" }
 {
   "outbounds": [
     { "type": "interface", "tag": "wan1", "interface": "eth1", "gateway": "192.0.2.1" },
@@ -103,7 +103,7 @@ sudo iptables -t nat -A POSTROUTING -o eth2 -j MASQUERADE
 ```bash {filename="bash"}
 sysctl net.ipv4.conf.all.rp_filter net.ipv4.conf.eth1.rp_filter net.ipv4.conf.eth2.rp_filter
 printf 'net.ipv4.conf.all.rp_filter = 2\nnet.ipv4.conf.eth1.rp_filter = 2\nnet.ipv4.conf.eth2.rp_filter = 2\n' \
-  | sudo tee /etc/sysctl.d/90-keen-pbr-multiwan.conf
+  | sudo tee /etc/sysctl.d/90-keen-pbr-sx-multiwan.conf
 sudo sysctl --system
 ```
 
@@ -111,9 +111,9 @@ sudo sysctl --system
 
 ## Если на роутере работают другие программы с метками
 
-Метки на пакетах ставят не только keen-pbr, но и Docker, WireGuard, Tailscale, скрипты {{< term "QoS" >}} и mwan3 на OpenWrt. По умолчанию keen-pbr не трогает пакеты с чужой меткой, и они не балансируются. Это управляется переключателем **Общее** > **Настройки** > **Общие** > **Не обрабатывать маркированные пакеты**.
+Метки на пакетах ставят не только keen-pbr-sx, но и Docker, WireGuard, Tailscale, скрипты {{< term "QoS" >}} и mwan3 на OpenWrt. По умолчанию keen-pbr-sx не трогает пакеты с чужой меткой, и они не балансируются. Это управляется переключателем **Общее** > **Настройки** > **Общие** > **Не обрабатывать маркированные пакеты**.
 
-Если выбор канала сбивается из-за чужих меток, предупреждение `fwmark_mask_conflict` появится на странице состояния. Тогда перенесите метки keen-pbr в свободные биты:
+Если выбор канала сбивается из-за чужих меток, предупреждение `fwmark_mask_conflict` появится на странице состояния. Тогда перенесите метки keen-pbr-sx в свободные биты:
 
 ```json { filename="config.json" }
 {

@@ -41,14 +41,14 @@ export const authenticatedFetch = async (
   url: string,
   options: RequestInit = {}
 ): Promise<Response> => {
-  const token = sessionStorage.getItem("keen-pbr-auth-token")
+  const token = sessionStorage.getItem("keen-pbr-sx-auth-token")
   const headers = new Headers(options.headers)
   if (token) headers.set("Authorization", `Bearer ${token}`)
 
   const response = await fetch(url, { ...options, headers })
   if (response.status === 401) {
-    sessionStorage.removeItem("keen-pbr-auth-token")
-    window.dispatchEvent(new Event("keen-pbr-auth-required"))
+    sessionStorage.removeItem("keen-pbr-sx-auth-token")
+    window.dispatchEvent(new Event("keen-pbr-sx-auth-required"))
   }
   return response
 }

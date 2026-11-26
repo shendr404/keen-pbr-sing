@@ -43,7 +43,7 @@ TEST_CASE("control protocol error response preserves request correlation") {
 }
 
 TEST_CASE("control client exchanges one framed request with a Unix daemon socket") {
-    const auto path = "/tmp/keen-pbr-control-client-" + std::to_string(getpid()) + ".sock";
+    const auto path = "/tmp/keen-pbr-sx-control-client-" + std::to_string(getpid()) + ".sock";
     (void)unlink(path.c_str());
     const int listener = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
     REQUIRE(listener >= 0);
@@ -97,7 +97,7 @@ TEST_CASE("control client exchanges one framed request with a Unix daemon socket
 }
 
 TEST_CASE("control client uses a separate total response timeout after HELO") {
-    const auto path = "/tmp/keen-pbr-control-deferred-" + std::to_string(getpid()) + ".sock";
+    const auto path = "/tmp/keen-pbr-sx-control-deferred-" + std::to_string(getpid()) + ".sock";
     (void)unlink(path.c_str());
     const int listener = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
     REQUIRE(listener >= 0);
@@ -138,7 +138,7 @@ TEST_CASE("control client uses a separate total response timeout after HELO") {
 }
 
 TEST_CASE("control client identifies a socket acknowledgement timeout") {
-    const auto path = "/tmp/keen-pbr-control-ack-timeout-" +
+    const auto path = "/tmp/keen-pbr-sx-control-ack-timeout-" +
         std::to_string(getpid()) + ".sock";
     (void)unlink(path.c_str());
     const int listener = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
@@ -180,7 +180,7 @@ TEST_CASE("control client identifies a socket acknowledgement timeout") {
 }
 
 TEST_CASE("control client identifies a response timeout after acknowledgement") {
-    const auto path = "/tmp/keen-pbr-control-response-timeout-" +
+    const auto path = "/tmp/keen-pbr-sx-control-response-timeout-" +
         std::to_string(getpid()) + ".sock";
     (void)unlink(path.c_str());
     const int listener = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);

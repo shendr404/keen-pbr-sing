@@ -7,12 +7,12 @@ On the **Sing-box interfaces** page each proxy node is its own TUN. Switching an
 
 ## Interface
 
-1. Install sing-box. A TUN does not have to exist beforehand: keen-pbr adds its own inbound.
+1. Install sing-box. A TUN does not have to exist beforehand: keen-pbr-sx adds its own inbound.
 2. Open **Sing-box interfaces**.
-3. Paste one or more links, one per line, and save. Each link immediately becomes its own TUN and a keen-pbr `interface` outbound **without** a `gateway`.
-4. The tag comes from the node name and is reduced to keen-pbr's rule: lowercase letters, digits and `_`. `es1-3` becomes `es1_3`, and non-Latin letters are transliterated. A tag that is already used gets a `_2` suffix. The form checks the tag against the same pattern.
+3. Paste one or more links, one per line, and save. Each link immediately becomes its own TUN and a keen-pbr-sx `interface` outbound **without** a `gateway`.
+4. The tag comes from the node name and is reduced to keen-pbr-sx's rule: lowercase letters, digits and `_`. `es1-3` becomes `es1_3`, and non-Latin letters are transliterated. A tag that is already used gets a `_2` suffix. The form checks the tag against the same pattern.
 5. The TUN name is the next free one (`sbtun`, then `sbtun2`, …). A name already used by an unmanaged inbound is skipped. An empty address gets a free `172.19.x.1/30`. Stack and MTU are under Advanced.
-6. On the Outbounds page, point a route rule at the tag or add several of these outbounds to a group. keen-pbr does not add them to a group by itself.
+6. On the Outbounds page, point a route rule at the tag or add several of these outbounds to a group. keen-pbr-sx does not add them to a group by itself.
 
 ## Subscriptions
 
@@ -27,19 +27,19 @@ VLESS Encryption (`encryption=` other than empty or `none`, including `mlkem768x
 From SSH:
 
 ```sh
-/opt/usr/bin/keen-pbr subscriptions refresh --all
-/opt/usr/bin/keen-pbr subscriptions refresh <id>
+/opt/usr/bin/keen-pbr-sx subscriptions refresh --all
+/opt/usr/bin/keen-pbr-sx subscriptions refresh <id>
 ```
 
-Deleting an interface removes its TUN inbound, sing-box outbound, route rule and keen-pbr outbound. If a route rule or a `urltest`/`icmptest` group still references that outbound, deletion is refused and the error names them.
+Deleting an interface removes its TUN inbound, sing-box outbound, route rule and keen-pbr-sx outbound. If a route rule or a `urltest`/`icmptest` group still references that outbound, deletion is refused and the error names them.
 
 When `sing-box check` fails, the error contains the FATAL/ERROR line with uuids, passwords and keys redacted. A missing sing-box binary is reported separately from a configuration error.
 
 ## What happens to `/opt/etc/sing-box/config.json`
 
-keen-pbr does **not** replace the file.
+keen-pbr-sx does **not** replace the file.
 
-The first edit of an existing file keeps a one-time copy `config.json.bak-keenpbr-original`. Later edits refresh only `config.json.bak-keenpbr`. `sing-box check` runs before the new file is kept; a failure restores the rolling copy. If the keen-pbr outbound cannot be saved after that, the link store, the sing-box config and `config.json` are all restored.
+The first edit of an existing file keeps a one-time copy `config.json.bak-keenpbr-original`. Later edits refresh only `config.json.bak-keenpbr`. `sing-box check` runs before the new file is kept; a failure restores the rolling copy. If the keen-pbr-sx outbound cannot be saved after that, the link store, the sing-box config and `config.json` are all restored.
 
 Managed objects use the `kpbr-` prefix:
 
@@ -52,4 +52,4 @@ Managed objects use the `kpbr-` prefix:
 
 If the interface name is already an unmanaged inbound (for example a hand-written `sbtun`), the save is refused and the file is left as it was.
 
-An older `sing-box-links.json` that still contains profiles is read and converted into separate nodes. Links live in `/opt/etc/keen-pbr/sing-box-links.json` and are not part of the API profile list.
+An older `sing-box-links.json` that still contains profiles is read and converted into separate nodes. Links live in `/opt/etc/keen-pbr-sx/sing-box-links.json` and are not part of the API profile list.

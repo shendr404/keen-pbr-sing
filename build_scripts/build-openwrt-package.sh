@@ -1,9 +1,9 @@
 #!/bin/bash
-# build-openwrt-package.sh — Compile keen-pbr inside an extracted OpenWrt SDK.
+# build-openwrt-package.sh — Compile keen-pbr-sx inside an extracted OpenWrt SDK.
 #
 # Usage: scripts/build-openwrt-package.sh <workspace-dir> <sdk-dir>
 #
-# <workspace-dir>  Root of the keen-pbr source tree (contains version.mk, packages/, …)
+# <workspace-dir>  Root of the keen-pbr-sx source tree (contains version.mk, packages/, …)
 # <sdk-dir>        Extracted OpenWrt SDK directory (contains scripts/feeds, .config, …)
 #
 set -euo pipefail
@@ -76,9 +76,9 @@ install_required_feed_packages() {
 
 bash "$WORKSPACE/build_scripts/ensure-frontend-dist.sh" "$WORKSPACE" "$FRONTEND_DIST" openwrt
 
-rm -rf "$SDK_DIR/package/keen-pbr"
-cp -r "$WORKSPACE/packages/openwrt/keen-pbr" "$SDK_DIR/package/"
-cp "$WORKSPACE/version.mk" "$SDK_DIR/package/keen-pbr/version.mk"
+rm -rf "$SDK_DIR/package/keen-pbr-sx"
+cp -r "$WORKSPACE/packages/openwrt/keen-pbr-sx" "$SDK_DIR/package/"
+cp "$WORKSPACE/version.mk" "$SDK_DIR/package/keen-pbr-sx/version.mk"
 
 cd "$SDK_DIR"
 retry "$FEED_UPDATE_RETRIES" "$FEED_UPDATE_RETRY_DELAY" update_feeds || {
@@ -91,14 +91,14 @@ cp "$WORKSPACE/packages/openwrt/packages.config" .config
 make defconfig
 
 # Fail-fast check
-for package in keen-pbr keen-pbr-headless; do
+for package in keen-pbr-sx keen-pbr-sx-headless; do
     if ! grep -Eq "^CONFIG_PACKAGE_${package}=(m|y)$" .config; then
         echo "[build-openwrt-package] Required package is not selected: $package" >&2
         exit 1
     fi
 done
 
-make package/keen-pbr/compile V=s "-j$(nproc)" \
+make package/keen-pbr-sx/compile V=s "-j$(nproc)" \
     KEEN_PBR_SRC="$WORKSPACE" \
     KEEN_PBR_FRONTEND_DIST="$FRONTEND_DIST" \
     KEEN_PBR_RELEASE="$KEEN_PBR_RELEASE" \

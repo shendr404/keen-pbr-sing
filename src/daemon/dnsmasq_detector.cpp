@@ -285,10 +285,10 @@ void evaluate_problem(DnsmasqInstance& inst, const std::string& own_netns) {
         set(DnsmasqErrorCode::DnsDisabled, sel + " (pid " + pid + "): DNS is disabled (port=0)");
     } else if (!inst.process->netns.empty() && !own_netns.empty() && inst.process->netns != own_netns) {
         set(DnsmasqErrorCode::OtherNetns, sel + " (pid " + pid + "): runs in network namespace " +
-                                              inst.process->netns + ", keen-pbr in " + own_netns);
+                                              inst.process->netns + ", keen-pbr-sx in " + own_netns);
     } else if (inst.hook.dropin_state == DropinState::Foreign) {
         set(DnsmasqErrorCode::ForeignDropin, sel + ": " + inst.hook.dropin_file +
-                                                 " exists but was not written by keen-pbr");
+                                                 " exists but was not written by keen-pbr-sx");
     } else if (inst.hook.dropin_include == DropinInclude::Static && !inst.dropin_dir_included) {
         set(DnsmasqErrorCode::DropinNotLoaded, sel + " (pid " + pid + "): conf-dir " +
                                                    inst.hook.dropin_dir + " is not loaded by dnsmasq");
@@ -420,7 +420,7 @@ DnsmasqDetection DnsmasqDetector::detect(const DnsmasqDetectOptions& options) co
                 det.selection = DnsmasqSelectionKind::Adopted;
             } else if (installed.size() > 1) {
                 det.error = DnsmasqErrorCode::InstanceAmbiguous;
-                det.message = "keen-pbr is installed in several dnsmasq instances (" +
+                det.message = "keen-pbr-sx is installed in several dnsmasq instances (" +
                               sel_list(installed) + "); set dns.dnsmasq_instance";
             } else if (usable.size() == 1) {
                 det.selected = usable[0];
@@ -438,7 +438,7 @@ DnsmasqDetection DnsmasqDetector::detect(const DnsmasqDetectOptions& options) co
             if (det.selected && *det.selected == i) continue;
             const auto& in = det.instances[i];
             if (in.hook.dropin_state == DropinState::Current) {
-                det.warnings.push_back("keen-pbr drop-in is also installed in " + in.selector.str() +
+                det.warnings.push_back("keen-pbr-sx drop-in is also installed in " + in.selector.str() +
                                        "; delete " +
                                        (in.hook.dropin_file.empty() ? std::string("it")
                                                                     : in.hook.dropin_file) +

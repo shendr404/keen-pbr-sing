@@ -48,7 +48,7 @@ std::string current_thread_id_string() {
 void emit_syslog_line(const std::string& line, int priority) {
     static std::once_flag openlog_once;
     std::call_once(openlog_once, []() {
-        openlog("keen-pbr", LOG_PID, LOG_DAEMON);
+        openlog("keen-pbr-sx", LOG_PID, LOG_DAEMON);
     });
     syslog(priority, "%s", line.c_str());
 }

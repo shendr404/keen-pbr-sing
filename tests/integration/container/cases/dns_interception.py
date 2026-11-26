@@ -86,7 +86,7 @@ class _EventReader(threading.Thread):
 
 def _kill_without_cleanup(context):
     pid = context.run("systemctl", "show", "--value", "--property", "MainPID",
-                      "keen-pbr.service").stdout.strip()
+                      "keen-pbr-sx.service").stdout.strip()
     assert pid.isdigit() and int(pid) > 1, pid
     # Keep the firewall hooks installed: this is the missing-listener path,
     # distinct from the graceful stop path that removes them first.
@@ -94,10 +94,10 @@ def _kill_without_cleanup(context):
     def exited():
         if context.run("kill", "-0", pid, check=False).returncode == 0:
             return False
-        return context.run("systemctl", "is-active", "keen-pbr.service",
+        return context.run("systemctl", "is-active", "keen-pbr-sx.service",
                            check=False).stdout.strip() != "active"
 
-    context.wait_for("keen-pbr listener exit", exited)
+    context.wait_for("keen-pbr-sx listener exit", exited)
 
 
 def register(registry):

@@ -40,7 +40,7 @@ export const DNS_EVENT_RECONNECT_MS = 3_000
 export const DNS_EVENT_HIDDEN_DISCONNECT_MS = 60_000
 
 export type DnsEventHub = ReturnType<typeof createDnsEventHub>
-export type DnsEventStreamMode = "keen-pbr" | "all" | "full"
+export type DnsEventStreamMode = "keen-pbr-sx" | "all" | "full"
 
 export type DnsTestGapEvent = {
   type: "GAP"
@@ -280,7 +280,7 @@ export function dnsEventStreamUrl(
 
 /** Per-tab singleton. */
 export function getDnsEventHub(
-  mode: DnsEventStreamMode = "keen-pbr",
+  mode: DnsEventStreamMode = "keen-pbr-sx",
   markerDomain?: string
 ): DnsEventHub {
   const normalizedDomain = markerDomain

@@ -133,7 +133,7 @@ TEST_CASE("candidate classifications and skip_marked are aggregated per family")
   CHECK(counters.skip_marked_packets.at("ipv4") == 905);
   CHECK(counters.skip_marked_packets.at("ipv6") == 12);
   // wan1 is 400+7 packets.  The foreign 777-packet MARK of the same value is
-  // not a keen-pbr rule and must not be added.
+  // not a keen-pbr-sx rule and must not be added.
   CHECK(counters.outbound_mark_counters.at("wan1").packets == 407);
   CHECK(counters.outbound_mark_counters.at("wan1").bytes == 30700);
   CHECK(counters.outbound_mark_counters.at("wan2").packets == 389);

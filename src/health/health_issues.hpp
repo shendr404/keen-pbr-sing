@@ -76,7 +76,7 @@ std::vector<api::KernelCheckElement> collect_kernel_checks(
 std::string dnsmasq_setup_docs_url(std::string_view os_type);
 
 // Classifies every health problem as an error or a warning. The web UI
-// overview and `keen-pbr status` both show this list.
+// overview and `keen-pbr-sx status` both show this list.
 api::HealthIssuesResponse collect_health_issues(const HealthIssueInputs& inputs);
 
 } // namespace keen_pbr3

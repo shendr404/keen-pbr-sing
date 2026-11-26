@@ -93,7 +93,7 @@ By default rules apply to traffic from all interfaces. To process only traffic f
 
 The router's own traffic is processed only if **General** > **Settings** > **General** > **Process router's own traffic** (shown in **Advanced** settings mode) (`iproute.process_router_traffic`) is on. Do not list the interface the router uses to reach the internet in `inbound_interfaces`: the router's own traffic would then not be routed.
 
-keen-pbr never routes DHCP (UDP ports 67–68 for IPv4 and 546–547 for IPv6), so devices always get their addresses from the router.
+keen-pbr-sx never routes DHCP (UDP ports 67–68 for IPv4 and 546–547 for IPv6), so devices always get their addresses from the router.
 
 ## Route Rule Fields
 
@@ -272,7 +272,7 @@ The rule matches only if all conditions hold: the query comes from `192.168.10.0
 
 ### DSCP filter — route tagged traffic through VPN
 
-{{< term "DSCP" >}} (Differentiated Services Code Point) is a 6-bit tag in the IP header. It is usually used for {{< term "QoS" >}}, but keen-pbr can also use it as a routing selector: tag packets on the client device, then match that tag in a route rule. This is useful for per-application routing when the app does not have stable destination domains, IPs, or ports.
+{{< term "DSCP" >}} (Differentiated Services Code Point) is a 6-bit tag in the IP header. It is usually used for {{< term "QoS" >}}, but keen-pbr-sx can also use it as a routing selector: tag packets on the client device, then match that tag in a route rule. This is useful for per-application routing when the app does not have stable destination domains, IPs, or ports.
 
 ```json { filename="config.json" }
 {
@@ -296,10 +296,10 @@ The DSCP mark must already be present when the packet reaches the router. Config
 Run PowerShell as Administrator:
 
 ```powershell
-New-NetQosPolicy -Name "keen-pbr Zoom DSCP" -AppPathNameMatchCondition "zoom.exe" -DSCPAction 46
+New-NetQosPolicy -Name "keen-pbr-sx Zoom DSCP" -AppPathNameMatchCondition "zoom.exe" -DSCPAction 46
 ```
 
-`AppPathNameMatchCondition` can be an executable name such as `zoom.exe` or a full application path. Windows then tags matching application traffic with {{< term "DSCP" >}} `46`, and keen-pbr can route it with a rule containing `"dscp": 46`.
+`AppPathNameMatchCondition` can be an executable name such as `zoom.exe` or a full application path. Windows then tags matching application traffic with {{< term "DSCP" >}} `46`, and keen-pbr-sx can route it with a rule containing `"dscp": 46`.
 
 #### Linux: tag traffic from a user
 
@@ -321,7 +321,7 @@ sudo iptables -t mangle -A OUTPUT -m owner --uid-owner john -j DSCP --set-dscp 4
 sudo ip6tables -t mangle -A OUTPUT -m owner --uid-owner john -j DSCP --set-dscp 46
 ```
 
-`owner` only sees packets created on the same computer, so add these rules on the Linux laptop or PC that runs the application, not on the keen-pbr router.
+`owner` only sees packets created on the same computer, so add these rules on the Linux laptop or PC that runs the application, not on the keen-pbr-sx router.
 
 ### Exclusions with `!`: all sources except the local LAN
 

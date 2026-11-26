@@ -26,9 +26,9 @@
 namespace keen_pbr3 {
 
 namespace {
-// How often the daemon verifies that dnsmasq still serves the keen-pbr config.
+// How often the daemon verifies that dnsmasq still serves the keen-pbr-sx config.
 constexpr auto kDnsmasqCheckInterval = std::chrono::seconds{30};
-constexpr const char* kInterfaceForwardScript = "/opt/usr/lib/keen-pbr/interface-forward.sh";
+constexpr const char* kInterfaceForwardScript = "/opt/usr/lib/keen-pbr-sx/interface-forward.sh";
 
 void sync_interface_forward_rules(bool remove) {
     if (access(kInterfaceForwardScript, X_OK) != 0) return;
@@ -57,7 +57,7 @@ private:
 // restarted because of it.
 std::string dnsmasq_apply_reason(std::string_view lifecycle_reason) {
     if (lifecycle_reason == "startup complete" || lifecycle_reason == "runtime started") {
-        return "keen-pbr runtime started";
+        return "keen-pbr-sx runtime started";
     }
     if (lifecycle_reason == "config apply verified" || lifecycle_reason == "config apply complete") {
         return "config applied";

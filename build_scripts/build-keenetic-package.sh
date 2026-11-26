@@ -1,13 +1,13 @@
 #!/bin/sh
-# build-keenetic-package.sh — Compile keen-pbr inside an Entware build tree.
+# build-keenetic-package.sh — Compile keen-pbr-sx inside an Entware build tree.
 #
 # Usage: scripts/build-keenetic-package.sh <workspace-dir> <entware-dir>
 #
 # This script is intended to run INSIDE the entware-builder Docker container
-# (ghcr.io/maksimkurb/entware-builder:<config>), with the keen-pbr source tree
+# (ghcr.io/maksimkurb/entware-builder:<config>), with the keen-pbr-sx source tree
 # mounted at <workspace-dir>.
 #
-# <workspace-dir>  Path to the keen-pbr source tree (contains version.mk, packages/, …)
+# <workspace-dir>  Path to the keen-pbr-sx source tree (contains version.mk, packages/, …)
 # <entware-dir>    Path to the Entware build tree (e.g. /home/me/Entware)
 
 set -eu
@@ -24,12 +24,12 @@ sh "$WORKSPACE/build_scripts/ensure-frontend-dist.sh" "$WORKSPACE" "$FRONTEND_DI
 cd "$ENTWARE_DIR"
 printf '\nsrc-link keenPbr %s/packages/keenetic\n' "$WORKSPACE" >> feeds.conf
 ./scripts/feeds update keenPbr
-./scripts/feeds install -p keenPbr keen-pbr
-FEED_PKG_DIR=$(find package -type d -path '*/keen-pbr' | grep '/package/feeds/' | head -1)
+./scripts/feeds install -p keenPbr keen-pbr-sx
+FEED_PKG_DIR=$(find package -type d -path '*/keen-pbr-sx' | grep '/package/feeds/' | head -1)
 cp "$WORKSPACE/version.mk" "$FEED_PKG_DIR/version.mk"
 cat "$WORKSPACE/packages/keenetic/packages.config" >> .config
 make defconfig
-make package/keen-pbr/compile V=s "-j$(nproc)" \
+make package/keen-pbr-sx/compile V=s "-j$(nproc)" \
     KEEN_PBR_SRC="$WORKSPACE" \
     KEEN_PBR_FRONTEND_DIST="$FRONTEND_DIST" \
     KEEN_PBR_RELEASE="$KEEN_PBR_RELEASE" \

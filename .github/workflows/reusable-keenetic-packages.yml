@@ -95,7 +95,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for package in keen-pbr keen-pbr-headless; do
+          for package in keen-pbr-sx keen-pbr-sx-headless; do
             find build/packages/keenetic -name "${package}_*.ipk" -print -quit | grep -q . || exit 1
           done
       - name: Upload packaged artifacts

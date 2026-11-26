@@ -559,7 +559,7 @@ void diff_rules(Report& report, const PhysicalChain& expected,
 
 void diff_chain(Report& report, const PhysicalChain& expected,
                 const PhysicalChain* observed) {
-    // A builtin chain is only observed while it holds a keen-pbr jump: absent
+    // A builtin chain is only observed while it holds a keen-pbr-sx jump: absent
     // simply means no hook, i.e. every expected jump is missing.
     if (observed == nullptr && is_system_role(expected.id.role)) {
         PhysicalChain empty;
@@ -622,7 +622,7 @@ std::vector<FirewallRuleCheck> verify_firewall_plan(
         }
         const std::string label = chain_label(chain.id);
         if (is_system_role(chain.id.role)) {
-            // Only jumps into keen-pbr chains are ever observed here.
+            // Only jumps into keen-pbr-sx chains are ever observed here.
             for (std::size_t i = 0; i < chain.rules.size(); ++i) {
                 report.add_extra(
                     chain.id, CheckStatus::mismatch,
@@ -632,7 +632,7 @@ std::vector<FirewallRuleCheck> verify_firewall_plan(
         } else {
             report.add_extra(
                 chain.id, CheckStatus::mismatch,
-                keen_pbr3::format("unexpected keen-pbr chain {} ({} rules)",
+                keen_pbr3::format("unexpected keen-pbr-sx chain {} ({} rules)",
                                   label, chain.rules.size()),
                 std::nullopt,
                 chain.id.role == PhysicalChainRole::nft_setter

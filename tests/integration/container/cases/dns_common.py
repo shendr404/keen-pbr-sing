@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-RUNTIME = os.environ.get("KPBR_RUNTIME", "/run/keen-pbr-it")
+RUNTIME = os.environ.get("KPBR_RUNTIME", "/run/keen-pbr-sx-it")
 UPSTREAM_CONF = f"{RUNTIME}/dnsmasq-upstream.conf"
 
 
@@ -24,7 +24,7 @@ def dns_config(context, servers, lists=None):
 def set_resolver_upstreams(context, *upstreams):
     """Point the unmanaged test resolver (plain dnsmasq) at the given upstreams.
 
-    keen-pbr does not configure the resolver; the harness resolver only
+    keen-pbr-sx does not configure the resolver; the harness resolver only
     forwards, so each case chooses where its queries go.  Upstreams use the
     dnsmasq `address#port` notation.
     """
@@ -43,7 +43,7 @@ def assert_query_seen(context, side, kind, name, identity):
 HOOK_LOG = f"{RUNTIME}/dnsmasq-hook.log"
 HOOK_FAIL_FLAG = f"{RUNTIME}/dnsmasq-hook.fail"
 HOOK_NODROPIN_FLAG = f"{RUNTIME}/dnsmasq-hook.nodropin"
-HOOK_DROPIN = f"{RUNTIME}/dnsmasq.d/keen-pbr-upstream-dns.conf"
+HOOK_DROPIN = f"{RUNTIME}/dnsmasq.d/keen-pbr-sx-upstream-dns.conf"
 
 
 def hook_calls():

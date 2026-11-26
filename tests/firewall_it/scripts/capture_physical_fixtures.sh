@@ -2,18 +2,18 @@
 # Regenerate tests/firewall_it/fixtures/physical/* from REAL kernel state.
 #
 # Each scenario runs in a throw-away rootless user+network namespace
-# (`unshare -Urn`, no sudo).  The keen-pbr unit-test binary applies a
+# (`unshare -Urn`, no sudo).  The keen-pbr-sx unit-test binary applies a
 # representative FirewallPlan through the real iptables/nftables backend (see
 # the "physical fixture capture" case in tests/test_firewall_physical.cpp) and
 # this script then dumps the kernel state with the stock tools.
 #
 #   cmake -S . -B cmake-build-gcc -DBUILD_TESTS=ON && \
-#     cmake --build cmake-build-gcc --target keen-pbr-tests
+#     cmake --build cmake-build-gcc --target keen-pbr-sx-tests
 #   bash tests/firewall_it/scripts/capture_physical_fixtures.sh \
-#     cmake-build-gcc/tests/keen-pbr-tests
+#     cmake-build-gcc/tests/keen-pbr-sx-tests
 set -euo pipefail
 
-test_bin=$(realpath "${1:?usage: $0 <keen-pbr-tests binary>}")
+test_bin=$(realpath "${1:?usage: $0 <keen-pbr-sx-tests binary>}")
 out=$(cd "$(dirname "${BASH_SOURCE[0]}")/../fixtures/physical" && pwd)
 
 scenario() {
@@ -204,7 +204,7 @@ EOF_RULES
 
 # nft stores anonymous address sets as interval sets and merges adjacent /
 # overlapping elements, printing them back as prefixes, single addresses or
-# `range` objects.  keen-pbr compares address lists as address SETS.
+# `range` objects.  keen-pbr-sx compares address lists as address SETS.
 scenario nft_interval "ip link set lo up
   nft add table inet KeenPbrTable
   nft add chain inet KeenPbrTable prerouting '{ type filter hook prerouting priority -150; policy accept; }'

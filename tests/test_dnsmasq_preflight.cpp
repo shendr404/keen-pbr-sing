@@ -42,7 +42,7 @@ DnsmasqInstance instance(DropinState state) {
     DnsmasqInstance inst;
     inst.process = proc("/usr/sbin/dnsmasq", {"/usr/sbin/dnsmasq", "-C", "/etc/d.conf", "-k"});
     inst.hook.dropin_state = state;
-    inst.hook.dropin_content = "conf-script=/usr/bin/keen-pbr";
+    inst.hook.dropin_content = "conf-script=/usr/bin/keen-pbr-sx";
     return inst;
 }
 
@@ -113,7 +113,7 @@ TEST_CASE("dnsmasq_preflight: Absent drop-in writes candidate during exec and re
     const auto r = run_dnsmasq_preflight(instance(DropinState::Absent), deps);
     CHECK(r.ok);
     CHECK_FALSE(candidate.empty());
-    CHECK(content == "conf-script=/usr/bin/keen-pbr\n");
+    CHECK(content == "conf-script=/usr/bin/keen-pbr-sx\n");
     CHECK_FALSE(std::filesystem::exists(candidate));
     CHECK(root.empty());
 }

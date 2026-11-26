@@ -70,11 +70,11 @@ def reapply(context):
     success = "Runtime iproute and firewall refresh complete."
     failure = "Runtime iproute and firewall refresh failed"
     sent = time.time()
-    context.run("systemctl", "kill", "-s", "SIGUSR1", "keen-pbr.service")
+    context.run("systemctl", "kill", "-s", "SIGUSR1", "keen-pbr-sx.service")
 
     def completed():
         output = context.run(
-            "journalctl", "--no-pager", "-u", "keen-pbr.service", f"--since=@{sent:.3f}",
+            "journalctl", "--no-pager", "-u", "keen-pbr-sx.service", f"--since=@{sent:.3f}",
             check=False).stdout
         if failure in output:  # not AssertionError: wait_for would retry it
             raise RuntimeError(f"SIGUSR1 runtime refresh failed:\n{output}")

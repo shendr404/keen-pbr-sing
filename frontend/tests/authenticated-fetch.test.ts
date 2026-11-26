@@ -18,7 +18,7 @@ afterEach(() => {
 
 describe("authenticatedFetch", () => {
   test("adds the active UI Bearer token while preserving caller headers", async () => {
-    const values = new Map([["keen-pbr-auth-token", "test-token"]])
+    const values = new Map([["keen-pbr-sx-auth-token", "test-token"]])
     Object.defineProperty(globalThis, "sessionStorage", {
       configurable: true,
       value: {

@@ -5,7 +5,7 @@ source "$(dirname "$0")/common.sh"
 backend=${1:-all}
 check_harness_requirements "$KPBR_REPO_ROOT/tests/integration/netns/shims"
 
-[[ -x "$KPBR_BIN" ]] || die "keen-pbr binary is not executable inside sandbox"
+[[ -x "$KPBR_BIN" ]] || die "keen-pbr-sx binary is not executable inside sandbox"
 
 required_missing=0
 : >"$KPBR_RUNTIME/optional-missing"
@@ -74,7 +74,7 @@ cleanup_preflight() {
 trap cleanup_preflight EXIT
 
 # These operations prove CAP_NET_ADMIN is scoped to the child user/net
-# namespace and that the host kernel permits the features keen-pbr exercises.
+# namespace and that the host kernel permits the features keen-pbr-sx exercises.
 ip link add kpbrpf0 type veth peer name kpbrpf1
 ip link del kpbrpf0
 ip netns add kpbr-preflight
@@ -109,7 +109,7 @@ if [[ $backend == all || $backend == iptables ]]; then
     probe_capability iptables "comment_$family" WARN "$binary" -t mangle -A KPBR_PREFLIGHT -m comment --comment kpbr-preflight -j RETURN
   done
   # The iptables shim can accept a rule even when the proc capability lists
-  # used by keen-pbr are unavailable.  Mirror the daemon's actual probe so
+  # used by keen-pbr-sx are unavailable.  Mirror the daemon's actual probe so
   # interception cases skip honestly instead of failing during health wait.
   probe_iptables_proc_capability nfqueue \
     /proc/net/ip_tables_targets:NFQUEUE /proc/net/ip6_tables_targets:NFQUEUE \

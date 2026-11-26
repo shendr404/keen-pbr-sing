@@ -14,12 +14,12 @@
 namespace keen_pbr3 {
 
 struct SingboxPaths {
-    std::string store{"/opt/etc/keen-pbr/sing-box-links.json"};
+    std::string store{"/opt/etc/keen-pbr-sx/sing-box-links.json"};
     std::string singbox_config{"/opt/etc/sing-box/config.json"};
     std::string singbox_bin{"sing-box"};
 };
 
-// One proxy node is one TUN interface and one keen-pbr interface outbound.
+// One proxy node is one TUN interface and one keen-pbr-sx interface outbound.
 // Grouping belongs to the Outbounds page, not to this store.
 struct SingboxNode {
     std::string id;
@@ -97,7 +97,7 @@ struct SingboxApplyResult {
     nlohmann::json state;
 };
 
-// nodes is the full set that should exist. removed_tags are keen-pbr tags that
+// nodes is the full set that should exist. removed_tags are keen-pbr-sx tags that
 // this change drops. owned_tags are the tags this store already managed.
 struct KeeneticSyncRequest {
     std::vector<SingboxNode> nodes;
@@ -141,7 +141,7 @@ public:
     SingboxApplyResult select_subscription(const std::string& subscription_id,
                                            const std::vector<std::string>& selected,
                                            const SingboxTunOptions& tun);
-    // Removes the subscription and its interfaces. Refuses when a keen-pbr
+    // Removes the subscription and its interfaces. Refuses when a keen-pbr-sx
     // outbound is still referenced; nothing is deleted in that case.
     SingboxApplyResult remove_subscription(const std::string& subscription_id);
     // Empty id refreshes every subscription that is due (or all, when due_only is false).

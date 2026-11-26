@@ -1,7 +1,7 @@
 openapi: "3.1.0"
 info:
-  title: keen-pbr API
-  description: REST API for the keen-pbr policy-based routing daemon.
+  title: keen-pbr-sx API
+  description: REST API for the keen-pbr-sx policy-based routing daemon.
   version: "3.0.0"
 
 servers:
@@ -159,7 +159,7 @@ paths:
     post:
       summary: Start routing runtime
       description: >
-        Applies keen-pbr routing/firewall runtime state without stopping the
+        Applies keen-pbr-sx routing/firewall runtime state without stopping the
         API process.
       operationId: postServiceStart
       responses:
@@ -176,7 +176,7 @@ paths:
     post:
       summary: Stop routing runtime
       description: >
-        Removes keen-pbr routing/firewall runtime state while keeping the
+        Removes keen-pbr-sx routing/firewall runtime state while keeping the
         API process running.
       operationId: postServiceStop
       responses:
@@ -193,7 +193,7 @@ paths:
     post:
       summary: Restart routing runtime
       description: >
-        Re-applies keen-pbr routing/firewall runtime state.
+        Re-applies keen-pbr-sx routing/firewall runtime state.
       operationId: postServiceRestart
       responses:
         "202":
@@ -454,7 +454,7 @@ paths:
         Problems found in the service, kernel, routing and outbound health,
         each classified as an error or a warning, and the kernel checks that
         apply to the current configuration. The web UI overview and
-        `keen-pbr status` show this same list.
+        `keen-pbr-sx status` show this same list.
       operationId: getHealthIssues
       responses:
         "200":
@@ -506,7 +506,7 @@ paths:
         `connections` counts `/proc/net/nf_conntrack` entries whose `mark`
         equals the outbound's fwmark. It is omitted when that file cannot be
         read or has no mark field (kernel 4.9 with conntrack marks, which
-        keen-pbr already requires for CONNMARK, does expose it).
+        keen-pbr-sx already requires for CONNMARK, does expose it).
 
         Rates are the byte delta since the previous sample, a few seconds
         earlier. The first sample has no rate. Poll this endpoint; it is not
@@ -524,7 +524,7 @@ paths:
     get:
       summary: Most recent failed command records
       description: >
-        Returns the contents of `/tmp/keen-pbr-cmdfail.log` when command
+        Returns the contents of `/tmp/keen-pbr-sx-cmdfail.log` when command
         execution failures have been recorded. The response remains successful
         when the file does not exist so diagnostics can be collected safely.
       operationId: getDiagnosticsCommandFailure
@@ -652,18 +652,19 @@ paths:
           in: query
           required: false
           description: >
-            Event view: `keen-pbr` (default, marker events only) or `all`
-            (all observed events). `full` is accepted as an alias for `all`.
+            Event view: `keen-pbr-sx` (default, marker events only) or `all`
+            (all observed events). `keen-pbr` is the previous name of the
+            default view. `full` is accepted as an alias for `all`.
           schema:
             type: string
-            enum: [keen-pbr, all, full]
-            default: keen-pbr
+            enum: [keen-pbr-sx, keen-pbr, all, full]
+            default: keen-pbr-sx
         - name: domain
           in: query
           required: false
           description: >
             Optional generated marker domain to observe for the default
-            `keen-pbr` view. When present, only that marker closes the stream.
+            `keen-pbr-sx` view. When present, only that marker closes the stream.
           schema:
             type: string
             minLength: 1
@@ -831,11 +832,11 @@ components:
         pid_file:
           type: string
           description: Path to the PID file.
-          example: "/var/run/keen-pbr.pid"
+          example: "/var/run/keen-pbr-sx.pid"
         cache_dir:
           type: string
           description: Directory for cached list data.
-          example: "/var/cache/keen-pbr"
+          example: "/var/cache/keen-pbr-sx"
         firewall_backend:
           type: string
           description: Firewall backend selection.
@@ -901,9 +902,9 @@ components:
           type: boolean
           nullable: true
           description: >
-            Whether keen-pbr should install IPv6 firewall sets/rules and emit IPv6
+            Whether keen-pbr-sx should install IPv6 firewall sets/rules and emit IPv6
             dynamic set targets. Defaults to `true` when omitted or set to `null`.
-            If enabled but the system lacks IPv6 support, keen-pbr logs an error and
+            If enabled but the system lacks IPv6 support, keen-pbr-sx logs an error and
             continues in IPv4-only mode.
           example: true
         strict_enforcement:
@@ -1055,7 +1056,7 @@ components:
           type: string
           pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
           description: >
-            keen-pbr version the configuration was written for (`X.Y.Z`). Used to
+            keen-pbr-sx version the configuration was written for (`X.Y.Z`). Used to
             upgrade older configs in memory on load. A config without it is
             treated as written by 3.3.x. The daemon sets it to its own version
             when a config is saved.
@@ -1448,7 +1449,7 @@ components:
           uniqueItems: true
           description: >
             Only for `type=doh`: fixed IPv4 or IPv6 addresses of the server,
-            without a port. When set, keen-pbr connects only to these
+            without a port. When set, keen-pbr-sx connects only to these
             addresses and does not look the server up through the bootstrap
             servers. The host name of the URL is still used for the TLS
             handshake and the `Host` header. Rejected for other types.
@@ -1522,7 +1523,7 @@ components:
       enum: [none, dnsmasq]
       description: >
         `none` (default) leaves the system resolver untouched. `dnsmasq` makes
-        keen-pbr generate a dnsmasq config with per-list `server=` lines,
+        keen-pbr-sx generate a dnsmasq config with per-list `server=` lines,
         install it through the platform hook and restart dnsmasq.
 
     DnsSystemResolver:
@@ -1576,7 +1577,7 @@ components:
             type: string
         resolver_integration:
           description: >
-            `none` (default) | `dnsmasq`. With `dnsmasq`, keen-pbr generates a
+            `none` (default) | `dnsmasq`. With `dnsmasq`, keen-pbr-sx generates a
             dnsmasq config with per-list `server=` lines, installs it via the
             platform hook and restarts dnsmasq. If absent and `dns.rules` is
             non-empty, `dnsmasq` is assumed (upgrade compatibility).
@@ -1586,9 +1587,9 @@ components:
           type: string
           nullable: true
           description: >
-            Selector of the dnsmasq instance keen-pbr manages: `uci:<section>` (OpenWrt),
+            Selector of the dnsmasq instance keen-pbr-sx manages: `uci:<section>` (OpenWrt),
             `entware:default` (Keenetic), `systemd:<unit>.service` (Debian). Empty or absent
-            means automatic selection. Needed only when `keen-pbr resolver dnsmasq detect` reports
+            means automatic selection. Needed only when `keen-pbr-sx resolver dnsmasq detect` reports
             DNSMASQ_INSTANCE_AMBIGUOUS.
           example: "uci:cfg01411c"
         proxy_address:
@@ -2266,13 +2267,13 @@ components:
 
     ConfigObject:
       type: object
-      description: keen-pbr configuration file.
+      description: keen-pbr-sx configuration file.
       properties:
         version:
           type: string
           pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
           description: >
-            keen-pbr version the configuration was written for (`X.Y.Z`). Used to
+            keen-pbr-sx version the configuration was written for (`X.Y.Z`). Used to
             upgrade older configs in memory on load. A config without it is
             treated as written by 3.3.x. The daemon sets it to its own version
             when a config is saved.
@@ -2308,8 +2309,8 @@ components:
           $ref: "#/components/schemas/InterceptConfig"
       example:
         daemon:
-          pid_file: "/var/run/keen-pbr.pid"
-          cache_dir: "/var/cache/keen-pbr"
+          pid_file: "/var/run/keen-pbr-sx.pid"
+          cache_dir: "/var/cache/keen-pbr-sx"
           firewall_backend: auto
           firewall_verify_max_bytes: 262144
           skip_marked_packets: true
@@ -2930,7 +2931,7 @@ components:
           type: string
           enum: [disabled, ok, applying, reconciling, error]
           description: >
-            - disabled: resolver integration is `none`; keen-pbr does not touch dnsmasq
+            - disabled: resolver integration is `none`; keen-pbr-sx does not touch dnsmasq
             - ok: dnsmasq confirmed (config-hash.keen.pbr TXT stamp) that it serves the current config
             - applying: the platform hook is running or dnsmasq has not yet confirmed the config
               (an explicit apply or an automatic repair attempt, see `repair_attempt`)
@@ -2940,7 +2941,7 @@ components:
         config_hash:
           type: string
           nullable: true
-          description: MD5 of the config keen-pbr generated and expects dnsmasq to serve.
+          description: MD5 of the config keen-pbr-sx generated and expects dnsmasq to serve.
         probe_status:
           type: string
           enum: [not_checked, ok, missing, invalid, query_failed]
@@ -2948,9 +2949,9 @@ components:
           description: >
             Result of the last `config-hash.keen.pbr` TXT query to dnsmasq.
             - not_checked: no query has been made yet
-            - ok: dnsmasq returned a keen-pbr stamp
-            - missing: dnsmasq answered without the stamp (the keen-pbr config is not loaded)
-            - invalid: the TXT record is not a valid keen-pbr stamp
+            - ok: dnsmasq returned a keen-pbr-sx stamp
+            - missing: dnsmasq answered without the stamp (the keen-pbr-sx config is not loaded)
+            - invalid: the TXT record is not a valid keen-pbr-sx stamp
             - query_failed: dnsmasq did not answer (timeout, refused, malformed reply)
         loaded_hash:
           type: string
@@ -2978,7 +2979,7 @@ components:
           format: int64
           nullable: true
           description: >
-            Unix timestamp (seconds) of the last dnsmasq reload that keen-pbr did
+            Unix timestamp (seconds) of the last dnsmasq reload that keen-pbr-sx did
             not cause (restart by the user, the OS or LuCI).
         last_apply_ts:
           type: integer
@@ -3525,7 +3526,7 @@ components:
       properties:
         chain_present:
           type: boolean
-          description: Whether the keen-pbr firewall chain exists.
+          description: Whether the keen-pbr-sx firewall chain exists.
           example: true
         prerouting_hook_present:
           type: boolean
@@ -3543,7 +3544,7 @@ components:
         detail:
           type: string
           description: Human-readable detail. Omitted when empty.
-          example: "chain keen-pbr found in table mangle"
+          example: "chain keen-pbr-sx found in table mangle"
 
     FirewallRuleCheck:
       type: object
@@ -3552,7 +3553,7 @@ components:
         set_name:
           type: string
           description: IP set or nftables set name for this rule.
-          example: "keen-pbr-russia"
+          example: "keen-pbr-sx-russia"
         action:
           type: string
           description: Expected firewall action (e.g. "MARK", "DROP", "PASS").
@@ -3725,7 +3726,7 @@ components:
       enum: [nat_missing, nat_partial, rp_filter_strict, fwmark_mask_conflict, stale_policy_rule]
       description: >
         - nat_missing: no MASQUERADE/SNAT rule covers the interface (iptables
-          backend only). Only the iptables nat table of the flavour keen-pbr
+          backend only). Only the iptables nat table of the flavour keen-pbr-sx
           uses is checked; NAT done in native nftables (nftables.conf,
           firewalld) or in the other iptables flavour (legacy vs nft) is not
           visible, so ignore this warning if NAT is configured there.
@@ -3733,7 +3734,7 @@ components:
           matches such as mark or protocol) cover the interface
         - rp_filter_strict: effective IPv4 rp_filter on the interface is 1 (strict)
         - fwmark_mask_conflict: a foreign iptables MARK/CONNMARK rule (mangle/raw, iptables backend only) or `ip rule` writes or matches mark bits overlapping `fwmark.mask`
-        - stale_policy_rule: an `ip rule` inside keen-pbr's priority block, fwmark.mask and table range that the active configuration no longer uses is still installed after an apply (the apply removes such rules, so this means the cleanup failed)
+        - stale_policy_rule: an `ip rule` inside keen-pbr-sx's priority block, fwmark.mask and table range that the active configuration no longer uses is still installed after an apply (the apply removes such rules, so this means the cleanup failed)
       example: "nat_missing"
 
     HealthIssuesResponse:

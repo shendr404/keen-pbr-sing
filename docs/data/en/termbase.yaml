@@ -1,13 +1,13 @@
 # Glossary for the {{< term >}} shortcode. Match is on `term` or `abbr`, case-insensitive.
 - term: fwmark
   abbr: fwmark
-  definition: 'Firewall mark: a number the Linux kernel attaches to a packet. keen-pbr sets it in the firewall, and ip rule uses it to pick a routing table.'
+  definition: 'Firewall mark: a number the Linux kernel attaches to a packet. keen-pbr-sx sets it in the firewall, and ip rule uses it to pick a routing table.'
 - term: conntrack
   abbr: conntrack
   definition: 'Connection tracking: the Linux kernel''s table of open connections. Each entry can carry its own mark (connmark).'
 - term: connmark
   abbr: connmark
-  definition: 'Connection mark: a mark stored on a conntrack entry. keen-pbr copies the fwmark into it so every packet of a connection follows the same route.'
+  definition: 'Connection mark: a mark stored on a conntrack entry. keen-pbr-sx copies the fwmark into it so every packet of a connection follows the same route.'
 - term: ipset
   abbr: ipset
   definition: A named set of IP addresses or subnets in the Linux kernel, used by iptables rules to match many addresses at once.
@@ -22,7 +22,7 @@
   definition: The iptables table for changing packet metadata, such as setting a fwmark, before routing.
 - term: PREROUTING
   abbr: PREROUTING
-  definition: The firewall hook that sees incoming packets before the routing decision. keen-pbr sets fwmarks here.
+  definition: The firewall hook that sees incoming packets before the routing decision. keen-pbr-sx sets fwmarks here.
 - term: policy routing
   abbr: policy routing
   definition: Routing that chooses a routing table by rules (ip rule) instead of only by destination address, for example by fwmark.
@@ -37,7 +37,7 @@
   definition: A kernel check (rp_filter) that drops a packet if the reply to it would not leave through the interface it arrived on.
 - term: NFQUEUE
   abbr: NFQUEUE
-  definition: A netfilter mechanism that passes packets to a user-space program and waits for its verdict. keen-pbr uses it to hold DNS replies briefly.
+  definition: A netfilter mechanism that passes packets to a user-space program and waits for its verdict. keen-pbr-sx uses it to hold DNS replies briefly.
 - term: NFLOG
   abbr: NFLOG
   definition: A netfilter mechanism that sends copies of packets to a user-space program without delaying them.
@@ -85,7 +85,7 @@
   definition: A small extra configuration file that a program reads in addition to its main config.
 - term: Entware
   abbr: Entware
-  definition: A package repository for routers. On Keenetic, keen-pbr and dnsmasq are installed from it.
+  definition: A package repository for routers. On Keenetic, keen-pbr-sx and dnsmasq are installed from it.
 - term: RCI
   abbr: RCI
   definition: The Keenetic router's built-in configuration API.

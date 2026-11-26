@@ -131,7 +131,7 @@ TEST_CASE("reality defaults utls, hysteria2 keeps obfs, and xhttp is skipped") {
     CHECK(info.skipped_nodes[0].reason == "VLESS Encryption (mlkem768x25519plus) не поддерживается sing-box");
 }
 
-TEST_CASE("node names become keen-pbr tags") {
+TEST_CASE("node names become keen-pbr-sx tags") {
     CHECK(sanitize_keenetic_tag("es1-3") == "es1_3");
     CHECK(sanitize_keenetic_tag("HU 1.3 Венгрия") == "hu_1_3_vengriya");
     CHECK(sanitize_keenetic_tag("1abc") == "n_1abc");
@@ -188,7 +188,7 @@ TEST_CASE("sing-box check errors name a missing binary and redact secrets") {
 }
 
 
-TEST_CASE("a keen-pbr outbound referenced by a rule or group cannot be removed") {
+TEST_CASE("a keen-pbr-sx outbound referenced by a rule or group cannot be removed") {
     const auto config = nlohmann::json::parse(R"({
       "route": {"rules": [{"outbound": "hu-1"}, {"outbound": "other"}]},
       "outbounds": [
@@ -439,7 +439,7 @@ TEST_CASE("sing-box merge keeps unmanaged config and an old profile store migrat
     patch.tun_stack = "system";
     patch.tun_mtu = 1280;
     CHECK_THROWS_WITH(service.update_node(patch),
-                      "TUN interface sbtun already exists in the sing-box config and is not managed by keen-pbr. "
+                      "TUN interface sbtun already exists in the sing-box config and is not managed by keen-pbr-sx. "
                       "The existing config was not changed. Choose another interface name.");
     CHECK(read_file(paths.singbox_config) == before);
     const auto added = service.add_links({"trojan://pw@b.example:443#Other"}, SingboxTunOptions{"system", 1280, "172.19.8.1/30"});

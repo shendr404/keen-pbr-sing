@@ -13,7 +13,7 @@ import {
 
 /**
  * dnsmasq management is on but dnsmasq is not installed (for example opkg
- * removed it when keen-pbr 3.3.x was upgraded).  Offers the two ways out:
+ * removed it when keen-pbr-sx 3.3.x was upgraded).  Offers the two ways out:
  * install it again, or turn management off.
  */
 export function DnsmasqMissingDialog({

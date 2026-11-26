@@ -20,7 +20,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include <keen-pbr/version.hpp>
+#include <keen-pbr-sx/version.hpp>
 #include "../log/logger.hpp"
 #include "../util/cron.hpp"
 
@@ -877,7 +877,7 @@ SemVer current_semver() {
                   KEEN_PBR3_VERSION_PATCH};
 }
 
-// Pre-3.4.0 keen-pbr always managed dnsmasq.  3.4.0 made that opt-in, so a
+// Pre-3.4.0 keen-pbr-sx always managed dnsmasq.  3.4.0 made that opt-in, so a
 // config that does not say otherwise keeps the old behaviour.
 void migrate_resolver_integration_340(json& root, const std::string& from) {
     json& dns = root["dns"];
@@ -1723,7 +1723,7 @@ void validate_config(const Config& cfg, ConfigValidationMode mode,
 
 #ifdef KEEN_PBR_PLATFORM_KEENETIC
         // Keenetic has its own multipath, and conntrack is not usable in the RAW
-        // table that keen-pbr rules mostly live in: balance is not compiled.
+        // table that keen-pbr-sx rules mostly live in: balance is not compiled.
         for (size_t outbound_index = 0; outbound_index < outbounds.size(); ++outbound_index) {
             const auto& outbound = outbounds[outbound_index];
             if ((outbound.type == OutboundType::URLTEST ||
@@ -1843,7 +1843,7 @@ void validate_config(const Config& cfg, ConfigValidationMode mode,
 #ifndef WITH_DOH
                 add_issue(issues, srv_path + ".type",
                           "dns.servers[\"" + srv.tag +
-                              "\"].type='doh' is not supported: this keen-pbr build has no "
+                              "\"].type='doh' is not supported: this keen-pbr-sx build has no "
                               "DNS-over-HTTPS support (built with WITH_DOH=OFF)");
 #endif
                 if (!srv.address.has_value() || srv.address->empty()) {
@@ -1994,7 +1994,7 @@ void validate_config(const Config& cfg, ConfigValidationMode mode,
                         if (dns_address_ip(*srv.address) == proxy_address) {
                             add_issue(issues, path,
                                       name + ": DNS server \"" + tag +
-                                          "\" is the keen-pbr DNS proxy address (dns.proxy_address)");
+                                          "\" is the keen-pbr-sx DNS proxy address (dns.proxy_address)");
                         }
                     }
                 }
@@ -2111,7 +2111,7 @@ std::vector<std::string> config_warnings(const Config& config) {
         const auto config_version = parse_semver(*config.version);
         if (config_version && current_semver() < *config_version) {
             warnings.push_back(
-                "Config was written by keen-pbr " + *config.version +
+                "Config was written by keen-pbr-sx " + *config.version +
                 ", newer than this " + KEEN_PBR3_VERSION_STRING +
                 ". It was not upgraded; settings this version does not know "
                 "are ignored.");

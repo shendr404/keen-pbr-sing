@@ -212,7 +212,7 @@ TEST_CASE("policy rule reload: a hot reload that moves fwmark bits removes the o
     check_reload(before, after, true);
 }
 
-TEST_CASE("policy rule health: a leftover keen-pbr rule is stale, not a foreign conflict") {
+TEST_CASE("policy rule health: a leftover keen-pbr-sx rule is stale, not a foreign conflict") {
     const auto before = reload_config(false, false);
     const auto after = reload_config(true, false);
     const auto new_rules = planned_rules(after);
@@ -223,7 +223,7 @@ TEST_CASE("policy rule health: a leftover keen-pbr rule is stale, not a foreign 
     const auto stale = evaluate_stale_policy_rule_warnings(kernel, new_rules, ns);
     REQUIRE_FALSE(stale.empty());
     CHECK(stale.front().code == HealthWarningCode::stale_policy_rule);
-    CHECK(stale.front().message.find("Outdated keen-pbr ip rule") != std::string::npos);
+    CHECK(stale.front().message.find("Outdated keen-pbr-sx ip rule") != std::string::npos);
 }
 
 TEST_CASE("policy_rule_namespace covers the configured allocation") {

@@ -447,7 +447,7 @@ TEST_CASE("verifier iptables: hook jumps") {
     CHECK(problems(checks) == 1);
     CHECK(any_detail(checks, "mangle/PREROUTING (ipv6)", CheckStatus::missing));
   }
-  SUBCASE("a jump from another builtin chain into keen-pbr is unexpected") {
+  SUBCASE("a jump from another builtin chain into keen-pbr-sx is unexpected") {
     const auto checks = verify_iptables(
         plan, expected,
         map_texts(mangle_texts(),
@@ -471,7 +471,7 @@ TEST_CASE("verifier iptables: hook jumps") {
   }
 }
 
-TEST_CASE("verifier iptables: foreign state is ignored, stale keen-pbr state is not") {
+TEST_CASE("verifier iptables: foreign state is ignored, stale keen-pbr-sx state is not") {
   const auto plan = capture_plan(false, false, true);
   const auto expected = iptables_expected(plan, {});
   const auto verify = [&](const std::function<std::string(const std::string&)>& edit) {
@@ -507,7 +507,7 @@ TEST_CASE("verifier iptables: foreign state is ignored, stale keen-pbr state is 
                                  "\n");
       });
       CHECK(problems(checks) == 1);
-      CHECK(any_detail(checks, std::string("unexpected keen-pbr chain mangle/") +
+      CHECK(any_detail(checks, std::string("unexpected keen-pbr-sx chain mangle/") +
                                    legacy));
     }
   }
@@ -520,7 +520,7 @@ TEST_CASE("verifier iptables: foreign state is ignored, stale keen-pbr state is 
                              "MARK --set-xmark 0x70000/0xff0000");
     });
     CHECK(problems(stale) == 1);
-    CHECK(any_detail(stale, "unexpected keen-pbr chain mangle/KeenPbrTable_B (1 rules)"));
+    CHECK(any_detail(stale, "unexpected keen-pbr-sx chain mangle/KeenPbrTable_B (1 rules)"));
   }
   SUBCASE("the PREROUTING chain missing flags every rule it holds") {
     const auto checks = verify([](const std::string& t) {
@@ -552,7 +552,7 @@ TEST_CASE("verifier iptables: foreign state is ignored, stale keen-pbr state is 
     CHECK(problems(reachable) == 2);
     CHECK(any_detail(reachable, "unexpected rule in mangle/KeenPbrTable at"));
     CHECK(any_detail(reachable,
-                     "unexpected keen-pbr chain mangle/KeenPbrTable_Unknown"));
+                     "unexpected keen-pbr-sx chain mangle/KeenPbrTable_Unknown"));
   }
 }
 
@@ -852,7 +852,7 @@ TEST_CASE("verifier nftables: setter chains") {
     CHECK(problems(checks) == 1);
     CHECK(checks.back().action == "setter");
     CHECK(checks.back().actual_fwmark == 0x90000U);
-    CHECK(checks.back().detail.find("unexpected keen-pbr chain") !=
+    CHECK(checks.back().detail.find("unexpected keen-pbr-sx chain") !=
           std::string::npos);
   }
 }
@@ -1045,8 +1045,8 @@ TEST_CASE("verifier iptables interception: leftovers of a disabled feature are r
   const auto expected = iptables_expected(plan, {});
   const auto checks = verify_iptables(plan, expected, intercept_texts(), {});
   CHECK(problems(checks) >= 4);
-  CHECK(any_detail(checks, "unexpected keen-pbr chain mangle/KeenPbrDnsHold"));
-  CHECK(any_detail(checks, "unexpected keen-pbr chain mangle/KeenPbrSniff"));
+  CHECK(any_detail(checks, "unexpected keen-pbr-sx chain mangle/KeenPbrDnsHold"));
+  CHECK(any_detail(checks, "unexpected keen-pbr-sx chain mangle/KeenPbrSniff"));
   CHECK(any_detail(checks, "unexpected rule in mangle/POSTROUTING"));
   CHECK(any_detail(checks, "unexpected rule in mangle/FORWARD"));
 }
@@ -1117,9 +1117,9 @@ TEST_CASE("verifier nftables interception: drift") {
     const auto plain = capture_plan(true, true, true);
     const auto checks = verify_nft(plain, nft_expected(plain),
                                    Json::parse(read_fixture("nft_intercept.json")));
-    CHECK(any_detail(checks, "unexpected keen-pbr chain dns_hold"));
-    CHECK(any_detail(checks, "unexpected keen-pbr chain sniff_fwd"));
-    CHECK(any_detail(checks, "unexpected keen-pbr chain sniff_out"));
+    CHECK(any_detail(checks, "unexpected keen-pbr-sx chain dns_hold"));
+    CHECK(any_detail(checks, "unexpected keen-pbr-sx chain sniff_fwd"));
+    CHECK(any_detail(checks, "unexpected keen-pbr-sx chain sniff_out"));
   }
 }
 #endif

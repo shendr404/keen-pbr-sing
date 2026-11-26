@@ -60,7 +60,7 @@ export function dnsmasqSetupDocsUrl(
     : `${docsBaseUrl}configuration/dns/#do-i-need-dnsmasq`
 }
 
-/** dnsmasq errors that mean it is not installed or not set up for keen-pbr. */
+/** dnsmasq errors that mean it is not installed or not set up for keen-pbr-sx. */
 const SETUP_ERROR_CODES = new Set([
   "DNSMASQ_NOT_INSTALLED",
   "DNSMASQ_NO_DNS_INSTANCE",

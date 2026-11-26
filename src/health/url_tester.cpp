@@ -34,7 +34,7 @@ URLTestResult URLTester::test_once(const std::string& url, uint32_t fwmark, uint
     request.url = url;
     request.timeout_ms = static_cast<long>(timeout_ms);
     request.ip_resolve = ip_resolve;
-    request.user_agent = "keen-pbr-urltest";
+    request.user_agent = "keen-pbr-sx-urltest";
     request.fwmark = fwmark;
     request.max_redirects = 3;
     request.discard_body = true;

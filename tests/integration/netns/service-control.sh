@@ -2,18 +2,18 @@
 set -euo pipefail
 source "$(dirname "$0")/common.sh"
 
-keen_child_pid="$KPBR_RUNTIME/keen-pbr.child.pid"
-keen_daemon_pid="$KPBR_RUNTIME/keen-pbr.daemon.pid"
+keen_child_pid="$KPBR_RUNTIME/keen-pbr-sx.child.pid"
+keen_daemon_pid="$KPBR_RUNTIME/keen-pbr-sx.daemon.pid"
 dns_child_pid="$KPBR_RUNTIME/dnsmasq.child.pid"
 dns_pid="$KPBR_RUNTIME/dnsmasq.pid"
-keen_log="$KPBR_RUNTIME/keen-pbr.log"
+keen_log="$KPBR_RUNTIME/keen-pbr-sx.log"
 dns_log="$KPBR_RUNTIME/dnsmasq.log"
 upstream_conf="$KPBR_RUNTIME/dnsmasq-upstream.conf"
 # Drop-in installed by tests/integration/netns/dnsmasq-hook.sh (the test
 # KEEN_PBR_DNSMASQ_HOOK); it carries the conf-script line.
-hook_conf="$KPBR_RUNTIME/dnsmasq.d/keen-pbr-upstream-dns.conf"
+hook_conf="$KPBR_RUNTIME/dnsmasq.d/keen-pbr-sx-upstream-dns.conf"
 
-# dnsmasq is an unmanaged, plain forwarding resolver in this harness; keen-pbr
+# dnsmasq is an unmanaged, plain forwarding resolver in this harness; keen-pbr-sx
 # no longer configures it.  Cases that need a different upstream rewrite the
 # file and restart the dnsmasq unit.
 ensure_dns_files() {
@@ -50,7 +50,7 @@ start_dnsmasq() {
   : >>"$dns_log"
   # Run dnsmasq from a private copy: a host AppArmor profile attached to
   # /usr/{bin,sbin}/dnsmasq (e.g. Ubuntu/Arch apparmor.d) denies the exec of
-  # the keen-pbr conf-script from the real path, even inside the sandbox.
+  # the keen-pbr-sx conf-script from the real path, even inside the sandbox.
   dnsmasq_bin="/tmp/kpbr-it-dnsmasq"
   cp -f "$(command -v dnsmasq)" "$dnsmasq_bin"
   # --no-daemon keeps dnsmasq in debug mode, which also avoids its privileged
@@ -87,7 +87,7 @@ start_keen() {
   require_commands setsid curl
   stop_pidfile "$keen_child_pid"
   rm -f "$keen_daemon_pid"
-  [[ -r "$KPBR_CONFIG_PATH" ]] || die "keen-pbr config is missing: $KPBR_CONFIG_PATH"
+  [[ -r "$KPBR_CONFIG_PATH" ]] || die "keen-pbr-sx config is missing: $KPBR_CONFIG_PATH"
   : >>"$keen_log"
 
   setsid "$KPBR_BIN" \
@@ -101,7 +101,7 @@ start_keen() {
   for _ in $(seq 1 160); do
     if ! pid_alive "$keen_child_pid"; then
       tail -n 160 "$keen_log" >&2 || true
-      die "keen-pbr exited during startup"
+      die "keen-pbr-sx exited during startup"
     fi
     body=$(curl --silent --max-time 1 http://127.0.0.1:12121/api/health/service 2>/dev/null || true)
     if printf '%s' "$body" |
@@ -115,19 +115,19 @@ start_keen() {
   done
   [[ $ready == 1 ]] || {
     tail -n 160 "$keen_log" >&2 || true
-    die "keen-pbr API did not reach running state"
+    die "keen-pbr-sx API did not reach running state"
   }
 }
 
 stop_keen() {
   stop_pidfile "$keen_child_pid"
-  rm -f "$keen_daemon_pid" /run/keen-pbr/control.sock "$KPBR_RUNTIME/control.sock"
+  rm -f "$keen_daemon_pid" /run/keen-pbr-sx/control.sock "$KPBR_RUNTIME/control.sock"
 }
 
 status_unit() {
   local unit=$1 pidfile
   case "$unit" in
-    keen-pbr|keen-pbr.service) pidfile=$keen_child_pid ;;
+    keen-pbr-sx|keen-pbr-sx.service) pidfile=$keen_child_pid ;;
     dnsmasq|dnsmasq.service) pidfile=$dns_child_pid ;;
     *) return 3 ;;
   esac
@@ -142,7 +142,7 @@ status_unit() {
 mainpid() {
   local unit=$1 pidfile
   case "$unit" in
-    keen-pbr|keen-pbr.service) pidfile=$keen_child_pid ;;
+    keen-pbr-sx|keen-pbr-sx.service) pidfile=$keen_child_pid ;;
     dnsmasq|dnsmasq.service) pidfile=$dns_child_pid ;;
     *) return 3 ;;
   esac

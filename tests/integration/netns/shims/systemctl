@@ -20,7 +20,7 @@ args=("${args[@]:1}")
 unit_action() {
   local action=$1 unit=$2
   case "$unit" in
-    keen-pbr|keen-pbr.service) bash "$service" "$action-keen" ;;
+    keen-pbr-sx|keen-pbr-sx.service) bash "$service" "$action-keen" ;;
     dnsmasq|dnsmasq.service) bash "$service" "$action-dnsmasq" ;;
     *) echo "unsupported integration unit: $unit" >&2; return 3 ;;
   esac
@@ -73,8 +73,8 @@ case "$cmd" in
       esac
       ((i+=1))
     done
-    [[ "$unit" == keen-pbr || "$unit" == keen-pbr.service ]] || exit 3
-    stat -c %s "$KPBR_RUNTIME/keen-pbr.log" 2>/dev/null >"$KPBR_RUNTIME/journal-since.offset" || echo 0 >"$KPBR_RUNTIME/journal-since.offset"
+    [[ "$unit" == keen-pbr-sx || "$unit" == keen-pbr-sx.service ]] || exit 3
+    stat -c %s "$KPBR_RUNTIME/keen-pbr-sx.log" 2>/dev/null >"$KPBR_RUNTIME/journal-since.offset" || echo 0 >"$KPBR_RUNTIME/journal-since.offset"
     bash "$service" signal-keen "$signal"
     ;;
   status)

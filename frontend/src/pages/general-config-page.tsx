@@ -215,7 +215,7 @@ function LoadedGeneralConfigPage({
   const { t } = useTranslation()
   const [advancedMode, setAdvancedMode] = useState(() => {
     try {
-      return localStorage.getItem("keen-pbr-settings-mode") === "advanced"
+      return localStorage.getItem("keen-pbr-sx-settings-mode") === "advanced"
     } catch {
       return false
     }
@@ -301,7 +301,7 @@ function LoadedGeneralConfigPage({
               onValueChange={(value) => {
                 setAdvancedMode(value === "advanced")
                 try {
-                  localStorage.setItem("keen-pbr-settings-mode", value)
+                  localStorage.setItem("keen-pbr-sx-settings-mode", value)
                 } catch {
                   // Storage may be unavailable; the mode still works for this page.
                 }

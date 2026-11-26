@@ -42,7 +42,7 @@ enum class DnsmasqLiveness {
 };
 
 // The single gate for every dnsmasq interaction (hook calls, probes, the
-// periodic check): keen-pbr touches dnsmasq only while the DNS rules module is
+// periodic check): keen-pbr-sx touches dnsmasq only while the DNS rules module is
 // switched to dnsmasq.
 inline bool dnsmasq_integration_enabled(const Config& config) {
     return effective_resolver_integration(config) == ResolverIntegrationMode::DNSMASQ;
@@ -52,8 +52,8 @@ inline bool dnsmasq_integration_enabled(const Config& config) {
 enum class DnsmasqProbeState {
     NotChecked,
     Ok,           // TXT present and parsed
-    Missing,      // dnsmasq runs without the keen-pbr config
-    Invalid,      // TXT present but not a keen-pbr stamp
+    Missing,      // dnsmasq runs without the keen-pbr-sx config
+    Invalid,      // TXT present but not a keen-pbr-sx stamp
     QueryFailed,  // dnsmasq did not answer
 };
 
@@ -61,7 +61,7 @@ enum class DnsmasqProbeState {
 struct DnsmasqStatus {
     ResolverIntegrationMode mode{ResolverIntegrationMode::NONE};
     DnsmasqSyncState state{DnsmasqSyncState::Disabled};
-    // MD5 of the config keen-pbr generated and expects dnsmasq to serve.
+    // MD5 of the config keen-pbr-sx generated and expects dnsmasq to serve.
     std::string config_hash;
     // Ok means dnsmasq confirmed (via the TXT stamp) that it serves config_hash.
     DnsmasqProbeState probe_state{DnsmasqProbeState::NotChecked};
@@ -70,7 +70,7 @@ struct DnsmasqStatus {
     std::optional<std::int64_t> loaded_boottime_ms;
     std::optional<std::int64_t> loaded_ts;
     std::optional<std::int64_t> last_check_ts;
-    // Last dnsmasq reload that keen-pbr did not cause (restart by the user/OS).
+    // Last dnsmasq reload that keen-pbr-sx did not cause (restart by the user/OS).
     std::optional<std::int64_t> last_external_reload_ts;
     std::optional<std::int64_t> last_apply_ts;
     std::string last_error;
@@ -148,7 +148,7 @@ struct DnsmasqTiming {
 // Computes the hash of the dnsmasq config for dns.resolver_integration=dnsmasq
 // entirely in memory (nothing is written to disk) and, when dnsmasq does not
 // serve it, runs the OS-specific hook `apply`: it makes sure dnsmasq's
-// configuration has the conf-script entry (`keen-pbr generate-resolver-config
+// configuration has the conf-script entry (`keen-pbr-sx generate-resolver-config
 // dnsmasq`, installed once and kept) and restarts dnsmasq.  The conf-script
 // output carries a TXT stamp (config-hash.keen.pbr) that is queried to confirm
 // dnsmasq really loaded it; the output printed while management is off carries

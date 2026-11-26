@@ -102,9 +102,9 @@ TEST_CASE("keenetic fixtures: mangle_v4 parsing and validation") {
     CHECK(!set.chains.empty());
   }
 
-  SUBCASE("no unknown matches or statements in all keen-pbr chains") {
+  SUBCASE("no unknown matches or statements in all keen-pbr-sx chains") {
     for (const auto &chain : set.chains) {
-      // Check keen-pbr owned chains only (not foreign _NDM chains)
+      // Check keen-pbr-sx owned chains only (not foreign _NDM chains)
       if (!chain.id.name.empty() && chain.id.name.find("KeenPbr") != std::string::npos) {
         for (const auto &rule : chain.rules) {
           CHECK_MESSAGE(!rule_has_unknown(rule),
@@ -153,7 +153,7 @@ TEST_CASE("keenetic fixtures: mangle_v4 parsing and validation") {
               ->role == Role::other_owned);
   }
 
-  SUBCASE("system PREROUTING has no keen-pbr jump") {
+  SUBCASE("system PREROUTING has no keen-pbr-sx jump") {
     auto prerouting = find_system_chain(set, "PREROUTING", Table::mangle, Fam::ipv4);
     if (prerouting != nullptr) {
       for (const auto &rule : prerouting->rules) {
@@ -279,7 +279,7 @@ TEST_CASE("keenetic fixtures: mangle_v4 parsing and validation") {
                   "Mark negation with full mask not found");
   }
 
-  SUBCASE("all keen-pbr rules have no key") {
+  SUBCASE("all keen-pbr-sx rules have no key") {
     for (const auto &chain : set.chains) {
       if (!chain.id.name.empty() && chain.id.name.find("KeenPbr") != std::string::npos) {
         for (const auto &rule : chain.rules) {
@@ -304,7 +304,7 @@ TEST_CASE("keenetic fixtures: raw_v4 parsing and validation") {
     CHECK(!set.chains.empty());
   }
 
-  SUBCASE("no unknown matches or statements in all keen-pbr chains") {
+  SUBCASE("no unknown matches or statements in all keen-pbr-sx chains") {
     for (const auto &chain : set.chains) {
       if (!chain.id.name.empty() && chain.id.name.find("KeenPbr") != std::string::npos) {
         for (const auto &rule : chain.rules) {
@@ -338,7 +338,7 @@ TEST_CASE("keenetic fixtures: raw_v4 parsing and validation") {
     CHECK(b->rules.size() > 0);
   }
 
-  SUBCASE("all keen-pbr rules have no key") {
+  SUBCASE("all keen-pbr-sx rules have no key") {
     for (const auto &chain : set.chains) {
       if (!chain.id.name.empty() && chain.id.name.find("KeenPbr") != std::string::npos) {
         for (const auto &rule : chain.rules) {
@@ -363,7 +363,7 @@ TEST_CASE("keenetic fixtures: mangle_v6 parsing and validation") {
     CHECK(!set.chains.empty());
   }
 
-  SUBCASE("no unknown matches or statements in all keen-pbr chains") {
+  SUBCASE("no unknown matches or statements in all keen-pbr-sx chains") {
     for (const auto &chain : set.chains) {
       if (!chain.id.name.empty() && chain.id.name.find("KeenPbr") != std::string::npos) {
         for (const auto &rule : chain.rules) {
@@ -391,7 +391,7 @@ TEST_CASE("keenetic fixtures: mangle_v6 parsing and validation") {
     CHECK(jump->target.name == "KeenPbrOutput");
   }
 
-  SUBCASE("all keen-pbr rules have no key") {
+  SUBCASE("all keen-pbr-sx rules have no key") {
     for (const auto &chain : set.chains) {
       if (!chain.id.name.empty() && chain.id.name.find("KeenPbr") != std::string::npos) {
         for (const auto &rule : chain.rules) {
@@ -416,7 +416,7 @@ TEST_CASE("keenetic fixtures: raw_v6 parsing and validation") {
     CHECK(!set.chains.empty());
   }
 
-  SUBCASE("no unknown matches or statements in all keen-pbr chains") {
+  SUBCASE("no unknown matches or statements in all keen-pbr-sx chains") {
     for (const auto &chain : set.chains) {
       if (!chain.id.name.empty() && chain.id.name.find("KeenPbr") != std::string::npos) {
         for (const auto &rule : chain.rules) {
@@ -437,7 +437,7 @@ TEST_CASE("keenetic fixtures: raw_v6 parsing and validation") {
     CHECK(jump->target.name == "KeenPbrRaw");
   }
 
-  SUBCASE("all keen-pbr rules have no key") {
+  SUBCASE("all keen-pbr-sx rules have no key") {
     for (const auto &chain : set.chains) {
       if (!chain.id.name.empty() && chain.id.name.find("KeenPbr") != std::string::npos) {
         for (const auto &rule : chain.rules) {

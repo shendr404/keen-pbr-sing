@@ -19,7 +19,7 @@ type AuthState = {
 }
 
 const AuthContext = createContext<AuthState | null>(null)
-const tokenKey = "keen-pbr-auth-token"
+const tokenKey = "keen-pbr-sx-auth-token"
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState({ enabled: false, authenticated: false, deviceName: "", loading: true })
@@ -60,13 +60,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     window.addEventListener("focus", onFocus)
     document.addEventListener("visibilitychange", onVisibilityChange)
-    window.addEventListener("keen-pbr-auth-required", requireAuth)
+    window.addEventListener("keen-pbr-sx-auth-required", requireAuth)
     return () => {
       window.clearInterval(interval)
       unsubscribeStream()
       window.removeEventListener("focus", onFocus)
       document.removeEventListener("visibilitychange", onVisibilityChange)
-      window.removeEventListener("keen-pbr-auth-required", requireAuth)
+      window.removeEventListener("keen-pbr-sx-auth-required", requireAuth)
     }
   }, [])
 

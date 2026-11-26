@@ -50,7 +50,7 @@ const OUTBOUND_ISSUE_CODES = new Set<HealthIssue["code"]>([
 /**
  * Translates the daemon's classified health issues (GET /api/health/issues).
  * The daemon decides which problems exist and how severe they are, so the
- * overview and `keen-pbr status` agree; this only picks the wording.
+ * overview and `keen-pbr-sx status` agree; this only picks the wording.
  */
 export function mapHealthIssues(
   issues: ReadonlyArray<HealthIssue>,

@@ -1,4 +1,4 @@
-# keen-pbr frontend
+# keen-pbr-sx frontend
 
 The Web UI uses React, TypeScript, Vite, and Base UI. Install dependencies and
 start the local development server from this directory:

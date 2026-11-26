@@ -87,9 +87,9 @@ std::string host_warning_title(const HealthWarning& warning, const std::string& 
     case HealthWarningCode::rp_filter_strict:
         return interface + ": strict rp_filter may drop replies";
     case HealthWarningCode::fwmark_mask_conflict:
-        return "A foreign rule uses packet mark bits reserved for keen-pbr";
+        return "A foreign rule uses packet mark bits reserved for keen-pbr-sx";
     case HealthWarningCode::stale_policy_rule:
-        return "keen-pbr did not remove an outdated ip rule";
+        return "keen-pbr-sx did not remove an outdated ip rule";
     }
     return warning.message;
 }
@@ -266,7 +266,7 @@ void collect_dnsmasq_issues(const api::DnsmasqHealth& dnsmasq,
         auto issue = make_issue("dnsmasq", api::Severity::ERROR, api::Code::DNSMASQ_ERROR,
                                 "dnsmasq does not serve the DNS rules");
         if (dnsmasq.error_code && *dnsmasq.error_code == "DNSMASQ_NOT_INSTALLED") {
-            // `keen-pbr status` shows this text; the web UI has its own help.
+            // `keen-pbr-sx status` shows this text; the web UI has its own help.
             issue.detail = "dnsmasq is not installed, see " + setup_docs_url;
         } else if (dnsmasq.last_error) {
             issue.detail = dnsmasq.last_error;

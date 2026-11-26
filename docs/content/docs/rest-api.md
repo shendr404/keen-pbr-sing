@@ -5,7 +5,7 @@ aliases:
   - /docs/advanced/rest-api/
 ---
 
-The REST API lets scripts and external systems control and monitor keen-pbr. For example:
+The REST API lets scripts and external systems control and monitor keen-pbr-sx. For example:
 
 - Prometheus and Grafana show VPN channel health and latency (see [GET /metrics](#get-metrics)).
 - A cron job refreshes lists on a schedule through `POST /api/lists/refresh`.
@@ -14,7 +14,7 @@ The REST API lets scripts and external systems control and monitor keen-pbr. For
 If you only use the web interface, you can skip this page.
 
 The REST API is available when:
-- Full package version is installed (`keen-pbr`, not `keen-pbr-headless`)
+- Full package version is installed (`keen-pbr-sx`, not `keen-pbr-sx-headless`)
 - The config has `api.enabled: true`
 - The `--no-api` flag was not passed at startup
 
@@ -22,7 +22,7 @@ The REST API is available when:
 
 In the web interface, open **Security** > **Authentication and CORS**. Turn on **Enable authentication**, enter a **New password** and confirm it. If a website on another address must call the API from a browser, add its address to **Allowed CORS origins** (one per line). Changes take effect immediately.
 
-Set the device name in **General** > **Settings** > **General** > **Device name**. It appears in the browser tab title and under the keen-pbr logo, which helps tell several routers apart.
+Set the device name in **General** > **Settings** > **General** > **Device name**. It appears in the browser tab title and under the keen-pbr-sx logo, which helps tell several routers apart.
 
 The same settings in `config.json`:
 
@@ -48,12 +48,12 @@ The same settings in `config.json`:
 If you edit `config.json` by hand, generate the password hash with this command (it asks for the password):
 
 ```bash
-keen-pbr hash-password
+keen-pbr-sx hash-password
 ```
 
-To write the hash straight into the file, run `keen-pbr --config /path/to/config.json hash-password --update`. Then restart the keen-pbr service: the daemon does not notice changes made to the file from outside.
+To write the hash straight into the file, run `keen-pbr-sx --config /path/to/config.json hash-password --update`. Then restart the keen-pbr-sx service: the daemon does not notice changes made to the file from outside.
 
-The password is stored as an Argon2id hash. Hashes from older keen-pbr versions do not work: set the password again.
+The password is stored as an Argon2id hash. Hashes from older keen-pbr-sx versions do not work: set the password again.
 
 When authentication is on, requests to the API use one of two methods:
 
@@ -62,7 +62,7 @@ When authentication is on, requests to the API use one of two methods:
 
 Without logging in, only `GET /api/auth/status` and `POST /api/auth/login` are available. `/metrics` is protected like the rest of the API.
 
-When authentication is off, requests from other websites in a browser are blocked. When it is on, addresses from **Allowed CORS origins** are allowed, as well as Chrome and Firefox extensions. The password travels over the network in clear text, so use a trusted network or HTTPS through a reverse proxy (a web server in front of keen-pbr).
+When authentication is off, requests from other websites in a browser are blocked. When it is on, addresses from **Allowed CORS origins** are allowed, as well as Chrome and Firefox extensions. The password travels over the network in clear text, so use a trusted network or HTTPS through a reverse proxy (a web server in front of keen-pbr-sx).
 
 By default, the API listens on `0.0.0.0:12121` (`api.listen`). All routes are served at that address.
 
@@ -76,7 +76,7 @@ The [OpenAPI document](https://github.com/shendr404/keen-pbr-sx/blob/main/docs/o
 | `GET /api/config/defaults` | Default values for settings that are not set in the config. |
 | `POST /api/config/discard`, `/save`, `/rollback` | Discard a draft, save and apply it, or return to the previous config after a failed apply. |
 | `GET /api/status/events` | Server-Sent Events (SSE) stream: the server pushes changes, so you do not need to poll. Events: `snapshot` (full state on connect), `service`, `outbounds`, `interfaces`, `issues`, `routing`, `auth`, `config`. A keep-alive signal arrives every 15 seconds. The `config` event carries only a revision number; read the data with `GET /api/config`. After a dropped connection, the new connection starts with a fresh `snapshot`. |
-| `GET /api/health/issues` | Detected problems and kernel check results: the same list as the overview page and `keen-pbr status`. |
+| `GET /api/health/issues` | Detected problems and kernel check results: the same list as the overview page and `keen-pbr-sx status`. |
 | `GET /api/runtime/outbounds`, `/api/runtime/interfaces` | Current outbound state and the list of system interfaces. |
 | `GET /api/runtime/outbound-traffic` | Bytes, packets, recent rate and conntrack count for each outbound. |
 | `GET /api/health/routing`, `POST /api/routing/test` | Routing and firewall diagnostics, and a route check for a specific domain or IP address. |
@@ -203,7 +203,7 @@ These metrics exist only with this firewall backend. A series with no data is om
 | Metric | Type | Labels | Meaning |
 |---|---|---|---|
 | `keen_pbr_balance_classifications_total` | counter | `outbound`, `candidate`, `family` = `ipv4`, `ipv6` | New connections that a balance group sent through the `candidate` channel. |
-| `keen_pbr_skip_marked_packets_total` | counter | `family` = `ipv4`, `ipv6` | Packets keen-pbr skipped because they were already marked (**General** > **Settings** > **General** > **Skip packets that are already marked**). |
+| `keen_pbr_skip_marked_packets_total` | counter | `family` = `ipv4`, `ipv6` | Packets keen-pbr-sx skipped because they were already marked (**General** > **Settings** > **General** > **Skip packets that are already marked**). |
 
 The "slow write" share is derived from the `le="0.025"` bucket of
 `keen_pbr_set_write_duration_seconds` (writes slower than 25 ms).
@@ -212,14 +212,14 @@ Prometheus scrape configuration:
 
 ```yaml
 scrape_configs:
-  - job_name: keen-pbr
+  - job_name: keen-pbr-sx
     metrics_path: /metrics
     scrape_interval: 15s
     static_configs:
       - targets: ["router.example:12121"]
     basic_auth:
       username: admin
-      password_file: /etc/prometheus/keen-pbr-password
+      password_file: /etc/prometheus/keen-pbr-sx-password
 ```
 
 Example queries:
@@ -279,16 +279,16 @@ sum by (server) (rate(keen_pbr_dns_proxy_upstream_requests_total{result=~"timeou
 
 ### Grafana dashboard and alerts
 
-Import [keen-pbr-dashboard.json](https://shendr404.github.io/keen-pbr-sx/grafana/keen-pbr-dashboard.json) into Grafana (Dashboards > New > Import). It needs a Prometheus data source with UID `prometheus`. The dashboard has `job` and `outbound` variables, a 30 s refresh, and the sections Status, Outbounds, DNS interception, DNS proxy, Sets & lists and Errors. Use a scrape interval of 30 s or less: the bar panels compute `increase()` over one-minute windows.
+Import [keen-pbr-sx-dashboard.json](https://shendr404.github.io/keen-pbr-sx/grafana/keen-pbr-sx-dashboard.json) into Grafana (Dashboards > New > Import). It needs a Prometheus data source with UID `prometheus`. The dashboard has `job` and `outbound` variables, a 30 s refresh, and the sections Status, Outbounds, DNS interception, DNS proxy, Sets & lists and Errors. Use a scrape interval of 30 s or less: the bar panels compute `increase()` over one-minute windows.
 
 Example alerting rules:
 
 ```yaml
 groups:
-  - name: keen-pbr
+  - name: keen-pbr-sx
     rules:
       - alert: KeenPbrDown
-        expr: up{job="keen-pbr"} == 0
+        expr: up{job="keen-pbr-sx"} == 0
         for: 2m
       - alert: KeenPbrOutboundDown
         expr: keen_pbr_probe_up == 0
@@ -323,7 +323,7 @@ Refreshes remote URL-backed lists from the active daemon config.
 
 - If `name` is provided, only that URL-backed list is refreshed.
 - If `name` is omitted, all URL-backed lists are refreshed.
-- If list contents changed and that affects routing or DNS, keen-pbr applies the changes immediately.
+- If list contents changed and that affects routing or DNS, keen-pbr-sx applies the changes immediately.
 
 ```bash {filename="bash"}
 curl -X POST http://127.0.0.1:12121/api/lists/refresh \
@@ -397,7 +397,7 @@ curl http://127.0.0.1:12121/api/config
 ```json
 {
   "config": {
-    "daemon": { "pid_file": "/var/run/keen-pbr.pid", "cache_dir": "/var/cache/keen-pbr" },
+    "daemon": { "pid_file": "/var/run/keen-pbr-sx.pid", "cache_dir": "/var/cache/keen-pbr-sx" },
     "outbounds": [],
     "lists": {},
     "route": {}
@@ -713,7 +713,7 @@ curl http://127.0.0.1:12121/api/health/routing
 
 Streams interception events as Server-Sent Events (the server sends events as they happen). `HELLO` comes first. The DNS check in the web interface uses this stream: it requests a special marker domain (`check.keen-pbr.fyi`) and waits for it to appear in the stream.
 
-- `show=keen-pbr` (default): only marker events. The stream closes when the matching marker arrives. Pass `domain=<marker>` to keep your check separate from others.
+- `show=keen-pbr-sx` (default): only marker events. The stream closes when the matching marker arrives. Pass `domain=<marker>` to keep your check separate from others.
 - `show=all` (or `show=full`): the stream stays open and shows DNS queries, TLS {{< term "SNI" >}}, HTTP Host, {{< term "QUIC" >}} Initial and markers, including domains that are not in any list.
 
 `show=all` exposes the traffic of every client, so it works only when API authentication is on. Without it the response is `403`. The default view is always available. An invalid `show` or `domain` returns `400`.

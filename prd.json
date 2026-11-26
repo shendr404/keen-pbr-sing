@@ -1,7 +1,7 @@
 {
-  "project": "keen-pbr3",
-  "branchName": "ralph/keen-pbr3-cpp-port",
-  "description": "Port keen-pbr (Lua) to C++20 as an always-running daemon with optional REST API, targeting OpenWRT and Keenetic routers. Selective routing for IP addresses, subnets, and domains with interface failover and health checks.",
+  "project": "keen-pbr-sx3",
+  "branchName": "ralph/keen-pbr-sx3-cpp-port",
+  "description": "Port keen-pbr-sx (Lua) to C++20 as an always-running daemon with optional REST API, targeting OpenWRT and Keenetic routers. Selective routing for IP addresses, subnets, and domains with interface failover and health checks.",
   "userStories": [
     {
       "id": "US-001",
@@ -10,10 +10,10 @@
       "acceptanceCriteria": [
         "conanfile.py exists with dependencies: libcurl/8.5.0, nlohmann_json/3.11.3, libnl/3.8.0, mbedtls/3.5.0, cpp-httplib/0.14.0 (optional)",
         "conanfile.py uses PkgConfigDeps and MesonToolchain generators",
-        "meson.build exists with project name 'keen-pbr3', C++20, size optimization flags (-Os -ffunction-sections -fdata-sections --gc-sections, LTO)",
+        "meson.build exists with project name 'keen-pbr-sx3', C++20, size optimization flags (-Os -ffunction-sections -fdata-sections --gc-sections, LTO)",
         "meson.build has 'with_api' feature flag for optional REST API compilation",
         "meson_options.txt defines options: with_api (boolean, default true), firewall_backend (combo: auto/iptables/nftables)",
-        "include/keen-pbr3/version.hpp exists with version macros"
+        "include/keen-pbr-sx3/version.hpp exists with version macros"
       ],
       "priority": 1,
       "passes": true,
@@ -44,7 +44,7 @@
         "docker/build.sh exists and is executable",
         "build.sh accepts architecture argument (e.g., mipsel_24kc)",
         "build.sh runs Conan install, Meson setup, and Meson compile inside container",
-        "build.sh outputs binary to dist/<arch>/keen-pbr3"
+        "build.sh outputs binary to dist/<arch>/keen-pbr-sx3"
       ],
       "priority": 3,
       "passes": true,
@@ -441,13 +441,13 @@
     {
       "id": "US-027",
       "title": "Update meson.build with all source files and final integration",
-      "description": "As a developer, I need the final meson.build to include all source files, link all dependencies, and produce the keen-pbr3 binary.",
+      "description": "As a developer, I need the final meson.build to include all source files, link all dependencies, and produce the keen-pbr-sx3 binary.",
       "acceptanceCriteria": [
         "meson.build lists all src/**/*.cpp source files",
         "All dependencies correctly linked: libcurl, nlohmann_json, libnl, mbedtls",
         "cpp-httplib conditionally linked when with_api is true",
         "Static linking configured for embedded targets",
-        "Executable target 'keen-pbr3' defined",
+        "Executable target 'keen-pbr-sx3' defined",
         "install target configured",
         "Typecheck passes"
       ],
@@ -478,11 +478,11 @@
       "title": "Add configurable cache_dir to DaemonConfig and remove list_update_interval",
       "description": "As a developer, I need the cache directory to be configurable in the JSON config instead of hardcoded, and remove periodic list update interval since downloading is now a separate command.",
       "acceptanceCriteria": [
-        "DaemonConfig in src/config/config.hpp has cache_dir field with default '/var/cache/keen-pbr3'",
+        "DaemonConfig in src/config/config.hpp has cache_dir field with default '/var/cache/keen-pbr-sx3'",
         "list_update_interval field removed from DaemonConfig",
         "src/config/config.cpp parses 'cache_dir' from daemon JSON section",
         "config.example.json updated to show cache_dir option and remove list_update_interval",
-        "All references to hardcoded '/var/cache/keen-pbr3' in src/main.cpp replaced with config.daemon.cache_dir",
+        "All references to hardcoded '/var/cache/keen-pbr-sx3' in src/main.cpp replaced with config.daemon.cache_dir",
         "Typecheck passes"
       ],
       "priority": 29,
@@ -640,7 +640,7 @@
     },
     {
       "id": "US-039",
-      "title": "Implement 'keen-pbr3 download' CLI command",
+      "title": "Implement 'keen-pbr-sx3 download' CLI command",
       "description": "As a developer, I need a 'download' CLI command that downloads all configured lists to cache using ETag/If-Modified-Since, and counts entries in metadata.",
       "acceptanceCriteria": [
         "CliOptions in src/main.cpp has download_lists bool field",
@@ -761,7 +761,7 @@
     {
       "id": "US-046",
       "title": "Add IgnoreOutbound and UrltestOutbound types, remove ping settings from InterfaceOutbound",
-      "description": "As a developer, I need to add two new outbound types (ignore and urltest) and remove ping-related settings from InterfaceOutbound. IgnoreOutbound marks traffic as 'not managed by keen-pbr3'. UrltestOutbound contains weighted outbound groups with HTTP URL testing, circuit breaker, and retry configuration.",
+      "description": "As a developer, I need to add two new outbound types (ignore and urltest) and remove ping-related settings from InterfaceOutbound. IgnoreOutbound marks traffic as 'not managed by keen-pbr-sx3'. UrltestOutbound contains weighted outbound groups with HTTP URL testing, circuit breaker, and retry configuration.",
       "acceptanceCriteria": [
         "IgnoreOutbound struct added to config.hpp with only 'tag' field",
         "OutboundGroup struct added with: weight (uint32_t), outbounds (vector<string>)",
@@ -1156,7 +1156,7 @@
     {
       "id": "US-067",
       "title": "Unit tests for firewall parsing functions using doctest",
-      "description": "As a developer, I need unit tests for the pure parse functions (parse_iptables_save, parse_nft_json) and the CommandRunner-injectable verifier classes so correctness can be verified without a running kernel.\n\nArchitecture:\n- Add `doctest` as a git submodule at `third_party/doctest/` (single header: `third_party/doctest/doctest/doctest.h`), following the same pattern as nlohmann_json and cpp-httplib submodules\n- `.gitmodules` gets a new entry pointing to `https://github.com/doctest/doctest.git`\n- New test file `tests/test_firewall_verifier.cpp`:\n  - `#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN` + `#include <doctest/doctest.h>`\n  - Tests for `parse_iptables_save()`:\n    - Empty string \u2192 has_keen_pbr_chain=false, has_prerouting_jump=false, empty rules\n    - Chain declaration present but no jump \u2192 has_keen_pbr_chain=true, has_prerouting_jump=false\n    - PREROUTING jump present \u2192 has_prerouting_jump=true\n    - Mark rule with fwmark \u2192 rule parsed with is_mark=true, correct fwmark value\n    - Drop rule \u2192 rule parsed with is_drop=true\n    - Multiple rules \u2192 all parsed in order\n    - IPv6 variant (ip6tables-save output) \u2192 same results\n  - Tests for `parse_nft_json()`:\n    - Invalid JSON \u2192 has_table=false, no exception\n    - Valid JSON with no KeenPbrTable table \u2192 has_table=false\n    - Table present, no chain \u2192 has_table=true, has_prerouting_chain=false\n    - Chain present, no hook \u2192 has_prerouting_chain=true, has_prerouting_hook=false\n    - Mark rule \u2192 parsed with correct fwmark\n    - Drop rule \u2192 parsed with is_drop=true\n    - Wrong table name \u2192 has_table=false\n  - Tests for `IptablesFirewallVerifier::verify_rules()` with injected CommandRunner:\n    - Inject lambda returning canned iptables-save string; pass expected RuleState; assert returned FirewallRuleCheck statuses\n  - Tests for `NftablesFirewallVerifier::verify_rules()` with injected CommandRunner:\n    - Same pattern with canned nft JSON string\n- `CMakeLists.txt` additions:\n  - `option(BUILD_TESTS \"Build unit tests\" OFF)`\n  - When `BUILD_TESTS=ON`: add `tests/` subdirectory with `CMakeLists.txt` that creates `keen-pbr3-tests` executable linking `iptables_verifier`, `nftables_verifier`, `firewall_verifier` object files and doctest header\n  - Routing verifier is NOT unit-tested (requires real kernel via libnl3); covered by integration/manual testing",
+      "description": "As a developer, I need unit tests for the pure parse functions (parse_iptables_save, parse_nft_json) and the CommandRunner-injectable verifier classes so correctness can be verified without a running kernel.\n\nArchitecture:\n- Add `doctest` as a git submodule at `third_party/doctest/` (single header: `third_party/doctest/doctest/doctest.h`), following the same pattern as nlohmann_json and cpp-httplib submodules\n- `.gitmodules` gets a new entry pointing to `https://github.com/doctest/doctest.git`\n- New test file `tests/test_firewall_verifier.cpp`:\n  - `#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN` + `#include <doctest/doctest.h>`\n  - Tests for `parse_iptables_save()`:\n    - Empty string \u2192 has_keen_pbr_chain=false, has_prerouting_jump=false, empty rules\n    - Chain declaration present but no jump \u2192 has_keen_pbr_chain=true, has_prerouting_jump=false\n    - PREROUTING jump present \u2192 has_prerouting_jump=true\n    - Mark rule with fwmark \u2192 rule parsed with is_mark=true, correct fwmark value\n    - Drop rule \u2192 rule parsed with is_drop=true\n    - Multiple rules \u2192 all parsed in order\n    - IPv6 variant (ip6tables-save output) \u2192 same results\n  - Tests for `parse_nft_json()`:\n    - Invalid JSON \u2192 has_table=false, no exception\n    - Valid JSON with no KeenPbrTable table \u2192 has_table=false\n    - Table present, no chain \u2192 has_table=true, has_prerouting_chain=false\n    - Chain present, no hook \u2192 has_prerouting_chain=true, has_prerouting_hook=false\n    - Mark rule \u2192 parsed with correct fwmark\n    - Drop rule \u2192 parsed with is_drop=true\n    - Wrong table name \u2192 has_table=false\n  - Tests for `IptablesFirewallVerifier::verify_rules()` with injected CommandRunner:\n    - Inject lambda returning canned iptables-save string; pass expected RuleState; assert returned FirewallRuleCheck statuses\n  - Tests for `NftablesFirewallVerifier::verify_rules()` with injected CommandRunner:\n    - Same pattern with canned nft JSON string\n- `CMakeLists.txt` additions:\n  - `option(BUILD_TESTS \"Build unit tests\" OFF)`\n  - When `BUILD_TESTS=ON`: add `tests/` subdirectory with `CMakeLists.txt` that creates `keen-pbr-sx3-tests` executable linking `iptables_verifier`, `nftables_verifier`, `firewall_verifier` object files and doctest header\n  - Routing verifier is NOT unit-tested (requires real kernel via libnl3); covered by integration/manual testing",
       "acceptanceCriteria": [
         "third_party/doctest/ git submodule added with doctest/doctest.h header present",
         ".gitmodules contains entry for doctest submodule",
@@ -1164,7 +1164,7 @@
         "parse_iptables_save() tests cover: empty input, chain only, prerouting jump, mark rule, drop rule, multiple rules, ipv6=true",
         "parse_nft_json() tests cover: invalid JSON, missing table, missing chain, missing hook, mark rule with fwmark, drop rule",
         "IptablesFirewallVerifier and NftablesFirewallVerifier tested with injected CommandRunner lambdas returning canned strings",
-        "cmake -DBUILD_TESTS=ON && cmake --build build && ./build/keen-pbr3-tests succeeds without root",
+        "cmake -DBUILD_TESTS=ON && cmake --build build && ./build/keen-pbr-sx3-tests succeeds without root",
         "Typecheck passes"
       ],
       "priority": 67,

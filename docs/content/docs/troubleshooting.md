@@ -5,7 +5,7 @@ aliases:
   - /docs/troubleshooting/troubleshooting/
 ---
 
-Start with the **General** > **Dashboard** page in the web interface: it shows whether the service is running and what exactly is broken. If that is not enough, read the system log: `keen-pbr` writes the reason for every error there.
+Start with the **General** > **Dashboard** page in the web interface: it shows whether the service is running and what exactly is broken. If that is not enough, read the system log: `keen-pbr-sx` writes the reason for every error there.
 
 Each section below follows the same order: symptom, check in the web interface, check by command, fix.
 
@@ -16,13 +16,13 @@ Open `http://<router-ip>:12121/` and go to **General** > **Dashboard**.
 1. The **status bar** at the top. "Everything works" means there are no problems. "Service is stopped" means routing is off: click **Start**. "System is running, but there are N problems" or "Routing works with limitations" means you should look at the **Diagnostics** panel.
 2. The **Outbounds** panel. An outbound is a channel that traffic goes through: a VPN interface, your ISP, or a block. Each channel should be "Healthy". "Degraded" means the channel works partially, "Unavailable" means it does not work.
 3. The **Diagnostics** panel. If everything is fine it says "No problems". To see healthy items too, turn on **Show healthy**. For what each message means, see [Messages in Diagnostics](#diagnostics-messages).
-4. The **Where does this traffic go?** button (Ctrl+Alt+K) in the page header. Enter a domain or IP address and click **Check route**: keen-pbr shows which rule matches and which outbound the traffic takes.
+4. The **Where does this traffic go?** button (Ctrl+Alt+K) in the page header. Enter a domain or IP address and click **Check route**: keen-pbr-sx shows which rule matches and which outbound the traffic takes.
 5. The **Domain-based routing** panel with the DNS check widget. Click **Check again**: "DNS interception from this browser is working" means DNS is fine.
 
 The same overview is available on the router:
 
 ```bash {filename="bash"}
-keen-pbr status
+keen-pbr-sx status
 ```
 
 It prints the state of outbounds, firewall rules, the kernel, DNS interception and dnsmasq, then the list of problems. The `Overall:` line at the end is the summary. The exit code is 1 if a check failed. The statuses `MISSING`, `MISMATCH` and `ERROR` show what exactly is wrong.
@@ -31,7 +31,7 @@ If you cannot solve the problem yourself, click **Download report** in the **Dia
 
 ## System Log
 
-This is the first place to look. Search for `keen-pbr` messages and the markers `[E]` (error) and `[W]` (warning). If system packages are missing, an interface is not found, the web interface port is taken, or the JSON is broken, the reason is written here.
+This is the first place to look. Search for `keen-pbr-sx` messages and the markers `[E]` (error) and `[W]` (warning). If system packages are missing, an interface is not found, the web interface port is taken, or the JSON is broken, the reason is written here.
 
 {{< tabs >}}
 {{< tab name="Keenetic / NetCraze" selected=true >}}
@@ -40,23 +40,23 @@ In the Keenetic web interface, open **Diagnostics** → **System log**.
 From the console you can read the log like this:
 
 ```bash {filename="bash"}
-ndmc -c "show log once" | grep -E 'keen-pbr|\[E\]|\[W\]|error|warn|warning'
+ndmc -c "show log once" | grep -E 'keen-pbr-sx|\[E\]|\[W\]|error|warn|warning'
 ```
 {{< /tab >}}
 {{< tab name="OpenWrt" >}}
 ```bash {filename="bash"}
-logread | grep -E 'keen-pbr|\[E\]|\[W\]|error|warn|warning'
+logread | grep -E 'keen-pbr-sx|\[E\]|\[W\]|error|warn|warning'
 ```
 {{< /tab >}}
 {{< tab name="Debian" >}}
 ```bash {filename="bash"}
-journalctl -u keen-pbr
+journalctl -u keen-pbr-sx
 ```
 
 For the current boot only:
 
 ```bash {filename="bash"}
-journalctl -u keen-pbr -b
+journalctl -u keen-pbr-sx -b
 ```
 {{< /tab >}}
 {{< /tabs >}}
@@ -73,83 +73,83 @@ journalctl -u keen-pbr -b
 {{< tab name="Keenetic / NetCraze" selected=true >}}
 1. Make sure the configuration exists:
    ```bash {filename="bash"}
-   ls -l /opt/etc/keen-pbr/config.json
+   ls -l /opt/etc/keen-pbr-sx/config.json
    ```
-2. Restart `keen-pbr`:
+2. Restart `keen-pbr-sx`:
    ```bash {filename="bash"}
-   /opt/etc/init.d/S80keen-pbr restart
+   /opt/etc/init.d/S80keen-pbr-sx restart
    ```
-3. Check the `keen-pbr` status:
+3. Check the `keen-pbr-sx` status:
    ```bash {filename="bash"}
-   /opt/etc/init.d/S80keen-pbr status
+   /opt/etc/init.d/S80keen-pbr-sx status
    ```
 4. Read the system log:
    ```bash {filename="bash"}
-   ndmc -c "show log once" | grep -E 'keen-pbr|\[E\]|\[W\]|error|warn|warning'
+   ndmc -c "show log once" | grep -E 'keen-pbr-sx|\[E\]|\[W\]|error|warn|warning'
    ```
 {{< /tab >}}
 {{< tab name="OpenWrt" >}}
 1. Make sure the configuration exists:
    ```bash {filename="bash"}
-   ls -l /etc/keen-pbr/config.json
+   ls -l /etc/keen-pbr-sx/config.json
    ```
-2. Restart `keen-pbr`:
+2. Restart `keen-pbr-sx`:
    ```bash {filename="bash"}
-   service keen-pbr restart
+   service keen-pbr-sx restart
    ```
-3. Check the `keen-pbr` status:
+3. Check the `keen-pbr-sx` status:
    ```bash {filename="bash"}
-   service keen-pbr status
+   service keen-pbr-sx status
    ```
 4. Read the system log:
    ```bash {filename="bash"}
-   logread | grep -E 'keen-pbr|\[E\]|\[W\]|error|warn|warning'
+   logread | grep -E 'keen-pbr-sx|\[E\]|\[W\]|error|warn|warning'
    ```
 {{< /tab >}}
 {{< tab name="Debian" >}}
 1. Make sure the configuration exists:
    ```bash {filename="bash"}
-   ls -l /etc/keen-pbr/config.json
+   ls -l /etc/keen-pbr-sx/config.json
    ```
-2. Restart `keen-pbr`:
+2. Restart `keen-pbr-sx`:
    ```bash {filename="bash"}
-   systemctl restart keen-pbr
+   systemctl restart keen-pbr-sx
    ```
-3. Check the `keen-pbr` status:
+3. Check the `keen-pbr-sx` status:
    ```bash {filename="bash"}
-   systemctl status keen-pbr
+   systemctl status keen-pbr-sx
    ```
 4. Read the system log:
    ```bash {filename="bash"}
-   journalctl -u keen-pbr -b
+   journalctl -u keen-pbr-sx -b
    ```
 {{< /tab >}}
 {{< /tabs >}}
 
-**Fix.** If `keen-pbr` does not stay running, stop the service and start `keen-pbr` manually with verbose logging. The error appears right in the console.
+**Fix.** If `keen-pbr-sx` does not stay running, stop the service and start `keen-pbr-sx` manually with verbose logging. The error appears right in the console.
 
 {{< tabs >}}
 {{< tab name="Keenetic / NetCraze" selected=true >}}
 ```bash {filename="bash"}
-/opt/etc/init.d/S80keen-pbr stop
-keen-pbr --log-level verbose service
+/opt/etc/init.d/S80keen-pbr-sx stop
+keen-pbr-sx --log-level verbose service
 ```
 {{< /tab >}}
 {{< tab name="OpenWrt" >}}
 ```bash {filename="bash"}
-service keen-pbr stop
-keen-pbr --log-level verbose service
+service keen-pbr-sx stop
+keen-pbr-sx --log-level verbose service
 ```
 {{< /tab >}}
 {{< tab name="Debian" >}}
 ```bash {filename="bash"}
-systemctl stop keen-pbr
-keen-pbr --log-level verbose service
+systemctl stop keen-pbr-sx
+keen-pbr-sx --log-level verbose service
 ```
 {{< /tab >}}
 {{< /tabs >}}
 
-While `keen-pbr` is running, the command does not return to the prompt. That is expected. If it exits right away, the last error in the output is the cause.
+While `keen-pbr-sx` is running, the command does not return to the prompt. That is expected. If it exits right away, the last error in the output is the cause.
 
 {{% details title="Advanced checks" closed="true" %}}
 1. Validate the JSON:
@@ -157,17 +157,17 @@ While `keen-pbr` is running, the command does not return to the prompt. That is 
 {{< tabs >}}
 {{< tab name="Keenetic / NetCraze" selected=true >}}
 ```bash {filename="bash"}
-jq . /opt/etc/keen-pbr/config.json
+jq . /opt/etc/keen-pbr-sx/config.json
 ```
 {{< /tab >}}
 {{< tab name="OpenWrt" >}}
 ```bash {filename="bash"}
-jq . /etc/keen-pbr/config.json
+jq . /etc/keen-pbr-sx/config.json
 ```
 {{< /tab >}}
 {{< tab name="Debian" >}}
 ```bash {filename="bash"}
-jq . /etc/keen-pbr/config.json
+jq . /etc/keen-pbr-sx/config.json
 ```
 {{< /tab >}}
 {{< /tabs >}}
@@ -176,7 +176,7 @@ jq . /etc/keen-pbr/config.json
 3. Make sure `daemon.cache_dir` exists and is writable.
 4. If the web interface is enabled, check that the address and port from `api.listen` are not used by another process.
 5. If the log shows a firewall error, check that `iptables` and `ipset`, or `nftables`, are installed for your platform.
-6. If `keen-pbr` is running but the web interface does not open, make sure `config.json` has an `api` section.
+6. If `keen-pbr-sx` is running but the web interface does not open, make sure `config.json` has an `api` section.
 {{% /details %}}
 
 ## Sites Are Not Going Through the VPN
@@ -186,7 +186,7 @@ jq . /etc/keen-pbr/config.json
 **In the web interface.**
 
 1. Click **Where does this traffic go?** on the **Dashboard** page, enter the domain and click **Check route**. To check a specific device, enter its IP in the device IP field. The result tells you what is wrong:
-   - "IP not in the expected ipset" (an ipset is a set of addresses that a rule uses to find the right traffic): keen-pbr has not learned the site's address yet. Open the site on the device, clear the device's DNS cache, and check that the browser does not use DoH/DoT (encrypted DNS that bypasses the router).
+   - "IP not in the expected ipset" (an ipset is a set of addresses that a rule uses to find the right traffic): keen-pbr-sx has not learned the site's address yet. Open the site on the device, clear the device's DNS cache, and check that the browser does not use DoH/DoT (encrypted DNS that bypasses the router).
    - "No rule matched. The system route is used.": the domain is in no list, or the list is not used in a routing rule. Check **Routing** > **Lists** and **Routing** > **Routing rules**.
    - "The route differs from the expected route": a rule exists but traffic goes elsewhere. See the firewall and routing table sections below.
 2. Make sure the right channel is "Healthy" in the **Outbounds** panel.
@@ -198,7 +198,7 @@ jq . /etc/keen-pbr/config.json
 **Commands.** On the router or server:
 
 ```bash {filename="bash"}
-keen-pbr test-routing google.com
+keen-pbr-sx test-routing google.com
 ```
 
 The command prints a table: IP address, matched list, expected and actual outbound, and status. To check a specific device, add `--src-addr <device-ip>`.
@@ -220,11 +220,11 @@ The **Diagnostics** panel on the **Dashboard** page lists the problems found. Th
 | "Routing checks failed" | Click **Restart** and read the log. |
 | "{interface}: no NAT (MASQUERADE/SNAT) for this WAN" | Outgoing traffic leaves through this interface without address translation, and replies do not come back. Enable NAT on the interface. For iptables, for example: `iptables -t nat -A POSTROUTING -o <interface> -j MASQUERADE`. If NAT is set up in native nftables rules, you can ignore the warning. |
 | "{interface}: strict rp_filter may drop replies" | Set the kernel parameters `net.ipv4.conf.all.rp_filter` and `net.ipv4.conf.<interface>.rp_filter` to 2 or 0, for example `sysctl -w net.ipv4.conf.all.rp_filter=2`. |
-| "A foreign rule uses packet mark bits reserved for keen-pbr" | Another program uses the packet marks that keen-pbr needs. Open **General** > **Settings** > **Advanced routing settings** (the card is visible when **Settings mode** = **Advanced**) and change **fwmark starting value** and **fwmark mask** to a free range. |
+| "A foreign rule uses packet mark bits reserved for keen-pbr-sx" | Another program uses the packet marks that keen-pbr-sx needs. Open **General** > **Settings** > **Advanced routing settings** (the card is visible when **Settings mode** = **Advanced**) and change **fwmark starting value** and **fwmark mask** to a free range. |
 
 ## DNS interception
 
-For domain-based routing, keen-pbr reads the DNS answers that pass through the router and remembers the addresses of sites from your lists. No separate DNS server is needed for this.
+For domain-based routing, keen-pbr-sx reads the DNS answers that pass through the router and remembers the addresses of sites from your lists. No separate DNS server is needed for this.
 
 **Symptom:** sites do not go through the VPN by domain, but do by IP address.
 
@@ -234,7 +234,7 @@ For domain-based routing, keen-pbr reads the DNS answers that pass through the r
 - "Browser request completed, but the interceptor did not see the marker lookup.": the browser reaches DNS bypassing the router. Turn off encrypted DNS (DoH) in the browser and try again.
 - "DNS interception is disabled in config.": turn on **Intercept DNS server responses** in **General** > **Settings** > **Domain-based routing**.
 - "Interception is not working: the DNS hold is not active": click **Restart** in the status bar, then read the log.
-- "The browser could not open the live DNS event stream…": close extra keen-pbr tabs and try again.
+- "The browser could not open the live DNS event stream…": close extra keen-pbr-sx tabs and try again.
 
 To check another device, click **Test from another device**. The dialog shows a command `nslookup <random-name>.check.keen-pbr.fyi`: run it on a phone or computer. If "DNS request from the device was observed by the interceptor." appears, the device uses the router's DNS. If it says "The DNS test query has not arrived yet…", make sure the device uses the router's DNS and run the command again.
 
@@ -246,7 +246,7 @@ nslookup check.keen-pbr.fyi
 
 The domain also has a public address, so the answer shows what happened:
 
-- `127.0.0.88`: the query went through the router and keen-pbr saw it.
+- `127.0.0.88`: the query went through the router and keen-pbr-sx saw it.
 - Any other address: DNS works but bypasses the router. For example, the browser or OS uses its own encrypted DNS.
 - No answer or an error: DNS does not work on the device, or the router's resolver does not respond.
 
@@ -260,15 +260,15 @@ nslookup google.com 127.0.0.1
 
 If you see `Connection refused`, the resolver is not running or is not listening on `127.0.0.1:53`. Check its service and log: {{< term "Entware" >}} `dnsmasq` on Keenetic, `dnsmasq` on OpenWrt and Debian, or the built-in Keenetic DNS proxy.
 
-On Keenetic, if client DNS queries do not reach Entware `dnsmasq`, check the `opkg dns-override` setting. The commands `opkg dns-override` and `system configuration save` are run in the router's web console at `http://my.keenetic.net/a`, not over SSH. The same applies when dnsmasq logs `bind 172.19.0.1:53: Address already in use`: ndnproxy still holds port 53 because `dns-override` is off. keen-pbr reports that and does not change the setting. Details are in [installing on Keenetic]({{< relref "/docs/getting-started/installation/keenetic" >}}).
+On Keenetic, if client DNS queries do not reach Entware `dnsmasq`, check the `opkg dns-override` setting. The commands `opkg dns-override` and `system configuration save` are run in the router's web console at `http://my.keenetic.net/a`, not over SSH. The same applies when dnsmasq logs `bind 172.19.0.1:53: Address already in use`: ndnproxy still holds port 53 because `dns-override` is off. keen-pbr-sx reports that and does not change the setting. Details are in [installing on Keenetic]({{< relref "/docs/getting-started/installation/keenetic" >}}).
 
-{{% details title="After upgrading from an older keen-pbr version" closed="true" %}}
-After the upgrade, dnsmasq management stays enabled; see [Breaking Changes in 3.4.0]({{< relref "/docs/changelog#upgrading-from-33x" >}}). If dnsmasq does not start after you removed keen-pbr manually, make sure its configuration has no leftover `conf-script=...keen-pbr...` line.
+{{% details title="After upgrading from an older keen-pbr-sx version" closed="true" %}}
+After the upgrade, dnsmasq management stays enabled; see [Breaking Changes in 3.4.0]({{< relref "/docs/changelog#upgrading-from-33x" >}}). If dnsmasq does not start after you removed keen-pbr-sx manually, make sure its configuration has no leftover `conf-script=...keen-pbr-sx...` line.
 {{% /details %}}
 
 ## Websites Are Not Opening: `DNS_PROBE_FINISHED_NXDOMAIN` / `ERR_NAME_NOT_RESOLVED`
 
-keen-pbr does not answer clients' DNS queries, so check the resolver your clients use.
+keen-pbr-sx does not answer clients' DNS queries, so check the resolver your clients use.
 
 1. Make sure the device uses the router's DNS.
 2. Make sure the router's resolver has working upstream servers (external DNS it forwards to) and can reach them.
@@ -292,10 +292,10 @@ This usually means the resolver is not running or could not apply its configurat
 **Command.**
 
 ```bash {filename="bash"}
-keen-pbr resolver dnsmasq detect
+keen-pbr-sx resolver dnsmasq detect
 ```
 
-The command shows the dnsmasq instances found, their DNS addresses, and the instance keen-pbr uses. In a healthy state keen-pbr is shown as `installed`, and the `problem` line says `none`. If dnsmasq is not installed and you do not need per-list DNS servers, turn off **Manage dnsmasq configuration**. Otherwise install dnsmasq.
+The command shows the dnsmasq instances found, their DNS addresses, and the instance keen-pbr-sx uses. In a healthy state keen-pbr-sx is shown as `installed`, and the `problem` line says `none`. If dnsmasq is not installed and you do not need per-list DNS servers, turn off **Manage dnsmasq configuration**. Otherwise install dnsmasq.
 
 **Fix.**
 
@@ -343,13 +343,13 @@ Use the address of the server from the warning instead of `8.8.8.8`.
 **Command.** The main check:
 
 ```bash {filename="bash"}
-keen-pbr status
+keen-pbr-sx status
 ```
 
 Lines with the statuses `MISSING`, `MISMATCH` or `ERROR` in the Firewall block show what is missing.
 
 {{% details title="Look at the firewall rules directly" closed="true" %}}
-`keen-pbr` creates its own chain or table `KeenPbrTable`. Traffic enters it, is matched against the lists, and gets a packet mark ({{< term "fwmark" >}}), which the system uses to choose a routing table.
+`keen-pbr-sx` creates its own chain or table `KeenPbrTable`. Traffic enters it, is matched against the lists, and gets a packet mark ({{< term "fwmark" >}}), which the system uses to choose a routing table.
 
 {{< tabs >}}
 {{< tab name="iptables / ipset" selected=true >}}
@@ -387,7 +387,7 @@ nft list ruleset
 There should be a table `inet KeenPbrTable`, a `prerouting` hook, rules that check sets, and the action `meta mark set ...`.
 {{< /tab >}}
 {{< tab name="Debian" >}}
-The backend depends on how the firewall is installed on your system. Check both variants, or the one named in the `keen-pbr` log.
+The backend depends on how the firewall is installed on your system. Check both variants, or the one named in the `keen-pbr-sx` log.
 
 ```bash {filename="bash"}
 iptables-save | grep KeenPbrTable
@@ -408,13 +408,13 @@ nft -t list ruleset
 
 **Commands.**
 
-1. Check the state `keen-pbr` expects:
+1. Check the state `keen-pbr-sx` expects:
    ```bash {filename="bash"}
-   keen-pbr status
+   keen-pbr-sx status
    ```
 2. Check a specific domain or IP. The expected and actual outbound should match:
    ```bash {filename="bash"}
-   keen-pbr test-routing google.com
+   keen-pbr-sx test-routing google.com
    ```
 3. Check the `ip rule` entries. There should be a rule like `fwmark <mark> lookup <table>`:
    ```bash {filename="bash"}
@@ -429,9 +429,9 @@ nft -t list ruleset
 
 ## Routing Breaks When Tailscale Is Enabled {#tailscale}
 
-Tailscale reserves `0x00FF0000`, which overlaps the default keen-pbr mask, and
+Tailscale reserves `0x00FF0000`, which overlaps the default keen-pbr-sx mask, and
 restores {{< term "connmark" >}} from {{< term "conntrack" >}}, fully overwriting the packet's
-{{< term "fwmark" >}}. Moving keen-pbr to a different fwmark range does not stop Tailscale from erasing it.
+{{< term "fwmark" >}}. Moving keen-pbr-sx to a different fwmark range does not stop Tailscale from erasing it.
 
 Disable Tailscale's netfilter integration:
 
@@ -461,14 +461,14 @@ Tailscale runs as a subnet router or exit node.
    curl -v --interface <interface_name> https://ifconfig.co/json
    ```
 
-Normally `curl` returns the VPN's external IP. If the command hangs or fails, the problem is not in `keen-pbr`: the tunnel is down, there is no route, the gateway is unreachable, or outgoing traffic is blocked. Fix the VPN itself.
+Normally `curl` returns the VPN's external IP. If the command hangs or fails, the problem is not in `keen-pbr-sx`: the tunnel is down, there is no route, the gateway is unreachable, or outgoing traffic is blocked. Fix the VPN itself.
 
 {{% details title="If you use urltest or icmptest" closed="true" %}}
 `urltest` and `icmptest` are outbounds that choose the best of several channels by probing them on a schedule.
 
 1. Check that the channels (outbounds from `outbound_groups`) have the right interfaces or tables.
 2. Look at the state of each channel in the **Outbounds** panel on the **Dashboard** page or on the **Routing** > **Outbounds** page.
-3. If a channel is "Unavailable", keen-pbr excluded it after failed probes. Wait for `circuit_breaker.timeout_ms` or fix the channel.
+3. If a channel is "Unavailable", keen-pbr-sx excluded it after failed probes. Wait for `circuit_breaker.timeout_ms` or fix the channel.
 4. If a backup channel does not take over, first check each channel separately with `curl --interface`.
 {{% /details %}}
 
@@ -481,7 +481,7 @@ Normally `curl` returns the VPN's external IP. If the command hangs or fails, th
 **Command.** On the router or server:
 
 ```bash {filename="bash"}
-keen-pbr download
+keen-pbr-sx download
 ```
 
 **Fix.**
@@ -489,8 +489,8 @@ keen-pbr download
 1. Check that the URL is reachable from this same system.
 2. If the list must be downloaded through the VPN, check `lists[].detour` and the matching outbound.
 3. If automatic update is used, check **Refresh schedule** in **General** > **Settings** > **Lists autoupdate**.
-4. If a list failed to download at the first start or after a configuration apply, the warnings show "List 'name' is not downloaded yet" with the error. keen-pbr keeps retrying in the background: after 10 seconds, 30 seconds, 2 minutes, then every 5 minutes, until the download succeeds. If the domain of the list server must resolve through a separate DNS server, add that domain to an inline list, a file list, or an already cached list, otherwise the first attempt goes through the default DNS.
-5. After a failure, read the `keen-pbr` log.
+4. If a list failed to download at the first start or after a configuration apply, the warnings show "List 'name' is not downloaded yet" with the error. keen-pbr-sx keeps retrying in the background: after 10 seconds, 30 seconds, 2 minutes, then every 5 minutes, until the download succeeds. If the domain of the list server must resolve through a separate DNS server, add that domain to an inline list, a file list, or an already cached list, otherwise the first attempt goes through the default DNS.
+5. After a failure, read the `keen-pbr-sx` log.
 
 {{% details title="Forced full reload" closed="true" %}}
 This command downloads all remote lists again and re-applies the rules:
@@ -498,17 +498,17 @@ This command downloads all remote lists again and re-applies the rules:
 {{< tabs >}}
 {{< tab name="Keenetic / NetCraze" selected=true >}}
 ```bash {filename="bash"}
-/opt/etc/init.d/S80keen-pbr reload
+/opt/etc/init.d/S80keen-pbr-sx reload
 ```
 {{< /tab >}}
 {{< tab name="OpenWrt" >}}
 ```bash {filename="bash"}
-service keen-pbr reload
+service keen-pbr-sx reload
 ```
 {{< /tab >}}
 {{< tab name="Debian" >}}
 ```bash {filename="bash"}
-systemctl reload keen-pbr
+systemctl reload keen-pbr-sx
 ```
 {{< /tab >}}
 {{< /tabs >}}
@@ -523,7 +523,7 @@ Also make sure `daemon.cache_dir` is writable.
 3. Make sure each channel works on its own.
 4. Check the interfaces with `curl --interface <interface_name> https://ifconfig.co/json`.
 5. Wait for the next probe, or temporarily lower `interval_ms` while diagnosing.
-6. Look at the **Outbounds** panel on the **Dashboard** page. If a channel is "Unavailable", keen-pbr excluded it. Wait for `circuit_breaker.timeout_ms`.
+6. Look at the **Outbounds** panel on the **Dashboard** page. If a channel is "Unavailable", keen-pbr-sx excluded it. Wait for `circuit_breaker.timeout_ms`.
 
 ## Rules with port or address filters do not work
 
@@ -537,17 +537,17 @@ If rules are not matching as expected:
 
 - Make sure the protocol is set correctly: any (`null` in JSON), `"tcp"`, `"udp"`, or `"tcp/udp"`.
 - Check that the list name in the rule exactly matches the key in `lists`, including case.
-- Click **Where does this traffic go?** on the **Dashboard** page, set **Protocol**, **Destination port** and the device IP as in the rule, and look at the result. `keen-pbr test-routing <domain-or-ip>` does the same, with the options `--proto`, `--src-addr`, `--src-port`, `--dest-port`, `--dscp`.
-- Run `keen-pbr status` and check whether firewall rules were created for this routing rule.
+- Click **Where does this traffic go?** on the **Dashboard** page, set **Protocol**, **Destination port** and the device IP as in the rule, and look at the result. `keen-pbr-sx test-routing <domain-or-ip>` does the same, with the options `--proto`, `--src-addr`, `--src-port`, `--dest-port`, `--dscp`.
+- Run `keen-pbr-sx status` and check whether firewall rules were created for this routing rule.
 
 ## Low-Level Routing Conflicts
 
-If another program on the router also sets packet marks ({{< term "fwmark" >}}) or manages `ip rule`, packets can go the wrong way or be dropped. The message "A foreign rule uses packet mark bits reserved for keen-pbr" in the **Diagnostics** panel warns about this.
+If another program on the router also sets packet marks ({{< term "fwmark" >}}) or manages `ip rule`, packets can go the wrong way or be dropped. The message "A foreign rule uses packet mark bits reserved for keen-pbr-sx" in the **Diagnostics** panel warns about this.
 
 Check for conflicts:
 
 ```bash {filename="bash"}
-keen-pbr status
+keen-pbr-sx status
 ip rule show
 ip route show table all
 ```
@@ -591,14 +591,14 @@ The mask must consist of consecutive hexadecimal `F` digits. Values are hex stri
 ## Measuring losses in DNS interception
 
 {{% details title="For advanced users" closed="true" %}}
-If the first connection to a freshly opened site sometimes bypasses the VPN, you can measure how often keen-pbr fails to remember the address before the DNS answer reaches the device. The script `dns-bench.py` does this. It is not included in the keen-pbr packages: download it from the [repository](https://github.com/shendr404/keen-pbr-sx/blob/main/scripts/dns-bench.py). It needs Python 3. Run it from a computer on the local network:
+If the first connection to a freshly opened site sometimes bypasses the VPN, you can measure how often keen-pbr-sx fails to remember the address before the DNS answer reaches the device. The script `dns-bench.py` does this. It is not included in the keen-pbr-sx packages: download it from the [repository](https://github.com/shendr404/keen-pbr-sx/blob/main/scripts/dns-bench.py). It needs Python 3. Run it from a computer on the local network:
 
 ```bash {filename="bash"}
 python3 dns-bench.py --api http://192.168.1.1:12121 --password 'admin-password' \
   --rates 50,200,1000 --count 1000
 ```
 
-The script queries random names like `a1b2c3d4-198-18-7-9.nip.io`. They point to the test addresses `198.18.0.0/15`, so ordinary traffic is not affected. For keen-pbr to process them, add a list and a rule to the configuration (if they are missing, the script tells you what to add):
+The script queries random names like `a1b2c3d4-198-18-7-9.nip.io`. They point to the test addresses `198.18.0.0/15`, so ordinary traffic is not affected. For keen-pbr-sx to process them, add a list and a rule to the configuration (if they are missing, the script tells you what to add):
 
 ```json
 "lists": { "dns_bench": { "domains": ["nip.io"] } },
@@ -612,9 +612,9 @@ Main results in the report:
 | Result | Meaning |
 |---|---|
 | `held-ok` | All good: the address was recorded before the answer went to the device |
-| `hold-timeout` | keen-pbr was not done within `intercept.dns.hold_timeout_ms`: the answer went out first and the address was added slightly later. The first packets could bypass the VPN |
-| `set-error` | The address could not be written to the set; see the keen-pbr log |
-| `bypass` | The answer bypassed keen-pbr: the name is not in the lists or the queue overflowed |
+| `hold-timeout` | keen-pbr-sx was not done within `intercept.dns.hold_timeout_ms`: the answer went out first and the address was added slightly later. The first packets could bypass the VPN |
+| `set-error` | The address could not be written to the set; see the keen-pbr-sx log |
+| `bypass` | The answer bypassed keen-pbr-sx: the name is not in the lists or the queue overflowed |
 | `not-in-set`, `wrong-set` | After the run the address is not in the set, or is in the set of another outbound |
 | `client-timeout` | The device got no answer |
 

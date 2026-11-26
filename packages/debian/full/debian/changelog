@@ -1,3 +1,10 @@
+keen-pbr-sx (3.4.1-2) unstable; urgency=medium
+
+  * Rename the Debian package from keen-pbr to keen-pbr-sx.
+    The package Conflicts, Replaces and Provides keen-pbr.
+
+ -- shendr404 <143122797+shendr404@users.noreply.github.com>  Thu, 26 Nov 2026 08:00:00 +0000
+
 keen-pbr (0.0.0-0) unstable; urgency=medium
 
   * Package keen-pbr for Debian.

@@ -339,7 +339,7 @@ int next_free_tun_octet(std::set<int>& used) {
 
 std::string interface_taken_message(const std::string& iface) {
     return "TUN interface " + iface +
-           " already exists in the sing-box config and is not managed by keen-pbr. "
+           " already exists in the sing-box config and is not managed by keen-pbr-sx. "
            "The existing config was not changed. Choose another interface name.";
 }
 
@@ -398,7 +398,7 @@ std::string allocate_tag(const std::string& name, const std::vector<SingboxNode>
         candidate += suffix;
         if (!tag_used(nodes, candidate, self_id)) return candidate;
     }
-    throw std::runtime_error("keen-pbr tag is already used");
+    throw std::runtime_error("keen-pbr-sx tag is already used");
 }
 
 std::string allocate_id(const std::string& material, const std::string& prefix,
@@ -862,9 +862,9 @@ void validate_unique(const std::vector<SingboxNode>& nodes) {
         if (nodes[i].interface_name.empty() || !safe_interface_name(nodes[i].interface_name)) {
             throw std::runtime_error("interface name is invalid");
         }
-        if (nodes[i].tag.empty()) throw std::runtime_error("keen-pbr tag is required");
+        if (nodes[i].tag.empty()) throw std::runtime_error("keen-pbr-sx tag is required");
         for (std::size_t j = i + 1; j < nodes.size(); ++j) {
-            if (nodes[i].tag == nodes[j].tag) throw std::runtime_error("keen-pbr tag is already used");
+            if (nodes[i].tag == nodes[j].tag) throw std::runtime_error("keen-pbr-sx tag is already used");
             if (nodes[i].interface_name == nodes[j].interface_name) {
                 throw std::runtime_error("TUN interface is already used");
             }
@@ -1432,7 +1432,7 @@ SingboxApplyResult SingboxLinkService::update_node(const SingboxNodePatch& patch
     if (it == store.nodes.end()) throw std::runtime_error("sing-box node was not found");
     if (!patch.tag.empty()) {
         const auto tag = sanitize_keenetic_tag(patch.tag);
-        if (tag_used(store.nodes, tag, it->id)) throw std::runtime_error("keen-pbr tag is already used");
+        if (tag_used(store.nodes, tag, it->id)) throw std::runtime_error("keen-pbr-sx tag is already used");
         it->tag = tag;
     }
     if (!patch.interface_name.empty()) {

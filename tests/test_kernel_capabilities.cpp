@@ -34,7 +34,7 @@ struct FakeToolsPath {
 
     FakeToolsPath() {
         dir = std::filesystem::temp_directory_path() /
-              ("keen-pbr-kernel-caps-" + std::to_string(static_cast<long long>(getpid())));
+              ("keen-pbr-sx-kernel-caps-" + std::to_string(static_cast<long long>(getpid())));
         std::filesystem::remove_all(dir);
         std::filesystem::create_directories(dir);
         for (const char* name : {"nft", "iptables", "iptables-restore", "ip6tables",

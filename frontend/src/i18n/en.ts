@@ -27,7 +27,7 @@ export const enTranslation = {
       originsPlaceholder:
         "https://panel.example.com\nhttps://admin.example.net",
       originsDescription:
-        "One exact HTTP or HTTPS origin per line. Only configure if you use external UIs to manage the keen-pbr API.",
+        "One exact HTTP or HTTPS origin per line. Only configure if you use external UIs to manage the keen-pbr-sx API.",
       passwordMismatch: "Passwords do not match.",
       passwordRequired: "Set a password before enabling authentication.",
       updateFailed: "Unable to update authentication settings.",
@@ -171,27 +171,27 @@ export const enTranslation = {
     compact: {
       keenRestartRequired: "Pending changes",
       keenRestartRequiredDescription:
-        "New settings found. Apply to restart keen-pbr.",
-      runtimeReloading: "Reloading keen-pbr...",
+        "New settings found. Apply to restart keen-pbr-sx.",
+      runtimeReloading: "Reloading keen-pbr-sx...",
       runtimeReloadingDescription: "Current stage: {{stage}}",
-      runtimeReloadSucceeded: "keen-pbr is ready",
+      runtimeReloadSucceeded: "keen-pbr-sx is ready",
       runtimeReloadSucceededDescription:
         "Routing is serving the expected configuration.",
-      runtimeApplying: "Applying keen-pbr configuration...",
-      runtimeApplySucceeded: "keen-pbr configuration applied",
-      runtimeApplyFailed: "keen-pbr configuration could not be applied",
-      runtimeRollingBack: "Rolling back keen-pbr configuration...",
+      runtimeApplying: "Applying keen-pbr-sx configuration...",
+      runtimeApplySucceeded: "keen-pbr-sx configuration applied",
+      runtimeApplyFailed: "keen-pbr-sx configuration could not be applied",
+      runtimeRollingBack: "Rolling back keen-pbr-sx configuration...",
       runtimeRollbackSucceeded: "Previous configuration restored",
       runtimeRollbackFailed: "Configuration rollback failed",
-      runtimeStarting: "Starting keen-pbr...",
-      runtimeStartSucceeded: "keen-pbr is running",
-      runtimeStartFailed: "keen-pbr could not be started",
-      runtimeStopping: "Stopping keen-pbr...",
-      runtimeStopSucceeded: "keen-pbr is stopped",
-      runtimeStopFailed: "keen-pbr could not be stopped",
+      runtimeStarting: "Starting keen-pbr-sx...",
+      runtimeStartSucceeded: "keen-pbr-sx is running",
+      runtimeStartFailed: "keen-pbr-sx could not be started",
+      runtimeStopping: "Stopping keen-pbr-sx...",
+      runtimeStopSucceeded: "keen-pbr-sx is stopped",
+      runtimeStopFailed: "keen-pbr-sx could not be stopped",
       runtimeStartingDescription:
         "Routing and firewall are starting. Please wait.",
-      runtimeReloadFailed: "keen-pbr reload failed",
+      runtimeReloadFailed: "keen-pbr-sx reload failed",
       runtimeReloadFailedDescription:
         "The routing runtime could not finish reloading. Try Apply & Restart again.",
     },
@@ -271,7 +271,7 @@ export const enTranslation = {
         "Domains that match no DNS rule may be resolved through the default DNS servers, such as your ISP's. Specify the main DNS servers.",
       dohBootstrapMissing: "No bootstrap servers for DoH servers",
       dohBootstrapMissingDetail:
-        "The DoH servers {{tags}} have no IP address specified, so keen-pbr will try to determine it on its own. Specify the bootstrap DNS servers to look them up.",
+        "The DoH servers {{tags}} have no IP address specified, so keen-pbr-sx will try to determine it on its own. Specify the bootstrap DNS servers to look them up.",
       dnsServerFailingFor:
         "{{detail}}. No working server is left for: {{lists}}",
       defaultServers: "main servers",
@@ -282,8 +282,8 @@ export const enTranslation = {
         nat_partial: "{{interface}}: NAT covers only some source subnets",
         rp_filter_strict: "{{interface}}: strict rp_filter may drop replies",
         fwmark_mask_conflict:
-          "A foreign rule uses packet mark bits reserved for keen-pbr",
-        stale_policy_rule: "keen-pbr did not remove an outdated ip rule",
+          "A foreign rule uses packet mark bits reserved for keen-pbr-sx",
+        stale_policy_rule: "keen-pbr-sx did not remove an outdated ip rule",
       },
     },
     healthy: {
@@ -419,7 +419,7 @@ export const enTranslation = {
       card: {
         title: "DNS interception",
         description:
-          "Observes DNS traffic through keen-pbr from this browser or another device; it does not verify synthetic response replacement.",
+          "Observes DNS traffic through keen-pbr-sx from this browser or another device; it does not verify synthetic response replacement.",
         disabledDescription:
           "Enable DNS interception in the settings to run the DNS self-check.",
         runtimeDisabledDescription:
@@ -456,7 +456,7 @@ export const enTranslation = {
           "Browser request ran, but the interceptor did not observe the marker lookup. A local VPN or DNS-over-HTTPS in the browser bypasses the router DNS at 192.168.1.1. Try the check from another device.",
         sseFail: "Live DNS event stream is not connected.",
         sseStalled:
-          "The browser could not open the live DNS event stream. Too many keen-pbr tabs may be open (browsers allow 6 connections per site) — close other keen-pbr tabs and retry.",
+          "The browser could not open the live DNS event stream. Too many keen-pbr-sx tabs may be open (browsers allow 6 connections per site) — close other keen-pbr-sx tabs and retry.",
         sseHttp: "The live DNS event stream request failed (HTTP {{status}}).",
         browserChecking: "Checking browser DNS path...",
         browserUnknown: "Browser DNS status is not known yet.",
@@ -474,7 +474,7 @@ export const enTranslation = {
         title: "Install dnsmasq",
         command: "Run over SSH:",
         pickup:
-          "Once dnsmasq is installed, keen-pbr finds it and applies the DNS rules.",
+          "Once dnsmasq is installed, keen-pbr-sx finds it and applies the DNS rules.",
         docs: "dnsmasq setup instructions",
         docsFor: "dnsmasq setup instructions for {{os}}",
         copyAria: "Copy the install command",
@@ -502,7 +502,7 @@ export const enTranslation = {
       domains: "Domains",
       lastSync: "Last sync",
       loadedAt: "dnsmasq loaded the config at",
-      externalReload: "dnsmasq restarted outside keen-pbr at",
+      externalReload: "dnsmasq restarted outside keen-pbr-sx at",
       disabledDescription: "DNS rules integration is disabled.",
       alive: {
         label: "dnsmasq service",
@@ -531,7 +531,7 @@ export const enTranslation = {
         DNSMASQ_INSTANCE_AMBIGUOUS:
           "Several dnsmasq instances were found. Choose one in settings.",
         DNSMASQ_NOT_RUNNING:
-          "dnsmasq is not running. keen-pbr does not start it; start it and keen-pbr will apply the rules.",
+          "dnsmasq is not running. keen-pbr-sx does not start it; start it and keen-pbr-sx will apply the rules.",
         DNSMASQ_DNS_DISABLED:
           "DNS is disabled in this dnsmasq instance (port=0).",
         DNSMASQ_OTHER_NETNS: "dnsmasq runs in another network namespace.",
@@ -539,9 +539,9 @@ export const enTranslation = {
         DNSMASQ_ENDPOINT_UNRESPONSIVE:
           "dnsmasq does not answer DNS queries. It was not restarted.",
         DNSMASQ_DROPIN_NOT_LOADED:
-          "dnsmasq does not read the directory where keen-pbr installs its configuration.",
+          "dnsmasq does not read the directory where keen-pbr-sx installs its configuration.",
         DNSMASQ_FOREIGN_DROPIN:
-          "A file not written by keen-pbr occupies the keen-pbr configuration path.",
+          "A file not written by keen-pbr-sx occupies the keen-pbr-sx configuration path.",
         DNSMASQ_CONF_SCRIPT_UNSUPPORTED:
           "This dnsmasq does not support conf-script.",
         DNSMASQ_TEST_FAILED: "dnsmasq failed its own configuration test.",
@@ -550,9 +550,9 @@ export const enTranslation = {
         DNSMASQ_APPLY_FAILED:
           "Installing the configuration into dnsmasq failed.",
         DNSMASQ_CONFIG_NOT_LOADED:
-          "dnsmasq restarted but did not load the keen-pbr configuration.",
+          "dnsmasq restarted but did not load the keen-pbr-sx configuration.",
         DNSMASQ_STAMP_MISMATCH:
-          "dnsmasq serves an outdated keen-pbr configuration.",
+          "dnsmasq serves an outdated keen-pbr-sx configuration.",
         DNSMASQ_REPAIR_PAUSED:
           "Automatic repair is paused after repeated failures.",
         DNSMASQ_PROBE_FAILED:
@@ -662,10 +662,10 @@ export const enTranslation = {
       trace: {
         writeEvidence: {
           recorded:
-            "keen-pbr has already added or refreshed this IP in the ipset.",
+            "keen-pbr-sx has already added or refreshed this IP in the ipset.",
           age: "Last time {{age}} s ago.",
           nowMissing: "It is not in the ipset now, and why it left is unknown.",
-          no_record: "keen-pbr has no record of adding this IP to the ipset.",
+          no_record: "keen-pbr-sx has no record of adding this IP to the ipset.",
           not_tracked: "Writes are not tracked for this ipset.",
           unavailable: "Could not get the write history.",
         },
@@ -755,12 +755,12 @@ export const enTranslation = {
             reason:
               "The address is in the list but not in the selected rule’s ipset.",
             reasonDomain:
-              "The domain is in the list, but its IPs are not in the rule’s ipset yet. keen-pbr adds addresses when a client looks the domain up through the router’s DNS.",
+              "The domain is in the list, but its IPs are not in the rule’s ipset yet. keen-pbr-sx adds addresses when a client looks the domain up through the router’s DNS.",
             steps: {
               open: "Open this site on the client device and run the check again.",
               flush:
                 "Still missing — clear the DNS cache on the device and in the browser, then try again.",
-              dns: "Still missing — make sure the device does not use third-party DNS (DoH, DoT or its own DNS server) that keen-pbr cannot intercept. To check, open the keen-pbr home page from that device and look at the “Domain-based routing” section, and see the <log>requests log</log>.",
+              dns: "Still missing — make sure the device does not use third-party DNS (DoH, DoT or its own DNS server) that keen-pbr-sx cannot intercept. To check, open the keen-pbr-sx home page from that device and look at the “Domain-based routing” section, and see the <log>requests log</log>.",
             },
             advice:
               "Check applied configuration and list updates, then try again.",
@@ -854,7 +854,7 @@ export const enTranslation = {
   },
   requestsLog: {
     authRequired: {
-      title: "keen-pbr authentication required",
+      title: "keen-pbr-sx authentication required",
       description:
         "The requests log shows the traffic of every client on the network, so it is available only with authentication enabled. Set an administrator password.",
       action: "Go to settings",
@@ -873,7 +873,7 @@ export const enTranslation = {
       kinds: "Filters",
       groups: {
         method: "Method",
-        actions: "keen-pbr actions",
+        actions: "keen-pbr-sx actions",
         answers: "DNS answer type",
       },
       actions: {
@@ -994,14 +994,14 @@ export const enTranslation = {
     singbox: {
       title: "Sing-box interfaces",
       description:
-        "Each node is its own TUN and a keen-pbr interface outbound. urltest and icmptest groups are built on the Outbounds page. An existing config.json is not replaced: only objects tagged kpbr- are changed.",
+        "Each node is its own TUN and a keen-pbr-sx interface outbound. urltest and icmptest groups are built on the Outbounds page. An existing config.json is not replaced: only objects tagged kpbr- are changed.",
       create: "New interfaces",
       saveNodes: "Create interfaces",
       savedNodes: "Interfaces created.",
       edit: "Edit",
       deleteNode: "Delete interface",
       save: "Save",
-      tag: "keen-pbr outbound tag",
+      tag: "keen-pbr-sx outbound tag",
       interface: "TUN interface",
       interfaceHint: "The next free name is {{name}}. Names already used by an unmanaged inbound, such as sbtun, are skipped.",
       advanced: "Advanced",
@@ -1063,7 +1063,7 @@ export const enTranslation = {
         settingsModeHint:
           "Advanced mode exposes low-level routing parameters such as the fwmark mask and netlink queue and log group numbers. Do not change these parameters unless you fully understand them, as this may disrupt the correct operation of your device.",
         title: "Web UI",
-        description: "Customize how this keen-pbr installation is identified.",
+        description: "Customize how this keen-pbr-sx installation is identified.",
       },
       dns: {
         disabledTitle: "Local DNS server management is disabled",
@@ -1072,13 +1072,13 @@ export const enTranslation = {
         disabledAction: "Go to setting",
         title: "Local DNS server management",
         description:
-          "Configure an upstream DNS server through keen-pbr and use separate DNS servers to resolve specific domains.",
+          "Configure an upstream DNS server through keen-pbr-sx and use separate DNS servers to resolve specific domains.",
         resolverIntegrationLabel: "Manage dnsmasq configuration",
         resolverIntegrationHint:
           "Example: Use DNS 8.8.8.8 by default, but resolve *.corp.acme domains using DNS 10.10.10.10.",
         dnsmasqInstanceLabel: "dnsmasq instance",
         dnsmasqInstanceHint:
-          'Leave empty to select automatically. Set it only if keen-pbr reports that several dnsmasq instances were found; run "keen-pbr resolver dnsmasq detect" on the router to list them.',
+          'Leave empty to select automatically. Set it only if keen-pbr-sx reports that several dnsmasq instances were found; run "keen-pbr-sx resolver dnsmasq detect" on the router to list them.',
         dnsmasqInstancePlaceholder: "automatic",
         proxyAddressLabel: "DNS proxy address",
         proxyAddressHint:
@@ -1100,13 +1100,13 @@ export const enTranslation = {
           "If a VPN or interface goes offline, traffic matching its rules is blocked instead of falling back to the main routing table. Can be overridden per outbound.",
         skipMarkedPacketsLabel: "Skip packets that are already marked",
         skipMarkedPacketsHint:
-          "Ignore packets with a fwmark already set by other firewall rules so keen-pbr does not process them again or change their route.",
+          "Ignore packets with a fwmark already set by other firewall rules so keen-pbr-sx does not process them again or change their route.",
         processRouterTrafficLabel: "Process router's own traffic",
         processRouterTrafficHint:
           "Apply route rules to, and learn domains from, traffic generated by the router itself. When disabled, only forwarded LAN traffic is routed by rules; DNS detour still applies to the router's own DNS queries.",
         clearDynamicSetsOnApplyLabel: "Clear learned domain addresses on apply",
         clearDynamicSetsOnApplyHint:
-          "Clear dynamic ipset entries learned from DNS responses and L7 when applying a new configuration or restarting keen-pbr. Disable to preserve addresses until their TTL expires.",
+          "Clear dynamic ipset entries learned from DNS responses and L7 when applying a new configuration or restarting keen-pbr-sx. Disable to preserve addresses until their TTL expires.",
         ipv6EnabledLabel: "Enable IPv6 support",
         ipv6EnabledHint:
           "Install IPv6 firewall sets and learn IPv6 destinations. Disable this on older firmware without IPv6 netfilter support.",
@@ -1131,10 +1131,10 @@ export const enTranslation = {
       intercept: {
         title: "Domain-based routing",
         description:
-          "Configure how keen-pbr determines domain IP addresses to populate ipset.",
+          "Configure how keen-pbr-sx determines domain IP addresses to populate ipset.",
         enabledLabel: "Enable domain-based routing",
         enabledHint:
-          "When disabled, keen-pbr neither intercepts DNS nor analyzes L7. Domain-based rules will not work, but IP/CIDR-based rules continue to work.",
+          "When disabled, keen-pbr-sx neither intercepts DNS nor analyzes L7. Domain-based rules will not work, but IP/CIDR-based rules continue to work.",
         minTtlLabel: "Minimum TTL (milliseconds)",
         minTtlHint:
           "Minimum lifetime of entries in ipset. Values are rounded down to whole seconds at runtime (1000–4294967295999 ms).",
@@ -1148,14 +1148,14 @@ export const enTranslation = {
         queueHint: "Netlink NFQUEUE queue number for intercepting DNS packets.",
         holdTimeoutLabel: "DNS hold timeout (milliseconds)",
         holdTimeoutHint:
-          "How long keen-pbr may hold a DNS response to populate ipset (5–500 ms). A timeout that is too short may let client packets take the wrong route before the IP is added. A timeout that is too long may make websites feel slow to open if keen-pbr hangs or crashes and DNS responses are delayed.",
+          "How long keen-pbr-sx may hold a DNS response to populate ipset (5–500 ms). A timeout that is too short may let client packets take the wrong route before the IP is added. A timeout that is too long may make websites feel slow to open if keen-pbr-sx hangs or crashes and DNS responses are delayed.",
         markerDomainLabel: "Marker domain",
         markerDomainHint: "Domain answered by the synthetic DNS marker.",
         markerAddressLabel: "Marker IPv4 address",
         markerAddressHint: "IPv4 address returned for the marker domain.",
         l7EnabledLabel: "Enable L7 interception",
         l7EnabledHint:
-          "Analyze TLS SNI, HTTP, and QUIC packets to identify domains and populate ipset. Helps route applications using their own DoH/DoT or hardcoded IPs when the domain name is visible in L7. When a newly observed IP is first added to ipset, keen-pbr deletes conntrack entries for that client and destination. The connection may be interrupted; reconnecting traffic then follows the correct route.",
+          "Analyze TLS SNI, HTTP, and QUIC packets to identify domains and populate ipset. Helps route applications using their own DoH/DoT or hardcoded IPs when the domain name is visible in L7. When a newly observed IP is first added to ipset, keen-pbr-sx deletes conntrack entries for that client and destination. The connection may be interrupted; reconnecting traffic then follows the correct route.",
         nflogGroupLabel: "NFLOG group",
         nflogGroupHint:
           "Netlink NFLOG group number for TLS SNI / HTTP / QUIC analysis.",
@@ -1352,7 +1352,7 @@ export const enTranslation = {
         noneDefined: "Add a plain DNS server first.",
         noneAvailable: "All DNS servers are already selected.",
         warning:
-          "The DoH servers <bold>{{tags}}</bold> have no IP address specified, so keen-pbr will try to determine it on its own. Specify the bootstrap DNS servers keen-pbr should use to look up these DoH servers.",
+          "The DoH servers <bold>{{tags}}</bold> have no IP address specified, so keen-pbr-sx will try to determine it on its own. Specify the bootstrap DNS servers keen-pbr-sx should use to look up these DoH servers.",
       },
     },
     dnsServerUpsert: {
@@ -1399,7 +1399,7 @@ export const enTranslation = {
         ips: "Server IP addresses",
         ipsPlaceholder: "8.8.8.8, 8.8.4.4",
         ipsHint:
-          "Optional, comma separated. If set, keen-pbr connects only to these addresses and does not look the server up through the bootstrap servers.",
+          "Optional, comma separated. If set, keen-pbr-sx connects only to these addresses and does not look the server up through the bootstrap servers.",
       },
       validation: {
         tagUnique: "Name must be unique.",
@@ -1630,7 +1630,7 @@ export const enTranslation = {
           "Select the outbound with the lowest latency (measured by sending an ICMP packet)",
         blackhole: "All traffic sent to this outbound is dropped.",
         ignore:
-          "Traffic is not processed by keen-pbr rules and is routed according to the router settings.",
+          "Traffic is not processed by keen-pbr-sx rules and is routed according to the router settings.",
       },
       advanced: {
         probesTitle: "Probes and retries",

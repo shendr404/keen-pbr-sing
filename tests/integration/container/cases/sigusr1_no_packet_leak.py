@@ -48,13 +48,13 @@ def register(registry):
 
         def send_signal(_index):
             sent = time.time()
-            context.run("systemctl", "kill", "-s", "SIGUSR1", "keen-pbr.service")
+            context.run("systemctl", "kill", "-s", "SIGUSR1", "keen-pbr-sx.service")
             return sent
 
         def wait_complete(_index, sent_at):
             def completed():
                 output = context.run(
-                    "journalctl", "--no-pager", "-u", "keen-pbr.service",
+                    "journalctl", "--no-pager", "-u", "keen-pbr-sx.service",
                     f"--since=@{sent_at:.3f}", "-g", "SIGUSR1: firewall refresh complete",
                     check=False).stdout
                 return "SIGUSR1: firewall refresh complete" in output

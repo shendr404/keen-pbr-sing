@@ -7,7 +7,7 @@ aliases:
 
 ## What firewall backend will be used?
 
-It depends on `daemon.firewall_backend`. The default is `"auto"`: keen-pbr uses nftables if the `nft` command is available, and iptables/ipset otherwise. On Keenetic, iptables/ipset is always used.
+It depends on `daemon.firewall_backend`. The default is `"auto"`: keen-pbr-sx uses nftables if the `nft` command is available, and iptables/ipset otherwise. On Keenetic, iptables/ipset is always used.
 
 ## How do I reload lists without restarting the service?
 
@@ -16,38 +16,38 @@ Run the command for your platform:
 {{< tabs >}}
 {{< tab name="Keenetic / NetCraze" selected=true >}}
 ```bash {filename="bash"}
-/opt/etc/init.d/S80keen-pbr reload
+/opt/etc/init.d/S80keen-pbr-sx reload
 ```
 {{< /tab >}}
 {{< tab name="OpenWrt" >}}
 ```bash {filename="bash"}
-service keen-pbr reload
+service keen-pbr-sx reload
 ```
 {{< /tab >}}
 {{< tab name="Debian" >}}
 ```bash {filename="bash"}
-systemctl reload keen-pbr
+systemctl reload keen-pbr-sx
 ```
 {{< /tab >}}
 {{< /tabs >}}
 
 This is a full reload: it re-downloads all remote lists and re-applies the firewall and routing rules.
 
-In the `keen-pbr-headless` build this command does not work. To re-download the lists and apply them, run `keen-pbr download --reload`.
+In the `keen-pbr-sx-headless` build this command does not work. To re-download the lists and apply them, run `keen-pbr-sx download --reload`.
 
 {{% details title="What `reapply-firewall` does" closed="true" %}}
-On Keenetic there is also `/opt/etc/init.d/S80keen-pbr reapply-firewall`. It re-verifies the routing tables and starts the `urltest` and `icmptest` channel checks immediately, but does not re-download lists.
+On Keenetic there is also `/opt/etc/init.d/S80keen-pbr-sx reapply-firewall`. It re-verifies the routing tables and starts the `urltest` and `icmptest` channel checks immediately, but does not re-download lists.
 {{% /details %}}
 
 ## What happens if a remote list URL is unreachable at startup?
 
-keen-pbr uses the cached copy from `daemon.cache_dir` if available. If there is no cache either, a list that has only `url` stays empty until a download succeeds; keen-pbr keeps retrying in the background.
+keen-pbr-sx uses the cached copy from `daemon.cache_dir` if available. If there is no cache either, a list that has only `url` stays empty until a download succeeds; keen-pbr-sx keeps retrying in the background.
 
 ## How does the urltest outbound select the best link?
 
-Every `interval_ms`, keen-pbr sends an HTTP request to the configured `url` through each link and measures the round-trip latency. With `strategy: "priority"`, the link with the lowest latency is selected. If the new best link is faster than the current one by less than `tolerance_ms`, keen-pbr does not switch. Links are checked group by group: the next group in `outbound_groups` is used only when no link in the previous one works.
+Every `interval_ms`, keen-pbr-sx sends an HTTP request to the configured `url` through each link and measures the round-trip latency. With `strategy: "priority"`, the link with the lowest latency is selected. If the new best link is faster than the current one by less than `tolerance_ms`, keen-pbr-sx does not switch. Links are checked group by group: the next group in `outbound_groups` is used only when no link in the previous one works.
 
-If a link fails `failure_threshold` checks in a row, keen-pbr stops using it for `timeout_ms`, then tries it again with a few checks. This keeps traffic from bouncing between links while one of them is unstable.
+If a link fails `failure_threshold` checks in a row, keen-pbr-sx stops using it for `timeout_ms`, then tries it again with a few checks. This keeps traffic from bouncing between links while one of them is unstable.
 
 The `icmptest` outbound works the same way, but checks each link with a ping to its `target` address instead of an HTTP request.
 
@@ -83,10 +83,10 @@ One entry per line. Supported formats:
 Run:
 
 ```bash {filename="bash"}
-keen-pbr status
+keen-pbr-sx status
 ```
 
-keen-pbr compares the firewall rules, routing tables and `ip rule` entries in the kernel with what it expects and marks each item `OK`, `MISSING`, `MISMATCH` or `ERROR`. The same check is in the web UI: the **Diagnostics** panel on the **General** > **Dashboard** page. To check a specific site, click **Where does this traffic go?** on the same page or run `keen-pbr test-routing <domain-or-ip>`.
+keen-pbr-sx compares the firewall rules, routing tables and `ip rule` entries in the kernel with what it expects and marks each item `OK`, `MISSING`, `MISMATCH` or `ERROR`. The same check is in the web UI: the **Diagnostics** panel on the **General** > **Dashboard** page. To check a specific site, click **Where does this traffic go?** on the same page or run `keen-pbr-sx test-routing <domain-or-ip>`.
 
 ## Why does a check from the router itself not go through the VPN? {#router-own-traffic}
 

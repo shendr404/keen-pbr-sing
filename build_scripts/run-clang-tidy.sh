@@ -34,7 +34,7 @@ fi
 mapfile -t FILES < <(
     find src include -type f \
         \( -name '*.c' -o -name '*.cc' -o -name '*.cpp' -o -name '*.cxx' -o -name '*.h' -o -name '*.hpp' \) \
-        ! -path 'include/keen-pbr/thread_annotations.hpp' \
+        ! -path 'include/keen-pbr-sx/thread_annotations.hpp' \
         | sort
 )
 

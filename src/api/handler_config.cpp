@@ -7,7 +7,7 @@
 #include "../config/config.hpp"
 #include "../config/config_defaults.hpp"
 #include "../util/format_compat.hpp"
-#include <keen-pbr/version.hpp>
+#include <keen-pbr-sx/version.hpp>
 #include <nlohmann/json.hpp>
 
 #include <functional>

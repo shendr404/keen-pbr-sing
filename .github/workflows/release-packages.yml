@@ -49,7 +49,7 @@ jobs:
         run: |
           set -euo pipefail
           for config in mipsel-3.4 mips-3.4 aarch64-3.10 armv7-3.2 x64-3.2; do
-            for pkg in keen-pbr keen-pbr-headless; do
+            for pkg in keen-pbr-sx keen-pbr-sx-headless; do
               find release_files -type f -name "${pkg}_*_keenetic_${config}.ipk" | grep -q . || {
                 echo "Missing ${pkg} for ${config}" >&2
                 exit 1

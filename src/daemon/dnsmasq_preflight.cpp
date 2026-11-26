@@ -41,7 +41,7 @@ DnsmasqPreflightResult run_impl(const DnsmasqInstance& inst, const DnsmasqPrefli
     TempDirGuard guard;
     std::string candidate;
     if (inst.hook.dropin_state == DropinState::Absent) {
-        std::string templ = deps.tmp_root + "/keen-pbr-preflight.XXXXXX";
+        std::string templ = deps.tmp_root + "/keen-pbr-sx-preflight.XXXXXX";
         std::vector<char> buf(templ.begin(), templ.end());
         buf.push_back('\0');
         if (::mkdtemp(buf.data()) == nullptr) {
@@ -50,7 +50,7 @@ DnsmasqPreflightResult run_impl(const DnsmasqInstance& inst, const DnsmasqPrefli
         }
         guard.path = buf.data();
         ::chmod(guard.path.c_str(), 0700);
-        candidate = guard.path + "/keen-pbr-upstream-dns.conf";
+        candidate = guard.path + "/keen-pbr-sx-upstream-dns.conf";
         {
             std::ofstream out(candidate, std::ios::binary | std::ios::trunc);
             if (!out) {

@@ -259,7 +259,7 @@ TEST_CASE("fwmark overlap: mark matches") {
     CHECK(overlap_of("-j ACCEPT") == 0U);
 }
 
-TEST_CASE("fwmark overlap: keen-pbr rules are excluded") {
+TEST_CASE("fwmark overlap: keen-pbr-sx rules are excluded") {
     const std::string text =
         "-N KeenPbrTable\n"
         "-A PREROUTING -j KeenPbrTable\n"

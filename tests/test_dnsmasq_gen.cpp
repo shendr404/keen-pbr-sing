@@ -129,7 +129,7 @@ std::string make_domain_with_len(size_t target_len, const std::string& seed) {
 TEST_CASE("dnsmasq gen: first line is the generated header") {
     const auto gen = run_generate(make_dns_cfg("mylist", "dns1", "1.1.1.1"),
                                   {{"mylist", make_list_cfg({"example.com"})}});
-    CHECK(gen.output.rfind("# keen-pbr generated, do not edit\n", 0) == 0);
+    CHECK(gen.output.rfind("# keen-pbr-sx generated, do not edit\n", 0) == 0);
     CHECK(gen.output.find("address=/use-application-dns.net/\n") != std::string::npos);
 }
 
@@ -395,7 +395,7 @@ TEST_CASE("dnsmasq gen: domains longer than 255 chars are skipped") {
 
 TEST_CASE("dnsmasq gen: cached content is merged with file and inline entries") {
     const auto temp_root =
-        std::filesystem::temp_directory_path() / "keen-pbr-test-dnsmasq-cache-merged";
+        std::filesystem::temp_directory_path() / "keen-pbr-sx-test-dnsmasq-cache-merged";
     std::filesystem::remove_all(temp_root);
     std::filesystem::create_directories(temp_root);
 

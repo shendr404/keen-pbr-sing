@@ -1,0 +1,21 @@
+#!/bin/sh
+
+[ "$PKG_UPGRADE" = "1" ] && exit 0
+[ -n "$IPKG_INSTROOT" ] && exit 0
+
+# Never runs keen-pbr-sx itself (a broken binary or config must not block or
+# break the removal); every step is best effort.
+
+/etc/init.d/keen-pbr-sx stop >/dev/null 2>&1 || true
+/etc/init.d/keen-pbr-sx disable >/dev/null 2>&1 || true
+
+/etc/init.d/keen-pbr-sx-dnsmasq disable >/dev/null 2>&1 || true
+
+# Take keen-pbr-sx out of every dnsmasq instance: gives the servers back and
+# removes the drop-in and the jail mounts.
+/usr/lib/keen-pbr-sx/dnsmasq-hook.sh uninstall >/dev/null 2>&1 || true
+
+# Remove firewall rules a crashed daemon may have left behind.
+/usr/lib/keen-pbr-sx/cleanup-firewall.sh >/dev/null 2>&1 || true
+
+exit 0

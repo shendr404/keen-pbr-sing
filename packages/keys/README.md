@@ -19,7 +19,7 @@ Published public keys live in:
 See https://openwrt.org/docs/guide-user/security/keygen#generate_usign_key_pair
 
 ```sh
-usign -G -s usign_private.key -p usign_public.key -c "keen-pbr OpenWrt signing key"
+usign -G -s usign_private.key -p usign_public.key -c "keen-pbr-sx OpenWrt signing key"
 ```
 
 - `OPENWRT_USIGN_PRIVATE_KEY` should contain the raw contents of `usign_private.key`
@@ -41,16 +41,16 @@ openssl ec -in apk_private.pem -pubout > apk_public.pem
 cat > debian-keygen.batch <<'EOF'
 Key-Type: RSA
 Key-Length: 4096
-Name-Real: keen-pbr Debian Repository
-Name-Email: keen-pbr@kurb.me
+Name-Real: keen-pbr-sx Debian Repository
+Name-Email: keen-pbr-sx@kurb.me
 Expire-Date: 0
 %no-protection
 %commit
 EOF
 
 gpg --batch --generate-key debian-keygen.batch
-gpg --armor --export "keen-pbr Debian Repository" > debian_public.pem
-gpg --armor --export-secret-keys "keen-pbr Debian Repository" > debian_private.pem
+gpg --armor --export "keen-pbr-sx Debian Repository" > debian_public.pem
+gpg --armor --export-secret-keys "keen-pbr-sx Debian Repository" > debian_private.pem
 ```
 
 - `DEBIAN_GPG_PRIVATE_KEY` should contain the armored secret key export from `debian_private.asc`

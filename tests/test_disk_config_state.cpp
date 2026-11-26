@@ -9,10 +9,10 @@
 using namespace keen_pbr3;
 
 TEST_CASE("disk config inspector compares JSON without mutating active config") {
-    const std::string path = "/tmp/keen-pbr-disk-config-" + std::to_string(getpid()) + ".json";
+    const std::string path = "/tmp/keen-pbr-sx-disk-config-" + std::to_string(getpid()) + ".json";
     Config active;
     active.daemon = DaemonConfig{};
-    active.daemon->pid_file = "/run/keen-pbr.pid";
+    active.daemon->pid_file = "/run/keen-pbr-sx.pid";
 
     { std::ofstream output(path); output << nlohmann::json(active).dump(); }
     CHECK(inspect_disk_config_state(path, active).matches_active);
@@ -25,13 +25,13 @@ TEST_CASE("disk config inspector compares JSON without mutating active config") 
 }
 
 TEST_CASE("disk config inspector reports unreadable paths") {
-    const auto state = inspect_disk_config_state("/missing/keen-pbr-config.json", Config{});
+    const auto state = inspect_disk_config_state("/missing/keen-pbr-sx-config.json", Config{});
     CHECK_FALSE(state.matches_active);
     CHECK_FALSE(state.error.empty());
 }
 
 TEST_CASE("disk config inspector reports invalid JSON") {
-    const std::string path = "/tmp/keen-pbr-disk-config-invalid-" + std::to_string(getpid()) + ".json";
+    const std::string path = "/tmp/keen-pbr-sx-disk-config-invalid-" + std::to_string(getpid()) + ".json";
     { std::ofstream output(path); output << "not JSON"; }
     const auto state = inspect_disk_config_state(path, Config{});
     CHECK_FALSE(state.matches_active);

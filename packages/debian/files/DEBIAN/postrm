@@ -7,8 +7,8 @@ if command -v systemctl >/dev/null 2>&1; then
 fi
 
 cat <<'EOF'
-keen-pbr has been removed.
-The keen-pbr entry was removed from dnsmasq. If dnsmasq had no upstream DNS
+keen-pbr-sx has been removed.
+The keen-pbr-sx entry was removed from dnsmasq. If dnsmasq had no upstream DNS
 server of its own, /etc/dnsmasq.conf was left with a marked block of fallback
 servers: replace them with your own or delete the block.
 EOF
@@ -17,7 +17,7 @@ EOF
 # so purge removes it (the hook's uninstall already did when it could).
 case "$1" in
     purge)
-        rm -rf /etc/keen-pbr/dnsmasq.d
+        rm -rf /etc/keen-pbr-sx/dnsmasq.d
         ;;
 esac
 

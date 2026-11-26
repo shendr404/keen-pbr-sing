@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for wanting to improve keen-pbr. This project runs on real routers, so contributions need to be specific, tested, and easy to review.
+Thank you for wanting to improve keen-pbr-sx. This project runs on real routers, so contributions need to be specific, tested, and easy to review.
 
 ## Before Opening a Merge Request
 

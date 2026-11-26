@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure DNS interception (hold) loss of a running keen-pbr daemon.
+"""Measure DNS interception (hold) loss of a running keen-pbr-sx daemon.
 
 Sends DNS queries from a LAN client and classifies EVERY answer the client got
 against the daemon's /api/dns/test INTERCEPT event stream:
@@ -257,7 +257,7 @@ def rate_warning(requested, achieved):
     if achieved is None or requested <= 0 or achieved >= RATE_WARN_FRACTION * requested:
         return None
     return ("client could not reach requested rate (achieved %.0f qps): "
-            "the client, not keen-pbr, is the bottleneck" % achieved)
+            "the client, not keen-pbr-sx, is the bottleneck" % achieved)
 
 
 def summarize(queries, events):
@@ -562,7 +562,7 @@ def preflight(config, health, names_or_zone):
 
 SNIPPET = """\
 no enabled route rule references a list containing "{domain}".
-Add to the keen-pbr config (this only routes 198.18.0.0/15 via that outbound):
+Add to the keen-pbr-sx config (this only routes 198.18.0.0/15 via that outbound):
 
   "lists": {{ "dns_bench": {{ "domains": ["{domain}"] }} }},
   "route": {{ "rules": [ {{ "list": ["dns_bench"], "outbound": "<any outbound tag>" }} ] }}
@@ -955,8 +955,8 @@ def step_line(summary):
 
 
 def parse_args(argv):
-    p = argparse.ArgumentParser(description="Measure keen-pbr DNS hold loss.")
-    p.add_argument("--api", required=True, help="http://ROUTER:PORT of the keen-pbr API")
+    p = argparse.ArgumentParser(description="Measure keen-pbr-sx DNS hold loss.")
+    p.add_argument("--api", required=True, help="http://ROUTER:PORT of the keen-pbr-sx API")
     p.add_argument("--password", help="API password (POST /api/auth/login)")
     p.add_argument("--token", help="API bearer token")
     p.add_argument("--resolver", help="DNS server to query (default: host of --api); "

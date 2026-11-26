@@ -55,7 +55,7 @@ struct ConfigValidationContext {
     RawPreroutingMode raw_prerouting{};
 };
 
-// Type aliases: map generated QuickType names to conventional keen-pbr names.
+// Type aliases: map generated QuickType names to conventional keen-pbr-sx names.
 // All config structs now live in api:: with full from_json/to_json support.
 using Config               = api::ConfigObject;
 using DaemonConfig         = api::Daemon;
@@ -140,7 +140,7 @@ inline bool outbound_requests_balance(const Outbound& outbound) {
            api::Strategy::BALANCE;
 }
 
-// Whether keen-pbr balances this outbound.  The Keenetic platform build does
+// Whether keen-pbr-sx balances this outbound.  The Keenetic platform build does
 // not compile balancing (config validation rejects it), so every balance
 // branch behind this predicate is dead there.
 inline bool outbound_uses_balance(const Outbound& outbound) {
@@ -200,7 +200,7 @@ FirewallBackendPreference firewall_backend_preference(const Config& config);
 // Maps outbound tag to its assigned fwmark value
 using OutboundMarkMap = std::map<std::string, uint32_t>;
 
-// Reserved map key for traffic initiated by keen-pbr itself (DNS/list fetches).
+// Reserved map key for traffic initiated by keen-pbr-sx itself (DNS/list fetches).
 // It is deliberately distinct from the mark used for user packet classification.
 std::string internal_detour_mark_key(const std::string& outbound_tag);
 

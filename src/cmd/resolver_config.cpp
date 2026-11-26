@@ -68,11 +68,11 @@ void write_stamp(std::ostream& out, const std::string& hash) {
         out, {hash, boottime_now_ms(), unix_timestamp_now_seconds()});
 }
 
-// The output while keen-pbr does not manage dnsmasq.
+// The output while keen-pbr-sx does not manage dnsmasq.
 void write_fallback_output(std::ostream& out, const std::string& fallback_path,
                            const std::string& comment) {
     auto& log = Logger::instance();
-    out << "# keen-pbr: " << comment << '\n';
+    out << "# keen-pbr-sx: " << comment << '\n';
     const std::size_t servers = write_dnsmasq_fallback_servers(out, fallback_path);
     log.info("generate-resolver-config: printing {} server(s) from {} ({})", servers,
              fallback_path, comment);
@@ -105,7 +105,7 @@ int run_generate_resolver_config(const std::string& resolver_type,
                                  const std::string& fallback_path,
                                  std::ostream& out) {
     if (resolver_type != "dnsmasq") {
-        out << "# keen-pbr: unsupported resolver type\n";
+        out << "# keen-pbr-sx: unsupported resolver type\n";
         out.flush();
         return 0;
     }
@@ -127,7 +127,7 @@ int run_generate_resolver_config(const std::string& resolver_type,
         const auto dns = config.dns.value_or(DnsConfig{});
         const auto lists = config.lists.value_or(std::map<std::string, ListConfig>{});
         const auto cache_dir = config.daemon.value_or(DaemonConfig{})
-                                   .cache_dir.value_or("/var/cache/keen-pbr");
+                                   .cache_dir.value_or("/var/cache/keen-pbr-sx");
         // CacheManager's constructor does not touch the disk; only cached
         // lists are read and nothing is downloaded.
         CacheManager cache(cache_dir, max_file_size_bytes(config));
@@ -163,7 +163,7 @@ int run_generate_resolver_config(const std::string& resolver_type,
         if (stats.fallback.empty()) {
             // No default upstream of our own: dnsmasq also gets the servers of
             // dnsmasq-fallback.conf (appended after the hashed part).
-            out << "# keen-pbr: no default DNS servers, using " << fallback_path << '\n';
+            out << "# keen-pbr-sx: no default DNS servers, using " << fallback_path << '\n';
             const std::size_t servers = write_dnsmasq_fallback_servers(out, fallback_path);
             log.info("generate-resolver-config: no default upstreams; {} server(s) from {}",
                      servers, fallback_path);

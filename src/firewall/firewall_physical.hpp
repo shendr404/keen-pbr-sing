@@ -1,15 +1,15 @@
 #pragma once
 
-// Backend-neutral, typed description of the rules that keen-pbr owns in the
+// Backend-neutral, typed description of the rules that keen-pbr-sx owns in the
 // kernel ("physical ruleset").  It is the common target of
 //   * the lowering of a FirewallPlan (firewall_lowering.hpp), and
 //   * the parsers of real backend output (iptables-save / nft -j), below.
 // A verifier can then be a pure ordered per-chain diff of two PhysicalRulesets
 // with no policy knowledge.
 //
-// Ownership is chain-scoped: every rule inside a keen-pbr chain is captured,
+// Ownership is chain-scoped: every rule inside a keen-pbr-sx chain is captured,
 // whatever its comment says.  Rules in system chains (PREROUTING/OUTPUT) are
-// captured only when they jump into a keen-pbr chain.  Comments are parsed into
+// captured only when they jump into a keen-pbr-sx chain.  Comments are parsed into
 // an optional key for diagnostics only and never take part in equality.
 //
 // Representation conventions (identical for the planned and the observed side):
@@ -17,7 +17,7 @@
 //   * Rule order inside a chain is significant and preserved.
 //   * Marks are canonical (value, mask) pairs: result = (mark & ~mask) | value.
 //   * Addresses are CIDR text with an explicit prefix length.
-//   * A missing chain is not the same as an empty one for keen-pbr chains
+//   * A missing chain is not the same as an empty one for keen-pbr-sx chains
 //     (existence is observable); system chains are only listed when they hold
 //     at least one hook rule, so "absent" there means "no hook".
 //   * Anything the parser cannot translate is kept as an explicit Unknown*
@@ -62,7 +62,7 @@ enum class PhysicalChainRole : uint8_t {
   iptables_sniff_out,
   // iptables: source NAT chain KeenPbrSnat in nat, jumped from POSTROUTING.
   iptables_snat,
-  // nft: base chain `prerouting` / `output` of the keen-pbr table.
+  // nft: base chain `prerouting` / `output` of the keen-pbr-sx table.
   nft_prerouting,
   nft_output,
   nft_dns_hold,
@@ -72,13 +72,13 @@ enum class PhysicalChainRole : uint8_t {
   nft_snat,
   // nft: balance/ct-restore setter chain `setmark_XXXXXXXX`.
   nft_setter,
-  // Builtin chain of a system table.  Only hook rules (jumps into keen-pbr
+  // Builtin chain of a system table.  Only hook rules (jumps into keen-pbr-sx
   // chains) are ever captured here.
   system_prerouting,
   system_output,
   // INPUT / FORWARD / POSTROUTING (identity includes `name`).
   system_other,
-  // A chain whose name belongs to keen-pbr's namespace but is not one the
+  // A chain whose name belongs to keen-pbr-sx's namespace but is not one the
   // backends create.  Kept so that it is reported instead of ignored.
   other_owned,
 };
@@ -130,7 +130,7 @@ struct AddrMatch {
   }
 };
 
-// Layer-4 protocol (tcp or udp are the only ones keen-pbr emits).
+// Layer-4 protocol (tcp or udp are the only ones keen-pbr-sx emits).
 struct ProtoMatch {
   L4Proto proto{L4Proto::Tcp};
   bool operator==(const ProtoMatch &o) const { return proto == o.proto; }
@@ -214,7 +214,7 @@ struct CtStateMatch {
   }
 };
 
-// Conntrack direction; keen-pbr only matches ORIGINAL.
+// Conntrack direction; keen-pbr-sx only matches ORIGINAL.
 struct CtDirMatch {
   bool original{true};
   bool operator==(const CtDirMatch &o) const { return original == o.original; }

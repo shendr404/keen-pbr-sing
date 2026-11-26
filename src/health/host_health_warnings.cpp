@@ -346,16 +346,16 @@ std::vector<HealthWarning> evaluate_stale_policy_rule_warnings(
     for (const auto& r : find_stale_policy_rules(dumped_rules, own_rules, ns)) {
         HealthWarning w;
         w.code = HealthWarningCode::stale_policy_rule;
-        w.message = "Outdated keen-pbr ip rule priority " + std::to_string(r.priority) +
+        w.message = "Outdated keen-pbr-sx ip rule priority " + std::to_string(r.priority) +
                     " fwmark " + hex_bits(r.fwmark) + "/" + hex_bits(r.fwmask) +
                     (r.action == RuleAction::lookup
                          ? " lookup " + std::to_string(r.table)
                          : std::string(r.action == RuleAction::unreachable
                                            ? " unreachable"
                                            : " blackhole")) +
-                    " is still installed after the last apply. keen-pbr removes "
+                    " is still installed after the last apply. keen-pbr-sx removes "
                     "such rules on apply; apply the configuration again, and "
-                    "report a keen-pbr bug if this warning stays";
+                    "report a keen-pbr-sx bug if this warning stays";
         warnings.push_back(std::move(w));
     }
     return warnings;
@@ -378,7 +378,7 @@ std::vector<HealthWarning> evaluate_fwmark_conflict_warnings(
             w.message = "Foreign iptables " + label + " rule '" + f.rule +
                         "' uses mark bits " + hex_bits(f.overlap) +
                         " that overlap fwmark.mask " + hex_bits(fwmark_mask) +
-                        " and can clobber keen-pbr's routing choice" + advice;
+                        " and can clobber keen-pbr-sx's routing choice" + advice;
             warnings.push_back(std::move(w));
         }
     }

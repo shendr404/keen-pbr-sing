@@ -193,7 +193,7 @@ TEST_CASE("json omits unknown directions and keeps a real zero") {
 }
 
 TEST_CASE("collector reads proc files and rates the second sample") {
-  const auto dir = std::filesystem::temp_directory_path() / "keen-pbr-traffic-test";
+  const auto dir = std::filesystem::temp_directory_path() / "keen-pbr-sx-traffic-test";
   std::filesystem::create_directories(dir);
   const auto dev_path = dir / "dev";
   const auto ct_path = dir / "nf_conntrack";

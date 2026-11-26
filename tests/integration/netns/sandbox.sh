@@ -9,7 +9,7 @@ host_gid=${KPBR_HOST_GID:?KPBR_HOST_GID is required}
 host_netns=${KPBR_HOST_NETNS:?KPBR_HOST_NETNS is required}
 host_userns=${KPBR_HOST_USERNS:?KPBR_HOST_USERNS is required}
 
-runtime=/run/keen-pbr-it
+runtime=/run/keen-pbr-sx-it
 sandbox_repo=/mnt/repo
 payload=/mnt/payload
 
@@ -86,7 +86,7 @@ mount_tmpfs() {
 
 # INTEGRATION_IPTABLES_FLAVOUR=nft|legacy puts a directory of symlinks
 # (iptables*, ip6tables* -> the matching *-nft / *-legacy binaries) first on
-# PATH.  keen-pbr and the harness resolve iptables, ip6tables and their
+# PATH.  keen-pbr-sx and the harness resolve iptables, ip6tables and their
 # -save/-restore tools through PATH, so this selects the flavour for the whole
 # run without touching host alternatives (the host filesystem is read-only
 # here anyway; the shim directory lives on the sandbox tmpfs).
@@ -216,7 +216,7 @@ run_one_backend() {
     printf 'KPBR_IT_DIAG backend=%s case=suite stage=artifacts message=private_runtime_%s\n' \
       "$current" "$runtime" >&2
   elif [[ ${INTEGRATION_VERBOSE:-0} == 1 ]]; then
-    tail -n 200 "$runtime/keen-pbr.log" 2>/dev/null || true
+    tail -n 200 "$runtime/keen-pbr-sx.log" 2>/dev/null || true
     tail -n 100 "$runtime/dnsmasq.log" 2>/dev/null || true
   fi
   return "$status"

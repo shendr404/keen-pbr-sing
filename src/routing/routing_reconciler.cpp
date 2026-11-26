@@ -167,7 +167,7 @@ void RoutingReconciler::reconcile(const std::vector<RouteSpec>& desired_routes,
                 actual.destination, actual.table,
                 tables.count(actual.table) != 0
                     ? ""
-                    : ": it lies in keen-pbr's table range");
+                    : ": it lies in keen-pbr-sx's table range");
         }
     }
 
@@ -201,7 +201,7 @@ void RoutingReconciler::reconcile(const std::vector<RouteSpec>& desired_routes,
             Logger::instance().info(
                 tracked ? "Removed stale {} policy rule priority {} fwmark {:#x}/{:#x}"
                         : "Removed leftover {} policy rule priority {} fwmark {:#x}/{:#x}: "
-                          "it fits keen-pbr's fwmark.mask, priority and table range",
+                          "it fits keen-pbr-sx's fwmark.mask, priority and table range",
                 actual.family == AF_INET6 ? "IPv6" : "IPv4", actual.priority,
                 actual.fwmark, actual.fwmask);
         }

@@ -15,7 +15,7 @@ namespace {
 
 ApiContext make_status_context(SseBroadcaster &broadcaster,
                                StatusStream &stream) {
-  static const std::string config_path = "/tmp/keen-pbr-status-test.json";
+  static const std::string config_path = "/tmp/keen-pbr-sx-status-test.json";
   return ApiContext{
       config_path,
       broadcaster,

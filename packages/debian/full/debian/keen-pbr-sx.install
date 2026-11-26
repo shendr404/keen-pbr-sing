@@ -1,0 +1,6 @@
+packages/debian/files/lib/systemd/system/keen-pbr-sx.service lib/systemd/system/
+packages/debian/files/etc/keen-pbr-sx/dnsmasq-fallback.conf etc/keen-pbr-sx/
+packages/debian/files/usr/lib/keen-pbr-sx/dnsmasq.sh usr/lib/keen-pbr-sx/
+packages/debian/files/usr/lib/keen-pbr-sx/dnsmasq-hook.sh usr/lib/keen-pbr-sx/
+packages/debian/files/usr/lib/keen-pbr-sx/dnsmasq.recommended.conf usr/lib/keen-pbr-sx/
+packages/common/cleanup-firewall.sh usr/lib/keen-pbr-sx/

@@ -17,14 +17,14 @@ A `urltest` or `icmptest` outbound with `"strategy": "balance"` picks one of its
 You need to set up {{< term "NAT" >}} on every provider and `rp_filter` on the system (see below).
 
 {{< callout type="info" >}}
-{{< only iptables >}} Links are picked at random with the configured probability, so over a small number of connections the shares are only approximate. The `iptables` backend needs the `xt_statistic` kernel module. You normally do not need to change `firewall_backend`: keen-pbr picks the backend that fits the system.
+{{< only iptables >}} Links are picked at random with the configured probability, so over a small number of connections the shares are only approximate. The `iptables` backend needs the `xt_statistic` kernel module. You normally do not need to change `firewall_backend`: keen-pbr-sx picks the backend that fits the system.
 {{< /callout >}}
 
 ## Example
 
 Two uplinks, `eth1` (30% of new connections) and `eth2` (70%), LAN on `eth0`. If connections from the host itself should be balanced too, turn on **General** > **Settings** > **General** > **Process router's own traffic** (shown in **Advanced** settings mode); by default only traffic from LAN devices is balanced. The LAN interfaces go in **Processed (inbound) interfaces**.
 
-```json { filename="/etc/keen-pbr/config.json" }
+```json { filename="/etc/keen-pbr-sx/config.json" }
 {
   "outbounds": [
     { "type": "interface", "tag": "wan1", "interface": "eth1", "gateway": "192.0.2.1" },
@@ -103,7 +103,7 @@ The strict reverse path check (`rp_filter=1`) drops replies from the second prov
 ```bash {filename="bash"}
 sysctl net.ipv4.conf.all.rp_filter net.ipv4.conf.eth1.rp_filter net.ipv4.conf.eth2.rp_filter
 printf 'net.ipv4.conf.all.rp_filter = 2\nnet.ipv4.conf.eth1.rp_filter = 2\nnet.ipv4.conf.eth2.rp_filter = 2\n' \
-  | sudo tee /etc/sysctl.d/90-keen-pbr-multiwan.conf
+  | sudo tee /etc/sysctl.d/90-keen-pbr-sx-multiwan.conf
 sudo sysctl --system
 ```
 
@@ -111,9 +111,9 @@ On OpenWrt, put the same three lines in `/etc/sysctl.conf` and run `/etc/init.d/
 
 ## If other programs on the router use packet marks
 
-Packet marks are set not only by keen-pbr but also by Docker, WireGuard, Tailscale, {{< term "QoS" >}} scripts and mwan3 on OpenWrt. By default keen-pbr leaves packets with a foreign mark alone, so they are not balanced. This is controlled by the **General** > **Settings** > **General** > **Skip packets that are already marked** switch.
+Packet marks are set not only by keen-pbr-sx but also by Docker, WireGuard, Tailscale, {{< term "QoS" >}} scripts and mwan3 on OpenWrt. By default keen-pbr-sx leaves packets with a foreign mark alone, so they are not balanced. This is controlled by the **General** > **Settings** > **General** > **Skip packets that are already marked** switch.
 
-If the link choice gets overwritten by foreign marks, the status page shows an `fwmark_mask_conflict` warning. Then move keen-pbr's marks to bits nobody uses:
+If the link choice gets overwritten by foreign marks, the status page shows an `fwmark_mask_conflict` warning. Then move keen-pbr-sx's marks to bits nobody uses:
 
 ```json { filename="config.json" }
 {

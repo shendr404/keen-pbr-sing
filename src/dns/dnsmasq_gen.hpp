@@ -35,10 +35,10 @@ struct DnsmasqGenStats {
 
 // Domain of the stamp TXT record the conf-script appends after the generated
 // config.  dnsmasq answers it from its own memory, so a successful query proves
-// it loaded the keen-pbr config and tells which one.
+// it loaded the keen-pbr-sx config and tells which one.
 constexpr std::string_view kDnsmasqStampDomain = "config-hash.keen.pbr";
 
-// Hash carried by the stamp of the output printed while keen-pbr does not
+// Hash carried by the stamp of the output printed while keen-pbr-sx does not
 // manage dnsmasq (integration off, or the config unreadable): lets the daemon
 // tell that output from the generated one.
 constexpr std::string_view kDnsmasqOffStampHash = "00000000000000000000000000000000";

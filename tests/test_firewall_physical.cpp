@@ -427,7 +427,7 @@ TEST_CASE("physical: iptables foreign rules, unknown matches, stray hooks") {
     CHECK_FALSE(log.key.has_value());
   }
 
-  SUBCASE("only hook rules into keen-pbr chains are kept in system chains") {
+  SUBCASE("only hook rules into keen-pbr-sx chains are kept in system chains") {
     const auto &pre = require_chain(
         set, ipt_id(Role::system_prerouting, Table::mangle, Fam::ipv4));
     // `-A PREROUTING -j KeenPbrTable` (real hook) and a later

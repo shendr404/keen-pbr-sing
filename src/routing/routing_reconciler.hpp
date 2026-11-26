@@ -7,10 +7,10 @@
 
 namespace keen_pbr3 {
 
-// The policy-rule slots keen-pbr allocates from: its priority block, an exact
+// The policy-rule slots keen-pbr-sx allocates from: its priority block, an exact
 // fwmark.mask selector with a mark the allocator can produce, and a lookup
-// into a keen-pbr table or a terminal action.  A rule inside all of them is
-// keen-pbr's even when the current configuration no longer produces it, e.g.
+// into a keen-pbr-sx table or a terminal action.  A rule inside all of them is
+// keen-pbr-sx's even when the current configuration no longer produces it, e.g.
 // after a reload shifted the mark allocation.  fwmask 0 means no namespace.
 struct RuleNamespace {
     uint32_t priority_first{0};

@@ -1,4 +1,4 @@
-add_executable(keen-pbr-tests
+add_executable(keen-pbr-sx-tests
   ../src/auth/password.cpp
   ../src/singbox/link_parser.cpp
   ../src/singbox/link_store.cpp
@@ -239,7 +239,7 @@ add_executable(keen-pbr-tests
 )
 # Backends and features that the Keenetic platform build does not compile.
 if(NOT KEEN_PBR_PLATFORM_KEENETIC)
-  target_sources(keen-pbr-tests PRIVATE
+  target_sources(keen-pbr-sx-tests PRIVATE
     ../src/firewall/rules/route_balance.cpp
     ../src/firewall/nftables.cpp
     ../src/firewall/nft_batch_pipe.cpp
@@ -247,21 +247,21 @@ if(NOT KEEN_PBR_PLATFORM_KEENETIC)
     test_balance_classifier_state.cpp
   )
 endif()
-set_target_properties(keen-pbr-tests PROPERTIES
+set_target_properties(keen-pbr-sx-tests PROPERTIES
   CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
   CXX_EXTENSIONS NO
 )
 
-target_compile_definitions(keen-pbr-tests PRIVATE KEEN_PBR3_TESTING)
+target_compile_definitions(keen-pbr-sx-tests PRIVATE KEEN_PBR3_TESTING)
 
 # Reuse include paths from the main target so generated headers such as
-# <keen-pbr/version.hpp> are always visible to tests.
-target_include_directories(keen-pbr-tests PRIVATE
-  $<TARGET_PROPERTY:keen-pbr,INCLUDE_DIRECTORIES>
+# <keen-pbr-sx/version.hpp> are always visible to tests.
+target_include_directories(keen-pbr-sx-tests PRIVATE
+  $<TARGET_PROPERTY:keen-pbr-sx,INCLUDE_DIRECTORIES>
 )
 
-target_include_directories(keen-pbr-tests PRIVATE
+target_include_directories(keen-pbr-sx-tests PRIVATE
   ${KEEN_PBR_GENERATED_INCLUDE_DIR}
   ${CMAKE_SOURCE_DIR}/include
   ${CMAKE_SOURCE_DIR}/src
@@ -272,7 +272,7 @@ target_include_directories(keen-pbr-tests PRIVATE
   ${LIBNL_ROUTE_INCLUDE_DIRS}
 )
 
-target_link_libraries(keen-pbr-tests PRIVATE
+target_link_libraries(keen-pbr-sx-tests PRIVATE
   nlohmann_json::nlohmann_json
   ${KEEN_PBR_CURL_TARGET}
   PkgConfig::LIBNL
@@ -302,18 +302,18 @@ target_link_libraries(crash-diagnostics-smoke PRIVATE
 )
 
 if(LIBATOMIC)
-  target_link_libraries(keen-pbr-tests PRIVATE ${LIBATOMIC})
+  target_link_libraries(keen-pbr-sx-tests PRIVATE ${LIBATOMIC})
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
-  target_link_libraries(keen-pbr-tests PRIVATE stdc++fs)
+  target_link_libraries(keen-pbr-sx-tests PRIVATE stdc++fs)
 endif()
 
-target_compile_definitions(keen-pbr-tests PRIVATE USE_KEENETIC_API)
+target_compile_definitions(keen-pbr-sx-tests PRIVATE USE_KEENETIC_API)
 
 if(WITH_DOH)
-  target_compile_definitions(keen-pbr-tests PRIVATE WITH_DOH)
-  target_sources(keen-pbr-tests PRIVATE
+  target_compile_definitions(keen-pbr-sx-tests PRIVATE WITH_DOH)
+  target_sources(keen-pbr-sx-tests PRIVATE
     ../src/dns/doh_client.cpp
     ../src/dns/doh_bootstrap.cpp
     test_doh_client.cpp
@@ -321,8 +321,8 @@ if(WITH_DOH)
 endif()
 
 if(WITH_API)
-  target_compile_definitions(keen-pbr-tests PRIVATE WITH_API)
-  target_sources(keen-pbr-tests PRIVATE
+  target_compile_definitions(keen-pbr-sx-tests PRIVATE WITH_API)
+  target_sources(keen-pbr-sx-tests PRIVATE
     ../src/api/server.cpp
     ../src/api/prometheus_metrics.cpp
     ../src/api/handler_config.cpp
@@ -338,12 +338,12 @@ if(WITH_API)
   ../src/health/runtime_interface_inventory.cpp
   ../src/keenetic/interface_descriptions.cpp
   )
-  target_link_libraries(keen-pbr-tests PRIVATE
+  target_link_libraries(keen-pbr-sx-tests PRIVATE
     httplib::httplib
     Threads::Threads
   )
   if(HTTPLIB_ANL_LIB)
-    target_link_libraries(keen-pbr-tests PRIVATE ${HTTPLIB_ANL_LIB})
+    target_link_libraries(keen-pbr-sx-tests PRIVATE ${HTTPLIB_ANL_LIB})
   endif()
 endif()
 

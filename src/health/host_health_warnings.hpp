@@ -77,7 +77,7 @@ std::vector<HealthWarning> evaluate_nat_warnings(
 // Small inputs copied out of the config so the health worker does not need a
 // full Config copy.
 // A foreign iptables rule that writes or matches mark bits overlapping the
-// keen-pbr fwmark mask.
+// keen-pbr-sx fwmark mask.
 struct ForeignMarkRule {
     std::string rule;           // the `-A ...` line as printed by iptables -S
     std::uint32_t overlap{0};   // overlapping bits (affected bits & mask)
@@ -87,12 +87,12 @@ struct ForeignMarkRule {
 // targets (--set-xmark, --set-mark, --and-mark, --or-mark, --xor-mark,
 // --save-mark, --restore-mark with --nfmask/--ctmask/--mask) and mark /
 // connmark matches (--mark V[/M]; a match without a mask contributes only the
-// bits set in V). keen-pbr's own rules (chains KeenPbr*, comments kpbr:v1:)
+// bits set in V). keen-pbr-sx's own rules (chains KeenPbr*, comments kpbr:v1:)
 // are skipped.
 std::vector<ForeignMarkRule> find_foreign_mark_overlaps(
     const std::string& iptables_text, std::uint32_t fwmark_mask);
 
-// A foreign `ip rule` whose fwmark mask overlaps the keen-pbr fwmark mask.
+// A foreign `ip rule` whose fwmark mask overlaps the keen-pbr-sx fwmark mask.
 struct ForeignPolicyRule {
     std::uint32_t priority{0};
     std::uint32_t fwmark{0};
@@ -101,13 +101,13 @@ struct ForeignPolicyRule {
 };
 
 // Pure: rules matching one of `own_rules` (priority, fwmark, mask, table) are
-// keen-pbr's and skipped, as are rules inside `ns` (stale keen-pbr rules, see
+// keen-pbr-sx's and skipped, as are rules inside `ns` (stale keen-pbr-sx rules, see
 // find_stale_policy_rules); rules without a fwmark match are ignored.
 std::vector<ForeignPolicyRule> find_foreign_policy_rule_overlaps(
     const std::vector<DumpedRule>& dumped, const std::vector<RuleSpec>& own_rules,
     std::uint32_t fwmark_mask, const RuleNamespace& ns = {});
 
-// Pure: rules inside keen-pbr's namespace that match none of `own_rules`, one
+// Pure: rules inside keen-pbr-sx's namespace that match none of `own_rules`, one
 // entry per (priority, fwmark, mask, table, action) across both families.
 // The apply removes them, so any hit means the cleanup failed.
 std::vector<DumpedRule> find_stale_policy_rules(const std::vector<DumpedRule>& dumped,
@@ -132,7 +132,7 @@ struct HostHealthInputs {
     std::vector<std::string> inbound_interfaces;
     // Configured fwmark.mask; 0 when it is invalid (overlap check skipped).
     std::uint32_t fwmark_mask{0};
-    // keen-pbr's policy-rule namespace; empty when fwmark is invalid.
+    // keen-pbr-sx's policy-rule namespace; empty when fwmark is invalid.
     RuleNamespace rule_namespace;
 };
 
@@ -148,7 +148,7 @@ inline bool fwmark_conflict_check_enabled(const HostHealthInputs& inputs) {
 #endif
 }
 
-// Live policy rules and keen-pbr's tracked ones, gathered by the caller the
+// Live policy rules and keen-pbr-sx's tracked ones, gathered by the caller the
 // same way as the interface dump.
 struct PolicyRuleInputs {
     std::vector<DumpedRule> dumped;

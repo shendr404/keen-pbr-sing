@@ -1,4 +1,4 @@
-"""keen-pbr managed dnsmasq: per-list upstreams through the platform hook.
+"""keen-pbr-sx managed dnsmasq: per-list upstreams through the platform hook.
 
 The integration binary is built with KEEN_PBR_DNSMASQ_HOOK pointing at
 tests/integration/netns/dnsmasq-hook.sh, which installs a conf-script drop-in

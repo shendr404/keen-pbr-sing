@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
         return run_child(argv[2], true);
     }
 
-    char directory[] = "/tmp/keen-pbr-crash-smoke-XXXXXX";
+    char directory[] = "/tmp/keen-pbr-sx-crash-smoke-XXXXXX";
     if (mkdtemp(directory) == nullptr) {
         std::perror("mkdtemp");
         return 2;

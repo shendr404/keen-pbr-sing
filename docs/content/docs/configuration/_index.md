@@ -3,15 +3,15 @@ title: Configuration
 weight: 3
 ---
 
-keen-pbr reads its settings from one JSON config file.
+keen-pbr-sx reads its settings from one JSON config file.
 
 Common config file locations:
 
-- Keenetic / NetCraze: `/opt/etc/keen-pbr/config.json`
-- OpenWrt: `/etc/keen-pbr/config.json`
-- Debian: `/etc/keen-pbr/config.json`
+- Keenetic / NetCraze: `/opt/etc/keen-pbr-sx/config.json`
+- OpenWrt: `/etc/keen-pbr-sx/config.json`
+- Debian: `/etc/keen-pbr-sx/config.json`
 
-If you installed the full package, configure keen-pbr in the Web UI: it writes the config for you, so you do not need to edit the file. If you installed `keen-pbr-headless` (no Web UI), edit the config file. Configuration has four parts:
+If you installed the full package, configure keen-pbr-sx in the Web UI: it writes the config for you, so you do not need to edit the file. If you installed `keen-pbr-sx-headless` (no Web UI), edit the config file. Configuration has four parts:
 
 - [Outbounds]({{< relref "/docs/configuration/outbounds" >}}) — the channels traffic can take: a VPN, your ISP connection, or a block
 - [Lists]({{< relref "/docs/configuration/lists" >}}) — the sites and IP ranges you want to route

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 reset_topology() {
-  # Forwarding is a property of the router role, not of keen-pbr.  Set both the
+  # Forwarding is a property of the router role, not of keen-pbr-sx.  Set both the
   # global and per-interface IPv6 switches because cloud images commonly ship
   # with IPv6 forwarding disabled on every interface.
   sysctl -q -w net.ipv4.ip_forward=1

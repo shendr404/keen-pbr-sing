@@ -12,7 +12,7 @@ namespace keen_pbr3 {
 
 namespace {
 
-const std::string kApiConfigPath = "/tmp/keen-pbr-test-config.json";
+const std::string kApiConfigPath = "/tmp/keen-pbr-sx-test-config.json";
 
 ApiContext make_check_context(SseBroadcaster& broadcaster) {
     return ApiContext{

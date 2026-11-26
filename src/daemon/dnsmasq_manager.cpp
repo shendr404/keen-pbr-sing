@@ -108,7 +108,7 @@ RoutingDnsResolver DnsmasqManager::routing_resolver(const Config& config) const 
     r.port = s.endpoint->port;
     r.instance = s.selector;
     if (s.state != DnsmasqSyncState::Ok) {
-        r.warning = "dnsmasq does not currently confirm the keen-pbr configuration; its answers may not follow the DNS rules";
+        r.warning = "dnsmasq does not currently confirm the keen-pbr-sx configuration; its answers may not follow the DNS rules";
     }
     return r;
 }
@@ -237,7 +237,7 @@ void DnsmasqManager::sync_dnsmasq(const Config& config,
     }
 
     // OpenWrt moves the router's own upstream servers aside only while
-    // keen-pbr provides the default ones; the hook gets that as an argument.
+    // keen-pbr-sx provides the default ones; the hook gets that as an argument.
     // The hash changes whenever this flips, which re-runs the hook.
     default_upstreams_ = !stats.fallback.empty();
 
@@ -265,7 +265,7 @@ void DnsmasqManager::sync_dnsmasq(const Config& config,
     }
     const DnsmasqInstance* inst = detection_.selected_instance();
 
-    // dnsmasq may already serve this exact config (keen-pbr restarted, or
+    // dnsmasq may already serve this exact config (keen-pbr-sx restarted, or
     // dnsmasq started first): then there is nothing to install or restart.
     if (!explicit_now && !apply_blocked_) {
         // Same config as before (e.g. lists autoupdate): only repair dnsmasq
@@ -274,7 +274,7 @@ void DnsmasqManager::sync_dnsmasq(const Config& config,
         return;
     }
     if (inst->evidence == EndpointEvidence::StampVerified && inst->stamp) {
-        log.info("dnsmasq {} already serves keen-pbr config (hash {}); not restarting",
+        log.info("dnsmasq {} already serves keen-pbr-sx config (hash {}); not restarting",
                  inst->selector.str(), hash);
         mark_in_sync(*inst->stamp, /*external=*/false);
         return;
@@ -371,7 +371,7 @@ bool DnsmasqManager::ensure_ready_to_apply_locked(const std::string& hash,
     if (!pf.ok) {
         update_status([](DnsmasqStatus& s) { s.preflight = "failed"; });
         publish_error(DnsmasqErrorCode::PreflightFailed,
-                      "dnsmasq --test rejected the configuration with the keen-pbr "
+                      "dnsmasq --test rejected the configuration with the keen-pbr-sx "
                       "conf-script entry; dnsmasq was not restarted: " + pf.detail);
         return false;
     }
@@ -424,7 +424,7 @@ DnsmasqManager::ProbeObservation DnsmasqManager::probe_once() {
             status.loaded_boottime_ms = observation.stamp->boottime_ms;
             status.loaded_ts = observation.stamp->unix_ts;
         } else if (observation.state != DnsmasqProbeState::QueryFailed) {
-            // dnsmasq answered and reports no keen-pbr config; keep the last
+            // dnsmasq answered and reports no keen-pbr-sx config; keep the last
             // known values only when it could not be asked.
             status.loaded_hash.clear();
             status.loaded_boottime_ms.reset();
@@ -506,9 +506,9 @@ std::string DnsmasqManager::failure_message(const ProbeObservation& obs,
                                             std::int64_t apply_started_ms) const {
     switch (obs.state) {
     case DnsmasqProbeState::Missing:
-        return "dnsmasq is running without the keen-pbr config (TXT " +
+        return "dnsmasq is running without the keen-pbr-sx config (TXT " +
                std::string(kDnsmasqStampDomain) +
-               " missing); dnsmasq did not run the keen-pbr conf-script";
+               " missing); dnsmasq did not run the keen-pbr-sx conf-script";
     case DnsmasqProbeState::QueryFailed:
         return "dnsmasq did not answer the config check on " +
                (endpoint_ ? endpoint_->str() : std::string("(unknown endpoint)")) + ": " +
@@ -521,8 +521,8 @@ std::string DnsmasqManager::failure_message(const ProbeObservation& obs,
         return "dnsmasq config check did not run";
     }
     if (obs.stamp->hash == kDnsmasqOffStampHash) {
-        return "dnsmasq restarted but keen-pbr printed its fallback output instead of the "
-               "generated config; see the keen-pbr log for generate-resolver-config";
+        return "dnsmasq restarted but keen-pbr-sx printed its fallback output instead of the "
+               "generated config; see the keen-pbr-sx log for generate-resolver-config";
     }
     if (obs.stamp->boottime_ms < apply_started_ms) {
         return "dnsmasq was not restarted after apply (it last loaded a config at " +
@@ -542,7 +542,7 @@ void DnsmasqManager::apply_and_confirm(const std::string& hash, const ApplyConte
         log.info("Restarting dnsmasq (repair attempt {}/{}) because {}",
                  repair_attempts_, timing_.max_repair_attempts, context.reason);
     } else {
-        log.info("Restarting dnsmasq to install keen-pbr config: {} (hash {})",
+        log.info("Restarting dnsmasq to install keen-pbr-sx config: {} (hash {})",
                  context.reason, hash);
     }
 
@@ -573,7 +573,7 @@ void DnsmasqManager::apply_and_confirm(const std::string& hash, const ApplyConte
             const std::int64_t now = unix_timestamp_now_seconds();
             mark_in_sync(*last.stamp, /*external=*/false);
             update_status([&](DnsmasqStatus& status) { status.last_apply_ts = now; });
-            log.info("dnsmasq confirmed keen-pbr config (hash {})", hash);
+            log.info("dnsmasq confirmed keen-pbr-sx config (hash {})", hash);
             return;
         }
         ++misses;
@@ -601,7 +601,7 @@ void DnsmasqManager::apply_and_confirm(const std::string& hash, const ApplyConte
     }
 
     const std::string message = failure_message(last, hash, apply_started_ms_);
-    log.error("dnsmasq did not confirm keen-pbr config: {}", message);
+    log.error("dnsmasq did not confirm keen-pbr-sx config: {}", message);
     publish_error(DnsmasqErrorCode::ConfigNotLoaded, message);
 }
 
@@ -614,7 +614,7 @@ void DnsmasqManager::repair_locked(const std::string& hash, const std::string& p
     if (repair_paused_ || repair_attempts_ >= timing_.max_repair_attempts) {
         repair_paused_ = true;
         const std::string message =
-            "dnsmasq lost the keen-pbr config again after " +
+            "dnsmasq lost the keen-pbr-sx config again after " +
             std::to_string(timing_.max_repair_attempts) +
             " repair attempts; automatic repair is paused until the next config apply or "
             "runtime restart (last problem: " + problem + ")";
@@ -684,7 +684,7 @@ void DnsmasqManager::evaluate_locked(const std::string& hash, ProbeObservation o
         const DnsmasqConfigStamp& stamp = *observed.stamp;
         const bool newer = !loaded_stamp_ || stamp.boottime_ms > loaded_stamp_->boottime_ms;
         if (newer) {
-            log.info("dnsmasq was restarted outside keen-pbr and reloaded the config "
+            log.info("dnsmasq was restarted outside keen-pbr-sx and reloaded the config "
                      "(hash {})", hash);
         }
         mark_in_sync(stamp, newer);
@@ -697,12 +697,12 @@ void DnsmasqManager::evaluate_locked(const std::string& hash, ProbeObservation o
         problem = "dnsmasq answered with an invalid " + std::string(kDnsmasqStampDomain) +
                   " record";
     } else if (observed.stamp && observed.stamp->boottime_ms > apply_started_ms_) {
-        problem = "dnsmasq was restarted outside keen-pbr and lost the keen-pbr config";
+        problem = "dnsmasq was restarted outside keen-pbr-sx and lost the keen-pbr-sx config";
     } else if (observed.stamp) {
         problem = "dnsmasq serves a different config (hash " + observed.stamp->hash +
                   ", expected " + hash + ")";
     } else {
-        problem = "the keen-pbr config is missing from dnsmasq (TXT " +
+        problem = "the keen-pbr-sx config is missing from dnsmasq (TXT " +
                   std::string(kDnsmasqStampDomain) + " not found)";
     }
     repair_locked(hash, problem);
@@ -743,7 +743,7 @@ void DnsmasqManager::run_check() {
     }
 }
 
-// Asks the hook to `remove` keen-pbr from one dnsmasq instance (restart, and on
+// Asks the hook to `remove` keen-pbr-sx from one dnsmasq instance (restart, and on
 // OpenWrt restore the moved servers).  Without `known_target` the instance is
 // found by detection.  `require_managed_output`: only act when that instance
 // visibly runs the generated config (the startup case).  Returns the failure
@@ -762,7 +762,7 @@ std::string DnsmasqManager::remove_from_dnsmasq(std::optional<std::string> known
             if (det.error == DnsmasqErrorCode::None && inst != nullptr && inst->stamp &&
                 inst->stamp->hash != kDnsmasqOffStampHash) {
                 Logger::instance().info(
-                    "dnsmasq {} still runs the generated keen-pbr config but management "
+                    "dnsmasq {} still runs the generated keen-pbr-sx config but management "
                     "is off; restarting it",
                     inst->selector.str());
                 target = inst->selector.str();
@@ -782,8 +782,8 @@ std::string DnsmasqManager::remove_from_dnsmasq(std::optional<std::string> known
                     joined += (joined.empty() ? "" : ", ") + item;
                 }
                 Logger::instance().warn(
-                    "dnsmasq management disabled; keen-pbr drop-in is installed in {}; "
-                    "delete the drop-in from the instances keen-pbr should not use and "
+                    "dnsmasq management disabled; keen-pbr-sx drop-in is installed in {}; "
+                    "delete the drop-in from the instances keen-pbr-sx should not use and "
                     "restart them, or set dns.dnsmasq_instance", joined);
             }
         }
@@ -813,7 +813,7 @@ void DnsmasqManager::sync_disabled() {
     if (hook_path_.empty()) {
         // Nothing to ask.
     } else if (previous_mode_ == ResolverIntegrationMode::DNSMASQ) {
-        Logger::instance().info("Restarting dnsmasq: keen-pbr dnsmasq management disabled");
+        Logger::instance().info("Restarting dnsmasq: keen-pbr-sx dnsmasq management disabled");
         failure = remove_from_dnsmasq(selected_selector_ ? std::optional<std::string>(selected_selector_->str())
                                                          : std::nullopt,
                                       /*require_managed_output=*/false);

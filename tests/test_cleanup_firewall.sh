@@ -6,7 +6,7 @@ set -eu
 
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 script="$repo_root/packages/common/cleanup-firewall.sh"
-tmp_root=$(mktemp -d "${TMPDIR:-/tmp}/keen-pbr-cleanup-firewall.XXXXXX")
+tmp_root=$(mktemp -d "${TMPDIR:-/tmp}/keen-pbr-sx-cleanup-firewall.XXXXXX")
 trap 'rm -rf "$tmp_root"' EXIT HUP INT TERM
 
 fail() {
@@ -100,7 +100,7 @@ cat > "$FAKE_XT_DIR/iptables.mangle" <<'EOF'
 -A PREROUTING -i br0 -j UserChain
 -A PREROUTING -j KeenPbrTable
 -A PREROUTING -p tcp -j ACCEPT
--A PREROUTING -m comment --comment "keen-pbr $(x)" -j KeenPbrTable
+-A PREROUTING -m comment --comment "keen-pbr-sx $(x)" -j KeenPbrTable
 -A OUTPUT -j KeenPbrTable
 -A POSTROUTING -p udp --dport 53 -j KeenPbrDnsHold
 -A UserChain -j KeenPbrTable_A

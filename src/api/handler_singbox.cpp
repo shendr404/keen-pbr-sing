@@ -139,7 +139,7 @@ void sync_keenetic_outbounds(ApiContext& ctx, const KeeneticSyncRequest& request
     for (const auto& outbound : doc["outbounds"]) {
         const auto tag = outbound.value("tag", "");
         if (next_tags.count(tag) && !owned.count(tag)) {
-            throw std::runtime_error("keen-pbr tag is already used");
+            throw std::runtime_error("keen-pbr-sx tag is already used");
         }
     }
     nlohmann::json kept = nlohmann::json::array();
@@ -153,7 +153,7 @@ void sync_keenetic_outbounds(ApiContext& ctx, const KeeneticSyncRequest& request
     }
     for (const auto& node : request.nodes) {
         // TUN and point-to-point interfaces are device routes. Writing
-        // gateway "auto" makes keen-pbr report that the gateway is ignored.
+        // gateway "auto" makes keen-pbr-sx report that the gateway is ignored.
         kept.push_back({
             {"type", "interface"},
             {"tag", node.tag},
@@ -166,7 +166,7 @@ void sync_keenetic_outbounds(ApiContext& ctx, const KeeneticSyncRequest& request
     ctx.validate_candidate_config_fn(updated);
     const auto applied = ctx.enqueue_apply_validated_config_fn(std::move(updated), dumped);
     if (!applied.error.empty() || !applied.saved) {
-        throw std::runtime_error(applied.error.empty() ? "keen-pbr config was not saved" : applied.error);
+        throw std::runtime_error(applied.error.empty() ? "keen-pbr-sx config was not saved" : applied.error);
     }
 }
 

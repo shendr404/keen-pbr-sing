@@ -30,7 +30,7 @@
 #include "../util/time_utils.hpp"
 
 #ifndef KEEN_PBR_FRONTEND_ROOT
-#define KEEN_PBR_FRONTEND_ROOT "/usr/share/keen-pbr/frontend"
+#define KEEN_PBR_FRONTEND_ROOT "/usr/share/keen-pbr-sx/frontend"
 #endif
 
 namespace keen_pbr3 {

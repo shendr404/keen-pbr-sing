@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  const dismissedKey = `keen-pbr-language-suggestion-dismissed-${selectedOption.dataset.language}`;
+  const dismissedKey = `keen-pbr-sx-language-suggestion-dismissed-${selectedOption.dataset.language}`;
 
   try {
     if (localStorage.getItem(dismissedKey)) {

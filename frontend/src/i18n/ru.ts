@@ -27,7 +27,7 @@ export const ruTranslation = {
       originsPlaceholder:
         "https://panel.example.com\nhttps://admin.example.net",
       originsDescription:
-        "Указывайте по одному точному HTTP- или HTTPS-источнику в строке. Настройка нужна только если вы используете внешние UI для управления API keen-pbr.",
+        "Указывайте по одному точному HTTP- или HTTPS-источнику в строке. Настройка нужна только если вы используете внешние UI для управления API keen-pbr-sx.",
       passwordMismatch: "Пароли не совпадают.",
       passwordRequired: "Перед включением аутентификации задайте пароль.",
       updateFailed: "Не удалось обновить настройки аутентификации.",
@@ -173,27 +173,27 @@ export const ruTranslation = {
     compact: {
       keenRestartRequired: "Несохранённые изменения",
       keenRestartRequiredDescription:
-        "Настройки изменены. Примените их для перезапуска keen-pbr.",
-      runtimeReloading: "Перезагрузка keen-pbr...",
+        "Настройки изменены. Примените их для перезапуска keen-pbr-sx.",
+      runtimeReloading: "Перезагрузка keen-pbr-sx...",
       runtimeReloadingDescription: "Текущий этап: {{stage}}",
-      runtimeReloadSucceeded: "keen-pbr готов",
+      runtimeReloadSucceeded: "keen-pbr-sx готов",
       runtimeReloadSucceededDescription:
         "Маршрутизация использует ожидаемую конфигурацию.",
-      runtimeApplying: "Применение конфигурации keen-pbr...",
-      runtimeApplySucceeded: "Конфигурация keen-pbr применена",
-      runtimeApplyFailed: "Не удалось применить конфигурацию keen-pbr",
-      runtimeRollingBack: "Откат конфигурации keen-pbr...",
+      runtimeApplying: "Применение конфигурации keen-pbr-sx...",
+      runtimeApplySucceeded: "Конфигурация keen-pbr-sx применена",
+      runtimeApplyFailed: "Не удалось применить конфигурацию keen-pbr-sx",
+      runtimeRollingBack: "Откат конфигурации keen-pbr-sx...",
       runtimeRollbackSucceeded: "Предыдущая конфигурация восстановлена",
       runtimeRollbackFailed: "Не удалось откатить конфигурацию",
-      runtimeStarting: "Запуск keen-pbr...",
-      runtimeStartSucceeded: "keen-pbr запущен",
-      runtimeStartFailed: "Не удалось запустить keen-pbr",
-      runtimeStopping: "Остановка keen-pbr...",
-      runtimeStopSucceeded: "keen-pbr остановлен",
-      runtimeStopFailed: "Не удалось остановить keen-pbr",
+      runtimeStarting: "Запуск keen-pbr-sx...",
+      runtimeStartSucceeded: "keen-pbr-sx запущен",
+      runtimeStartFailed: "Не удалось запустить keen-pbr-sx",
+      runtimeStopping: "Остановка keen-pbr-sx...",
+      runtimeStopSucceeded: "keen-pbr-sx остановлен",
+      runtimeStopFailed: "Не удалось остановить keen-pbr-sx",
       runtimeStartingDescription:
         "Маршрутизация и межсетевой экран запускаются. Подождите.",
-      runtimeReloadFailed: "Не удалось перезагрузить keen-pbr",
+      runtimeReloadFailed: "Не удалось перезагрузить keen-pbr-sx",
       runtimeReloadFailedDescription:
         "Не удалось завершить перезагрузку маршрутизации. Попробуйте применить настройки и перезапустить ещё раз.",
     },
@@ -276,7 +276,7 @@ export const ruTranslation = {
         "Домены, не подходящие ни под одно DNS-правило, могут разрешаться через DNS-серверы по умолчанию, например провайдера. Укажите основные DNS-серверы.",
       dohBootstrapMissing: "Не указаны bootstrap-серверы для DoH",
       dohBootstrapMissingDetail:
-        "У DoH-серверов {{tags}} не указан IP-адрес, поэтому keen-pbr будет пытаться определить его самостоятельно. Укажите bootstrap DNS-серверы, через которые их искать.",
+        "У DoH-серверов {{tags}} не указан IP-адрес, поэтому keen-pbr-sx будет пытаться определить его самостоятельно. Укажите bootstrap DNS-серверы, через которые их искать.",
       dnsServerFailingFor:
         "{{detail}}. Не осталось рабочих серверов для: {{lists}}",
       defaultServers: "основные серверы",
@@ -288,8 +288,8 @@ export const ruTranslation = {
         rp_filter_strict:
           "{{interface}}: строгий rp_filter может отбрасывать ответы",
         fwmark_mask_conflict:
-          "Стороннее правило использует биты метки пакета, зарезервированные keen-pbr",
-        stale_policy_rule: "keen-pbr не удалил устаревшее правило ip rule",
+          "Стороннее правило использует биты метки пакета, зарезервированные keen-pbr-sx",
+        stale_policy_rule: "keen-pbr-sx не удалил устаревшее правило ip rule",
       },
     },
     healthy: {
@@ -429,7 +429,7 @@ export const ruTranslation = {
       card: {
         title: "Перехват DNS",
         description:
-          "Наблюдает DNS-трафик через keen-pbr из этого браузера или с другого устройства; замена синтетического ответа отдельно не проверяется.",
+          "Наблюдает DNS-трафик через keen-pbr-sx из этого браузера или с другого устройства; замена синтетического ответа отдельно не проверяется.",
         disabledDescription:
           "Включите перехват DNS в настройках, чтобы запустить самопроверку DNS.",
         runtimeDisabledDescription:
@@ -464,7 +464,7 @@ export const ruTranslation = {
           "Запрос браузера выполнился, но перехватчик не увидел lookup маркера. Локальный VPN или DNS-over-HTTPS в браузере обходит DNS роутера 192.168.1.1. Проверьте с другого устройства.",
         sseFail: "Поток событий DNS в реальном времени не подключён.",
         sseStalled:
-          "Браузер не смог открыть поток событий DNS в реальном времени. Возможно, открыто слишком много вкладок keen-pbr (браузеры разрешают 6 соединений на сайт) — закройте лишние вкладки keen-pbr и повторите.",
+          "Браузер не смог открыть поток событий DNS в реальном времени. Возможно, открыто слишком много вкладок keen-pbr-sx (браузеры разрешают 6 соединений на сайт) — закройте лишние вкладки keen-pbr-sx и повторите.",
         sseHttp:
           "Запрос потока событий DNS в реальном времени завершился ошибкой (HTTP {{status}}).",
         browserChecking: "Проверяем DNS-путь браузера...",
@@ -482,7 +482,7 @@ export const ruTranslation = {
         title: "Установить dnsmasq",
         command: "Выполните по SSH:",
         pickup:
-          "После установки keen-pbr сам найдёт dnsmasq и применит DNS-правила.",
+          "После установки keen-pbr-sx сам найдёт dnsmasq и применит DNS-правила.",
         docs: "Инструкция по настройке dnsmasq",
         docsFor: "Инструкция по настройке dnsmasq для {{os}}",
         copyAria: "Скопировать команду установки",
@@ -510,7 +510,7 @@ export const ruTranslation = {
       domains: "Домены",
       lastSync: "Последняя синхронизация",
       loadedAt: "dnsmasq загрузил конфигурацию",
-      externalReload: "dnsmasq перезапущен вне keen-pbr",
+      externalReload: "dnsmasq перезапущен вне keen-pbr-sx",
       disabledDescription: "Интеграция правил DNS отключена.",
       alive: {
         label: "Служба dnsmasq",
@@ -541,7 +541,7 @@ export const ruTranslation = {
         DNSMASQ_INSTANCE_AMBIGUOUS:
           "Найдено несколько экземпляров dnsmasq. Выберите один в настройках.",
         DNSMASQ_NOT_RUNNING:
-          "dnsmasq не запущен. keen-pbr его не запускает; запустите dnsmasq, и keen-pbr применит правила.",
+          "dnsmasq не запущен. keen-pbr-sx его не запускает; запустите dnsmasq, и keen-pbr-sx применит правила.",
         DNSMASQ_DNS_DISABLED:
           "В этом экземпляре dnsmasq DNS выключен (port=0).",
         DNSMASQ_OTHER_NETNS:
@@ -550,9 +550,9 @@ export const ruTranslation = {
         DNSMASQ_ENDPOINT_UNRESPONSIVE:
           "dnsmasq не отвечает на DNS-запросы. Перезапуск не выполнялся.",
         DNSMASQ_DROPIN_NOT_LOADED:
-          "dnsmasq не читает каталог, в который keen-pbr устанавливает свою конфигурацию.",
+          "dnsmasq не читает каталог, в который keen-pbr-sx устанавливает свою конфигурацию.",
         DNSMASQ_FOREIGN_DROPIN:
-          "Путь конфигурации keen-pbr занят файлом, созданным не keen-pbr.",
+          "Путь конфигурации keen-pbr-sx занят файлом, созданным не keen-pbr-sx.",
         DNSMASQ_CONF_SCRIPT_UNSUPPORTED:
           "Этот dnsmasq не поддерживает conf-script.",
         DNSMASQ_TEST_FAILED:
@@ -561,9 +561,9 @@ export const ruTranslation = {
           "dnsmasq отклонил новую конфигурацию. Работающий dnsmasq не изменён.",
         DNSMASQ_APPLY_FAILED: "Не удалось установить конфигурацию в dnsmasq.",
         DNSMASQ_CONFIG_NOT_LOADED:
-          "dnsmasq перезапущен, но не загрузил конфигурацию keen-pbr.",
+          "dnsmasq перезапущен, но не загрузил конфигурацию keen-pbr-sx.",
         DNSMASQ_STAMP_MISMATCH:
-          "dnsmasq использует устаревшую конфигурацию keen-pbr.",
+          "dnsmasq использует устаревшую конфигурацию keen-pbr-sx.",
         DNSMASQ_REPAIR_PAUSED:
           "Автоматическое восстановление приостановлено после повторных ошибок.",
         DNSMASQ_PROBE_FAILED:
@@ -672,10 +672,10 @@ export const ruTranslation = {
     routingDiagnostics: {
       trace: {
         writeEvidence: {
-          recorded: "keen-pbr уже добавлял этот IP в ipset или продлевал его.",
+          recorded: "keen-pbr-sx уже добавлял этот IP в ipset или продлевал его.",
           age: "Последний раз {{age}} с назад.",
           nowMissing: "Сейчас его в ipset нет, и почему он пропал, неизвестно.",
-          no_record: "keen-pbr не помнит, чтобы добавлял этот IP в ipset.",
+          no_record: "keen-pbr-sx не помнит, чтобы добавлял этот IP в ipset.",
           not_tracked: "Для этого ipset записи не отслеживаются.",
           unavailable: "Не удалось получить историю записей.",
         },
@@ -778,12 +778,12 @@ export const ruTranslation = {
             reason:
               "Адрес есть в списке, но его нет в ipset выбранного правила.",
             reasonDomain:
-              "Домен есть в списке, но его IP пока нет в ipset правила. keen-pbr добавляет адреса, когда клиент запрашивает домен через DNS роутера.",
+              "Домен есть в списке, но его IP пока нет в ipset правила. keen-pbr-sx добавляет адреса, когда клиент запрашивает домен через DNS роутера.",
             steps: {
               open: "Откройте этот сайт на клиентском устройстве и повторите проверку.",
               flush:
                 "Не помогло — очистите DNS-кеш на устройстве и в браузере, затем попробуйте снова.",
-              dns: "Не помогло — убедитесь, что устройство не использует сторонние DNS-серверы (DoH, DoT или свой DNS), которые keen-pbr не может перехватить. Для этого откройте главную страницу keen-pbr с этого устройства и посмотрите раздел «Маршрутизация на основе доменов», а также <log>журнал запросов</log>.",
+              dns: "Не помогло — убедитесь, что устройство не использует сторонние DNS-серверы (DoH, DoT или свой DNS), которые keen-pbr-sx не может перехватить. Для этого откройте главную страницу keen-pbr-sx с этого устройства и посмотрите раздел «Маршрутизация на основе доменов», а также <log>журнал запросов</log>.",
             },
             advice:
               "Проверьте применение конфигурации и актуальность списков, затем повторите проверку.",
@@ -877,7 +877,7 @@ export const ruTranslation = {
   },
   requestsLog: {
     authRequired: {
-      title: "Требуется авторизация keen-pbr",
+      title: "Требуется авторизация keen-pbr-sx",
       description:
         "Журнал запросов показывает трафик всех клиентов сети, поэтому доступен только при включённой авторизации. Задайте пароль администратора.",
       action: "Перейти к настройке",
@@ -897,7 +897,7 @@ export const ruTranslation = {
       kinds: "Фильтры",
       groups: {
         method: "Метод",
-        actions: "Действия keen-pbr",
+        actions: "Действия keen-pbr-sx",
         answers: "Тип DNS ответа",
       },
       actions: {
@@ -1027,14 +1027,14 @@ export const ruTranslation = {
     singbox: {
       title: "Sing-box интерфейсы",
       description:
-        "Каждый узел — отдельный TUN и outbound keen-pbr типа interface. Группы urltest и icmptest собираются на странице Outbounds. Существующий config.json не перезаписывается: меняются только объекты с тегами kpbr-.",
+        "Каждый узел — отдельный TUN и outbound keen-pbr-sx типа interface. Группы urltest и icmptest собираются на странице Outbounds. Существующий config.json не перезаписывается: меняются только объекты с тегами kpbr-.",
       create: "Новые интерфейсы",
       saveNodes: "Создать интерфейсы",
       savedNodes: "Интерфейсы созданы.",
       edit: "Изменить",
       deleteNode: "Удалить интерфейс",
       save: "Сохранить",
-      tag: "Тег outbound keen-pbr",
+      tag: "Тег outbound keen-pbr-sx",
       interface: "Интерфейс TUN",
       interfaceHint: "Следующее свободное имя — {{name}}. Имена чужих inbound, например sbtun, пропускаются.",
       advanced: "Дополнительно",
@@ -1104,7 +1104,7 @@ export const ruTranslation = {
         settingsModeHint:
           "В продвинутом режиме можно настраивать низкоуровневые параметры маршрутизации (например, маску fwmark, номера очередей и журналов netlink). Не меняйте эти параметры, если не до конца понимаете их смысл, поскольку это может нарушить корректную работу устройства.",
         title: "Веб-интерфейс",
-        description: "Настройте отображаемое имя этой установки keen-pbr.",
+        description: "Настройте отображаемое имя этой установки keen-pbr-sx.",
       },
       dns: {
         disabledTitle: "Управление локальным DNS-сервером отключено",
@@ -1113,13 +1113,13 @@ export const ruTranslation = {
         disabledAction: "Перейти к настройке",
         title: "Управление локальным DNS-сервером",
         description:
-          "Позволяет указывать вышестоящий DNS-сервер через интерфейс keen-pbr, а также указывать отдельные DNS серверы для разрешения определённых доменов.",
+          "Позволяет указывать вышестоящий DNS-сервер через интерфейс keen-pbr-sx, а также указывать отдельные DNS серверы для разрешения определённых доменов.",
         resolverIntegrationLabel: "Управлять конфигурацией dnsmasq",
         resolverIntegrationHint:
           "Пример: Использовать DNS 8.8.8.8 по умолчанию, но для разрешения доменов *.corp.acme использовать DNS 10.10.10.10",
         dnsmasqInstanceLabel: "Экземпляр dnsmasq",
         dnsmasqInstanceHint:
-          "Оставьте пустым для автоматического выбора. Заполняйте, только если keen-pbr сообщает, что найдено несколько экземпляров dnsmasq; список покажет команда «keen-pbr resolver dnsmasq detect» на роутере.",
+          "Оставьте пустым для автоматического выбора. Заполняйте, только если keen-pbr-sx сообщает, что найдено несколько экземпляров dnsmasq; список покажет команда «keen-pbr-sx resolver dnsmasq detect» на роутере.",
         dnsmasqInstancePlaceholder: "автоматически",
         proxyAddressLabel: "Адрес DNS-прокси",
         proxyAddressHint:
@@ -1141,14 +1141,14 @@ export const ruTranslation = {
           "Если VPN или интерфейс отключится, трафик по его правилам будет заблокирован, а не отправлен через основную таблицу маршрутизации. Можно переопределить для каждого outbound.",
         skipMarkedPacketsLabel: "Не обрабатывать маркированные пакеты",
         skipMarkedPacketsHint:
-          "Игнорировать пакеты, у которых уже есть fwmark, проставленный другими правилами межсетевого экрана, чтобы keen-pbr не обрабатывал их повторно и не менял их маршрут.",
+          "Игнорировать пакеты, у которых уже есть fwmark, проставленный другими правилами межсетевого экрана, чтобы keen-pbr-sx не обрабатывал их повторно и не менял их маршрут.",
         processRouterTrafficLabel: "Обрабатывать собственный трафик роутера",
         processRouterTrafficHint:
           "Применять правила маршрутизации и изучать домены для трафика, который генерирует сам роутер. Если отключено, правилами маршрутизируется только транзитный трафик LAN; DNS detour по-прежнему применяется к собственным DNS-запросам роутера.",
         clearDynamicSetsOnApplyLabel:
           "Очищать изученные адреса доменов при применении",
         clearDynamicSetsOnApplyHint:
-          "Очищать динамические ipset, заполненные на основе DNS-ответов и L7, при применении новой конфигурации или перезапуске keen-pbr. Отключите, чтобы сохранять адреса в ipset до истечения их TTL.",
+          "Очищать динамические ipset, заполненные на основе DNS-ответов и L7, при применении новой конфигурации или перезапуске keen-pbr-sx. Отключите, чтобы сохранять адреса в ipset до истечения их TTL.",
         ipv6EnabledLabel: "Включить поддержку IPv6",
         ipv6EnabledHint:
           "Создавать IPv6-наборы межсетевого экрана и изучать IPv6-назначения. Отключите на старых прошивках без поддержки IPv6 netfilter.",
@@ -1174,10 +1174,10 @@ export const ruTranslation = {
       intercept: {
         title: "Маршрутизация на основе доменов",
         description:
-          "Настройте способы, которыми keen-pbr будет определять IP-адреса доменов для заполнения ipset",
+          "Настройте способы, которыми keen-pbr-sx будет определять IP-адреса доменов для заполнения ipset",
         enabledLabel: "Включить маршрутизацию на основе доменов",
         enabledHint:
-          "Если выключено, то keen-pbr не будет перехватывать DNS или анализировать L7. Правила на основе доменов работать не будут, однако правила на основе IP/CIDR продолжат работать.",
+          "Если выключено, то keen-pbr-sx не будет перехватывать DNS или анализировать L7. Правила на основе доменов работать не будут, однако правила на основе IP/CIDR продолжат работать.",
         minTtlLabel: "Минимальный TTL (миллисекунды)",
         minTtlHint:
           "Минимальное время жизни элементов в ipset. При применении значение округляется вниз до целых секунд (1000–4294967295999 мс).",
@@ -1191,14 +1191,14 @@ export const ruTranslation = {
         queueHint: "Номер очереди netlink nfqueue для перехвата DNS-пакетов.",
         holdTimeoutLabel: "Тайм-аут удержания DNS (миллисекунды)",
         holdTimeoutHint:
-          "Как долго keen-pbr может удерживать ответ DNS-сервера для заполнения ipset (5–500 мс). Если тайм-аут слишком маленький, keen-pbr может не успеть добавить IP в ipset и пакеты от клиента могут пойти по неправильному маршруту. Если тайм-аут слишком большой, то в случае зависания или краша keen-pbr у клиентов может возникнуть ощущение «медленного открытия сайтов» из-за задержки DNS-ответов.",
+          "Как долго keen-pbr-sx может удерживать ответ DNS-сервера для заполнения ipset (5–500 мс). Если тайм-аут слишком маленький, keen-pbr-sx может не успеть добавить IP в ipset и пакеты от клиента могут пойти по неправильному маршруту. Если тайм-аут слишком большой, то в случае зависания или краша keen-pbr-sx у клиентов может возникнуть ощущение «медленного открытия сайтов» из-за задержки DNS-ответов.",
         markerDomainLabel: "Домен-маркер",
         markerDomainHint: "Домен для синтетического DNS-ответа.",
         markerAddressLabel: "IPv4-адрес маркера",
         markerAddressHint: "IPv4-адрес, возвращаемый для домена-маркера.",
         l7EnabledLabel: "Включить перехват L7",
         l7EnabledHint:
-          "Анализировать TLS SNI, HTTP и QUIC пакеты для определения доменов и заполнения ipset. Помогает маршрутизировать приложения, которые не используют системные DNS-серверы, используют собственные DoH/DoT или зашитые IP-адреса, если имя домена доступно в L7. Если обнаруженный IP-адрес впервые добавлен в ipset, keen-pbr удаляет conntrack-записи этого клиента к данному IP. Соединение может прерваться; при переподключении трафик пойдёт через корректный маршрут.",
+          "Анализировать TLS SNI, HTTP и QUIC пакеты для определения доменов и заполнения ipset. Помогает маршрутизировать приложения, которые не используют системные DNS-серверы, используют собственные DoH/DoT или зашитые IP-адреса, если имя домена доступно в L7. Если обнаруженный IP-адрес впервые добавлен в ipset, keen-pbr-sx удаляет conntrack-записи этого клиента к данному IP. Соединение может прерваться; при переподключении трафик пойдёт через корректный маршрут.",
         nflogGroupLabel: "Группа NFLOG",
         nflogGroupHint:
           "Номер журнала netlink nflog для анализа TLS SNI / HTTP / QUIC.",
@@ -1400,7 +1400,7 @@ export const ruTranslation = {
         noneDefined: "Сначала добавьте обычный DNS-сервер.",
         noneAvailable: "Все DNS-серверы уже выбраны.",
         warning:
-          "У DoH-серверов <bold>{{tags}}</bold> не указан IP-адрес, поэтому keen-pbr будет пытаться определить его самостоятельно. Укажите bootstrap DNS-серверы, через которые keen-pbr должен искать эти DoH.",
+          "У DoH-серверов <bold>{{tags}}</bold> не указан IP-адрес, поэтому keen-pbr-sx будет пытаться определить его самостоятельно. Укажите bootstrap DNS-серверы, через которые keen-pbr-sx должен искать эти DoH.",
       },
     },
     dnsServerUpsert: {
@@ -1446,7 +1446,7 @@ export const ruTranslation = {
         ips: "IP-адреса сервера",
         ipsPlaceholder: "8.8.8.8, 8.8.4.4",
         ipsHint:
-          "Необязательно, через запятую. Если указать, keen-pbr будет подключаться только к этим адресам и не будет искать адрес сервера через bootstrap-серверы.",
+          "Необязательно, через запятую. Если указать, keen-pbr-sx будет подключаться только к этим адресам и не будет искать адрес сервера через bootstrap-серверы.",
       },
       validation: {
         tagUnique: "Название должно быть уникальным.",
@@ -1685,7 +1685,7 @@ export const ruTranslation = {
           "Выбор outbound с наименьшей задержкой (пинг путём отправки ICMP-пакета)",
         blackhole: "Весь трафик, направленный в этот outbound, отбрасывается.",
         ignore:
-          "Трафик не обрабатывается правилами keen-pbr и направляется согласно настройкам роутера.",
+          "Трафик не обрабатывается правилами keen-pbr-sx и направляется согласно настройкам роутера.",
       },
       advanced: {
         probesTitle: "Проверки и повторы",

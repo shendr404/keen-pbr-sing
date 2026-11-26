@@ -172,7 +172,7 @@ public:
       const std::string &registry = "mangle\nraw\n", bool preserve_dynamic = false,
       const std::string &list_failure = "") {
     const auto directory = std::filesystem::temp_directory_path() /
-                           ("keen-pbr-raw-cleanup-" +
+                           ("keen-pbr-sx-raw-cleanup-" +
                             std::to_string(static_cast<long long>(getpid())));
     std::filesystem::remove_all(directory);
     std::filesystem::create_directories(directory);
@@ -1043,7 +1043,7 @@ TEST_CASE("live-state cleanup sweeps RAW and mangle layouts per family") {
 
 TEST_CASE("IptablesFirewall cleanup propagates command failure") {
   const auto directory = std::filesystem::temp_directory_path() /
-                         ("keen-pbr-iptables-cleanup-" +
+                         ("keen-pbr-sx-iptables-cleanup-" +
                           std::to_string(static_cast<long long>(getpid())));
   std::filesystem::remove_all(directory);
   std::filesystem::create_directories(directory);
@@ -1592,7 +1592,7 @@ TEST_CASE("Destructive apply preserves compatible dynamic schemas") {
                             int schema_status = 0,
                             std::optional<uint32_t> maxelem = std::nullopt) {
     const auto sandbox = std::filesystem::temp_directory_path() /
-                         ("keen-pbr-iptables-destructive-" +
+                         ("keen-pbr-sx-iptables-destructive-" +
                           std::to_string(static_cast<long long>(getpid())) +
                           "-" + std::to_string(names_status) + "-" +
                           std::to_string(schema_status) + "-" +
@@ -1699,7 +1699,7 @@ TEST_CASE("Destructive apply preserves compatible dynamic schemas") {
 
 TEST_CASE("an invalid plan fails before any firewall mutation, a valid one commits once") {
   const auto sandbox = std::filesystem::temp_directory_path() /
-                       ("keen-pbr-iptables-plan-validation-" +
+                       ("keen-pbr-sx-iptables-plan-validation-" +
                         std::to_string(static_cast<long long>(getpid())));
   std::filesystem::remove_all(sandbox);
   std::filesystem::create_directories(sandbox);
@@ -1768,7 +1768,7 @@ TEST_CASE("an invalid plan fails before any firewall mutation, a valid one commi
 
 TEST_CASE("RulesOnly without a live PREROUTING chain is a typed fallback") {
   const auto sandbox = std::filesystem::temp_directory_path() /
-                       ("keen-pbr-iptables-rules-only-missing-" +
+                       ("keen-pbr-sx-iptables-rules-only-missing-" +
                         std::to_string(static_cast<long long>(getpid())));
   std::filesystem::remove_all(sandbox);
   std::filesystem::create_directories(sandbox);
@@ -1801,7 +1801,7 @@ public:
                        const std::vector<std::string> &live_sets,
                        const std::string &table_dump = "") {
     dir_ = std::filesystem::temp_directory_path() /
-           ("keen-pbr-ipt-apply-" + tag + "-" +
+           ("keen-pbr-sx-ipt-apply-" + tag + "-" +
             std::to_string(static_cast<long long>(getpid())));
     std::filesystem::remove_all(dir_);
     std::filesystem::create_directories(dir_);
@@ -2205,7 +2205,7 @@ TEST_CASE("default_gateway: the bypass set is destroyed after the rule is gone")
 
 TEST_CASE("consecutive RulesOnly applies rewrite the same chains while reusing the static sets") {
   const auto sandbox = std::filesystem::temp_directory_path() /
-                       ("keen-pbr-iptables-rules-only-consecutive-" +
+                       ("keen-pbr-sx-iptables-rules-only-consecutive-" +
                         std::to_string(static_cast<long long>(getpid())));
   std::filesystem::remove_all(sandbox);
   std::filesystem::create_directories(sandbox);
@@ -2320,7 +2320,7 @@ TEST_CASE("xt_comment registration parser requires an exact token") {
 
 TEST_CASE("xt_comment preflight fails closed for missing or unreadable registration") {
   const auto sandbox = std::filesystem::temp_directory_path() /
-                       ("keen-pbr-iptables-comment-proc-" +
+                       ("keen-pbr-sx-iptables-comment-proc-" +
                         std::to_string(static_cast<long long>(getpid())));
   std::filesystem::remove_all(sandbox);
   std::filesystem::create_directories(sandbox / "directory");
@@ -2339,7 +2339,7 @@ TEST_CASE("xt_comment preflight fails closed for missing or unreadable registrat
 
 TEST_CASE("xt_comment preflight keeps family registration independent") {
   const auto sandbox = std::filesystem::temp_directory_path() /
-                       ("keen-pbr-iptables-comment-family-" +
+                       ("keen-pbr-sx-iptables-comment-family-" +
                         std::to_string(static_cast<long long>(getpid())));
   std::filesystem::remove_all(sandbox);
   std::filesystem::create_directories(sandbox);
@@ -2393,7 +2393,7 @@ TEST_CASE("xt_comment preflight keeps family registration independent") {
 
 TEST_CASE("xt_comment restore grammar failure is a safe fallback") {
   const auto sandbox = std::filesystem::temp_directory_path() /
-                       ("keen-pbr-iptables-comment-restore-" +
+                       ("keen-pbr-sx-iptables-comment-restore-" +
                         std::to_string(static_cast<long long>(getpid())));
   std::filesystem::remove_all(sandbox);
   std::filesystem::create_directories(sandbox);
@@ -2442,7 +2442,7 @@ TEST_CASE("iptables flavour parser reads the -V suffix") {
 
 TEST_CASE("xt_comment probe decision depends on the iptables flavour") {
   const auto sandbox = std::filesystem::temp_directory_path() /
-                       ("keen-pbr-iptables-comment-flavour-" +
+                       ("keen-pbr-sx-iptables-comment-flavour-" +
                         std::to_string(static_cast<long long>(getpid())));
   std::filesystem::remove_all(sandbox);
   std::filesystem::create_directories(sandbox);
@@ -2524,7 +2524,7 @@ TEST_CASE("xt_comment probe decision depends on the iptables flavour") {
 
 TEST_CASE("unsupported xt_comment omits comments without changing apply") {
   const auto sandbox = std::filesystem::temp_directory_path() /
-                       ("keen-pbr-iptables-no-comment-" +
+                       ("keen-pbr-sx-iptables-no-comment-" +
                         std::to_string(static_cast<long long>(getpid())));
   std::filesystem::remove_all(sandbox);
   std::filesystem::create_directories(sandbox);

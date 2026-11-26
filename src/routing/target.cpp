@@ -28,7 +28,7 @@ RoutingDecision resolve_route_action(
     }
 
     // IGNORE type means install a pass-through firewall verdict so the
-    // packet leaves keen-pbr processing unchanged.
+    // packet leaves keen-pbr-sx processing unchanged.
     if (ob->type == OutboundType::IGNORE) {
         return RoutingDecision::passthrough(ob);
     }

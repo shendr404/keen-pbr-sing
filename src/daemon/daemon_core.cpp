@@ -64,7 +64,7 @@ bool config_uses_doh(const Config &config) {
 }
 
 // Tags of the DoH servers with a host name in the URL and no IP addresses of
-// their own: keen-pbr has to look their address up.
+// their own: keen-pbr-sx has to look their address up.
 std::vector<std::string> doh_servers_needing_bootstrap(const Config &config) {
   std::vector<std::string> tags;
   const auto servers = config.dns.value_or(DnsConfig{}).servers.value_or(std::vector<DnsServer>{});
@@ -231,7 +231,7 @@ const Outbound *find_outbound(const std::vector<Outbound> &outbounds,
 Daemon::Daemon(Config config, std::string config_path, DaemonOptions opts)
     : config_store_(config),
       list_service_(config.daemon.value_or(DaemonConfig{})
-                        .cache_dir.value_or("/var/cache/keen-pbr"),
+                        .cache_dir.value_or("/var/cache/keen-pbr-sx"),
                     max_file_size_bytes(config)),
       config_(std::move(config)), config_path_(std::move(config_path)),
       opts_(std::move(opts)),

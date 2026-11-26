@@ -14,7 +14,7 @@
 #include <unistd.h>
 #include <termios.h>
 
-#include <keen-pbr/version.hpp>
+#include <keen-pbr-sx/version.hpp>
 
 #include "config/config.hpp"
 #include "config/config_writer.hpp"
@@ -31,10 +31,10 @@
 #include "util/daemon_signals.hpp"
 
 #ifndef KEEN_PBR_DEFAULT_CONFIG_PATH
-#define KEEN_PBR_DEFAULT_CONFIG_PATH "/etc/keen-pbr/config.json"
+#define KEEN_PBR_DEFAULT_CONFIG_PATH "/etc/keen-pbr-sx/config.json"
 #endif
 #ifndef KEEN_PBR_RESOLVER_FALLBACK_CONFIG
-#define KEEN_PBR_RESOLVER_FALLBACK_CONFIG "/etc/keen-pbr/dnsmasq-fallback.conf"
+#define KEEN_PBR_RESOLVER_FALLBACK_CONFIG "/etc/keen-pbr-sx/dnsmasq-fallback.conf"
 #endif
 #ifndef KEEN_PBR_TARGET_OS
 #define KEEN_PBR_TARGET_OS "linux"
@@ -62,7 +62,7 @@ struct CliOptions {
   std::string log_level{"info"};
   std::string log_target;
   std::string pid_file_override;
-  std::string crash_report_path{"/tmp/keen-pbr-crash.log"};
+  std::string crash_report_path{"/tmp/keen-pbr-sx-crash.log"};
   bool no_api{false};
   bool use_raw_prerouting{false};
   bool use_raw6_prerouting{false};
@@ -103,7 +103,7 @@ void print_usage(const char *argv0) {
             << "  --pid-file <path>  Override daemon.pid_file when running the "
                "service command\n"
             << "  --crash-report <path>  Last-crash report path (default: "
-               "/tmp/keen-pbr-crash.log)\n"
+               "/tmp/keen-pbr-sx-crash.log)\n"
             << "  --no-api           Disable REST API at runtime\n"
             << "  --use-raw-prerouting  Use raw PREROUTING for IPv4 forwarded "
                "traffic (iptables only)\n"
@@ -131,7 +131,7 @@ void print_usage(const char *argv0) {
             << "  resolver dnsmasq print-config      Print the dnsmasq config generated "
                "from dns.rules/dns.fallback (cached lists only; used as "
                "dnsmasq conf-script, always exits 0)\n"
-            << "  resolver dnsmasq detect [--json]   List dnsmasq instances, their DNS endpoints and which one keen-pbr uses\n"
+            << "  resolver dnsmasq detect [--json]   List dnsmasq instances, their DNS endpoints and which one keen-pbr-sx uses\n"
             << "  hash-password [--update]           Generate an authentication password hash; --update writes config.json\n";
 }
 
@@ -232,7 +232,7 @@ CliOptions parse_args(int argc, char *argv[]) {
     } else if (std::strcmp(argv[i], "subscriptions") == 0) {
       if (i + 1 >= argc || std::strcmp(argv[++i], "refresh") != 0 || argc - i > 2 ||
           (i + 1 < argc && argv[i + 1][0] == '-' && std::strcmp(argv[i + 1], "--all") != 0)) {
-        std::cerr << "Usage: keen-pbr subscriptions refresh [--all|<id>]\n";
+        std::cerr << "Usage: keen-pbr-sx subscriptions refresh [--all|<id>]\n";
         std::exit(64);
       }
       opts.refresh_subscriptions = true;
@@ -439,7 +439,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (opts.show_version) {
-      std::cout << "keen-pbr " << KEEN_PBR3_VERSION_STRING << " (build "
+      std::cout << "keen-pbr-sx " << KEEN_PBR3_VERSION_STRING << " (build "
                 << KEEN_PBR3_VERSION_RELEASE << ")" << "\n";
       return 0;
     }
@@ -482,13 +482,13 @@ int main(int argc, char *argv[]) {
       keen_pbr3::validate_config(updated);
       keen_pbr3::write_config_atomically(opts.config_path, body);
       std::cout << "Authentication password updated in " << opts.config_path << ".\n"
-                << "Restart the keen-pbr service for authentication changes to take effect.\n";
+                << "Restart the keen-pbr-sx service for authentication changes to take effect.\n";
       return 0;
     }
 
     if (opts.resolver_usage_error) {
-      std::cerr << "Usage: keen-pbr resolver dnsmasq print-config\n"
-                   "       keen-pbr resolver dnsmasq detect [--json]\n";
+      std::cerr << "Usage: keen-pbr-sx resolver dnsmasq print-config\n"
+                   "       keen-pbr-sx resolver dnsmasq detect [--json]\n";
       return 64;
     }
 
@@ -531,7 +531,7 @@ int main(int argc, char *argv[]) {
           output << '\n';
         }
       } else {
-        std::cerr << "keen-pbr subscriptions refresh: "
+        std::cerr << "keen-pbr-sx subscriptions refresh: "
                   << response.value("error", nlohmann::json::object())
                          .value("message", "control request failed") << '\n';
       }
@@ -563,7 +563,7 @@ int main(int argc, char *argv[]) {
                  : request_control_state(operation));
       if (!response.value("ok", false)) {
         const auto& error = response.value("error", nlohmann::json::object());
-        std::cerr << "keen-pbr " << operation << ": "
+        std::cerr << "keen-pbr-sx " << operation << ": "
                   << error.value("code", "daemon_error") << ": "
                   << error.value("message", "control request failed") << '\n';
         return 1;
@@ -622,7 +622,7 @@ int main(int argc, char *argv[]) {
 
     // Construct Daemon with all subsystems and run
     if (opts.run_service) {
-      logger.info("keen-pbr {} starting...", KEEN_PBR3_VERSION_STRING);
+      logger.info("keen-pbr-sx {} starting...", KEEN_PBR3_VERSION_STRING);
       keen_pbr3::DaemonOptions daemon_opts;
       daemon_opts.no_api = opts.no_api;
       daemon_opts.use_raw_prerouting = opts.use_raw_prerouting;

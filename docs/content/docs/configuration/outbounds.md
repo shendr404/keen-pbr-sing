@@ -13,7 +13,7 @@ Most users only need:
 
 - one **Interface** (`interface`) outbound for the VPN connection
 - one **Routing table** (`table`) outbound with `table: 254` (the system's main routing table) for the normal connection, often `wan`
-- optionally one **Auto-select (urltest)** or **Auto-select (ICMP)** (`icmptest`) outbound, so keen-pbr picks a working one among several connections
+- optionally one **Auto-select (urltest)** or **Auto-select (ICMP)** (`icmptest`) outbound, so keen-pbr-sx picks a working one among several connections
 
 If you are not sure, start with **Interface** and come back to the other types later.
 
@@ -56,7 +56,7 @@ Use it when traffic must go through a specific network interface: a VPN tunnel (
 
 For tunnels such as `tun0` or `wg0`, a gateway is usually not needed: without `gateway` and `gateway6`, both IPv4 and IPv6 traffic is sent straight into the interface. You need a gateway when the interface is connected to your ISP's router and traffic must be handed to its address, for example a second WAN.
 
-You do not have to look the gateway up yourself: enter `"auto"` (type `auto` in the Web UI) and keen-pbr takes the gateway from this interface's default route in the main routing table (if there are several, from the one with the lowest metric). If the interface has no such route, or its best routes have different gateways, the outbound counts as unavailable for that IP version.
+You do not have to look the gateway up yourself: enter `"auto"` (type `auto` in the Web UI) and keen-pbr-sx takes the gateway from this interface's default route in the main routing table (if there are several, from the one with the lowest metric). If the interface has no such route, or its best routes have different gateways, the outbound counts as unavailable for that IP version.
 
 If you set a gateway for only one IP version, traffic of the other version for this outbound is blocked rather than leaking past the VPN.
 
@@ -127,7 +127,7 @@ Use it to block access to sites or addresses: matching traffic is dropped.
 
 ## `ignore`
 
-Use it for exceptions: traffic follows the router's normal routing, as if keen-pbr did not touch it.
+Use it for exceptions: traffic follows the router's normal routing, as if keen-pbr-sx did not touch it.
 
 Rules are checked from top to bottom and the first match wins, so put the `ignore` rule above a broader one. For example, the whole `streaming` list goes through the VPN except addresses from the `streaming_direct` list (`direct` is the `ignore` outbound from the example below):
 
@@ -156,7 +156,7 @@ Rules are checked from top to bottom and the first match wins, so put the `ignor
 
 ## `urltest`
 
-Use it when you have several links (for example two VPNs and your normal internet) and want keen-pbr to pick a working one automatically. keen-pbr periodically opens `url` through each link and measures the response time. In the Web UI the type is called **Auto-select (urltest)**.
+Use it when you have several links (for example two VPNs and your normal internet) and want keen-pbr-sx to pick a working one automatically. keen-pbr-sx periodically opens `url` through each link and measures the response time. In the Web UI the type is called **Auto-select (urltest)**.
 
 If no link works, traffic for this outbound is blocked rather than leaking through your normal internet connection around the VPN.
 
@@ -205,7 +205,7 @@ If no link works, traffic for this outbound is blocked rather than leaking throu
 
 ### Outbound Groups (tiers)
 
-A group is a set of links to pick a working one from. You can have several groups, checked in order: the first is the primary one, the rest are backups. keen-pbr uses the first group that has at least one working link. A backup group is used only when no link in the groups above it works.
+A group is a set of links to pick a working one from. You can have several groups, checked in order: the first is the primary one, the rest are backups. keen-pbr-sx uses the first group that has at least one working link. A backup group is used only when no link in the groups above it works.
 
 In the Web UI groups are called tiers: **Primary tier** and **Backup tier N**. Click **Add backup tier** to add a fallback.
 
@@ -233,7 +233,7 @@ Each link in a group:
 This strategy spreads load across the working links of the first working tier. A link is chosen per new connection, not per request: the whole connection, including HTTP/2 and {{< term "QUIC" >}}, stays on one link. `tolerance_ms` and `conntrack_on_switch` are not used with balancing. When a link stops working, {{< term "conntrack" >}} entries of its connections are deleted, and new connections are spread across the remaining links.
 
 {{< only nftables >}} Connections are split exactly by weight.\
-{{< only iptables >}} A link is picked at random with the right probability, so with only a few connections the shares can differ noticeably from the weights; with many connections they even out. iptables needs the `xt_statistic` kernel module; if it is missing, keen-pbr reports it when applying the configuration. This strategy is not available on Keenetic. Balancing is not available with `--use-raw-prerouting`.
+{{< only iptables >}} A link is picked at random with the right probability, so with only a few connections the shares can differ noticeably from the weights; with many connections they even out. iptables needs the `xt_statistic` kernel module; if it is missing, keen-pbr-sx reports it when applying the configuration. This strategy is not available on Keenetic. Balancing is not available with `--use-raw-prerouting`.
 
 {{< callout type="info" >}}
 Balancing across several WANs needs {{< term "NAT" >}} on every uplink, loose `rp_filter`, and an {{< term "fwmark" >}} range that other software does not use. See [Multi-WAN Load Balancing]({{< relref "/docs/configuration/multi-wan" >}}) for a complete setup for each firewall backend.
@@ -248,7 +248,7 @@ Balancing across several WANs needs {{< term "NAT" >}} on every uplink, loose `r
 
 ### Excluding an unstable link (`circuit_breaker`)
 
-If a link fails several checks in a row, keen-pbr stops using it for a while. This keeps traffic from bouncing back and forth while a link keeps going up and down. The defaults suit most setups; you do not need to change them.
+If a link fails several checks in a row, keen-pbr-sx stops using it for a while. This keeps traffic from bouncing back and forth while a link keeps going up and down. The defaults suit most setups; you do not need to change them.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
@@ -297,4 +297,4 @@ Use it instead of `urltest` when HTTP checks do not work for you. In the Web UI 
 
 `tolerance_ms`, `strategy`, `conntrack_on_switch`, groups (tiers) and weights work the same as in `urltest`.
 
-Pings are sent one after another, so checking all links takes time. `interval_ms` must exceed that time by at least 25%; otherwise keen-pbr rejects the configuration and tells you the minimum allowed value. Groups may contain at most 16 links in total.
+Pings are sent one after another, so checking all links takes time. `interval_ms` must exceed that time by at least 25%; otherwise keen-pbr-sx rejects the configuration and tells you the minimum allowed value. Groups may contain at most 16 links in total.

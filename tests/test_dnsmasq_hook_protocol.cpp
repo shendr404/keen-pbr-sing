@@ -17,8 +17,8 @@ const char* kExample =
     "match_conf_file=/var/etc/dnsmasq.conf.cfg01411c\n"
     "dropin_include=static\n"
     "dropin_dir=/tmp/dnsmasq.cfg01411c.d\n"
-    "dropin_file=/tmp/dnsmasq.cfg01411c.d/keen-pbr.conf\n"
-    "dropin_content=conf-script=/usr/sbin/keen-pbr generate-resolver-config dnsmasq\n"
+    "dropin_file=/tmp/dnsmasq.cfg01411c.d/keen-pbr-sx.conf\n"
+    "dropin_content=conf-script=/usr/sbin/keen-pbr-sx generate-resolver-config dnsmasq\n"
     "dropin_state=current\n"
     "missing_mounts=\n";
 
@@ -41,8 +41,8 @@ TEST_CASE("dnsmasq_hook_protocol: spec example parses") {
     CHECK(r.match_conf_file == "/var/etc/dnsmasq.conf.cfg01411c");
     CHECK(r.dropin_include == DropinInclude::Static);
     CHECK(r.dropin_dir == "/tmp/dnsmasq.cfg01411c.d");
-    CHECK(r.dropin_file == "/tmp/dnsmasq.cfg01411c.d/keen-pbr.conf");
-    CHECK(r.dropin_content == "conf-script=/usr/sbin/keen-pbr generate-resolver-config dnsmasq");
+    CHECK(r.dropin_file == "/tmp/dnsmasq.cfg01411c.d/keen-pbr-sx.conf");
+    CHECK(r.dropin_content == "conf-script=/usr/sbin/keen-pbr-sx generate-resolver-config dnsmasq");
     CHECK(r.dropin_state == DropinState::Current);
     CHECK(r.missing_mounts.empty());
 }

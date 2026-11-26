@@ -77,14 +77,14 @@ std::string DnsmasqGenerator::generate(std::ostream& sink, DnsmasqGenStats* stat
     std::ostream out(&hashing);
     DnsmasqGenStats local_stats;
 
-    out << "# keen-pbr generated, do not edit\n\n";
+    out << "# keen-pbr-sx generated, do not edit\n\n";
     out << "address=/use-application-dns.net/\n\n";
 
     if (!dns_registry_.balancer_error().empty()) {
         throw DnsError(dns_registry_.balancer_error());
     }
 
-    // Default upstreams: dnsmasq must not read /etc/resolv.conf when keen-pbr
+    // Default upstreams: dnsmasq must not read /etc/resolv.conf when keen-pbr-sx
     // owns the list of unscoped servers.  A DoH server is reached through the
     // local forwarder.
     const auto fallback_tags = dns_config_.fallback.value_or(std::vector<std::string>{});

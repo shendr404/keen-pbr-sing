@@ -344,7 +344,7 @@ TEST_CASE("runtime preserves ordered direct rule actions and selectors") {
     ]}
   })");
   RecordingFirewall firewall;
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-direct-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-direct-test-cache");
 
   const auto states = apply_runtime_firewall(
       config, {{"wan", 0x100U}}, cache, firewall,
@@ -396,7 +396,7 @@ TEST_CASE("failed firewall apply does not publish a candidate plan") {
   })");
   RecordingFirewall firewall;
   firewall.fail_apply = true;
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-failed-plan-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-failed-plan-test-cache");
 
   ActiveFirewall previous;
   previous.plan.fwmark_mask = 0x00FF0000u;
@@ -437,7 +437,7 @@ TEST_CASE("runtime emits static and dynamic list sets in family order") {
   const bool ipv6_enabled = resolve_ipv6_support(config).enabled;
 
   RecordingFirewall firewall;
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-list-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-list-test-cache");
   const auto applied_result = apply_runtime_firewall(
       config, {{"wan", 0x100U}}, cache, firewall,
       FirewallApplyMode::PreserveSets);
@@ -490,7 +490,7 @@ TEST_CASE("runtime projects and streams only finalized list-set declarations") {
     "route": {"rules": [{"list":["shared"],"outbound":"auto"}]}
   })");
   RecordingFirewall firewall;
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-plan-projection-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-plan-projection-test-cache");
 
   // The balance route has no runtime mark, so its canonical plan omits the
   // list sets even though list analysis finds static entries.
@@ -530,7 +530,7 @@ TEST_CASE("RulesOnly preserves shared list usage after a skipped first rule") {
     ]}
   })");
   const OutboundMarkMap marks{{"wan", 0x100U}};
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-shared-rules-only-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-shared-rules-only-test-cache");
 
   RecordingFirewall initial_firewall;
   ActiveFirewall previous_plan;
@@ -570,7 +570,7 @@ TEST_CASE("runtime streams a shared static list once per family") {
   })");
   const bool ipv6_enabled = resolve_ipv6_support(config).enabled;
   RecordingFirewall firewall;
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-shared-list-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-shared-list-test-cache");
 
   const auto applied_result = apply_runtime_firewall(
       config, {{"wan", 0x100U}}, cache, firewall,
@@ -614,7 +614,7 @@ TEST_CASE("runtime captures OUTPUT default-gateway bypass criteria") {
     "route": {"rules": [{"default_gateway":"ipv4","outbound":"wan"}]}
   })");
   RecordingFirewall firewall;
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-gateway-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-gateway-test-cache");
   const std::vector<DumpedRoute> main_routes = {
       {"default", 254, {}, {}, false, false, AF_INET},
       {"192.0.2.0/24", 254, {}, {}, false, false, AF_INET},
@@ -657,7 +657,7 @@ TEST_CASE("iptables plan declares the internal address sets with their entries")
   })");
   RecordingFirewall firewall;
   firewall.backend_type = FirewallBackend::iptables;
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-internal-sets-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-internal-sets-test-cache");
   const std::vector<DumpedRoute> main_routes = {
       {"192.0.2.0/24", 254, {}, {}, false, false, AF_INET}};
 
@@ -695,7 +695,7 @@ TEST_CASE("runtime replays only the gateway family for populated route lists") {
                             "outbound":"wan"}]}
   })");
   RecordingFirewall firewall;
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-gateway-list-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-gateway-list-test-cache");
 
   const auto states = apply_runtime_firewall(
       config, {{"wan", 0x100U}}, cache, firewall,
@@ -741,7 +741,7 @@ TEST_CASE("runtime passes balance fallback and candidates to the firewall") {
     "route": {"rules": [{"outbound":"auto","dscp":46}]}
   })");
   RecordingFirewall firewall;
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-balance-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-balance-test-cache");
   const FirewallBalanceCandidates candidates = {
       {"auto", {{0x200U, true, false}, {0x300U, true, true}}}};
 
@@ -791,7 +791,7 @@ TEST_CASE("mixed nftables-only plan fails before backend mutation") {
   })");
   RecordingFirewall firewall;
   firewall.backend_type = FirewallBackend::iptables;
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-backend-validation-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-backend-validation-test-cache");
   const FirewallBalanceCandidates candidates = {
       {"auto", {{0x200U, true, true}, {0x300U, true, true}}}};
 
@@ -820,7 +820,7 @@ TEST_CASE("RulesOnly validates deferred list-backed actions before preparation")
   })");
   RecordingFirewall firewall;
   firewall.backend_type = FirewallBackend::iptables;
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-deferred-validation-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-deferred-validation-test-cache");
   const FirewallBalanceCandidates candidates = {
       {"auto", {{0x200U, true, true}, {0x300U, true, true}}}};
 
@@ -843,7 +843,7 @@ TEST_CASE("RulesOnly rejects list-backed default gateway with an empty active pl
                             "outbound":"wan"}]}
   })");
   const OutboundMarkMap marks{{"wan", 1}};
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-empty-plan-gateway-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-empty-plan-gateway-test-cache");
   RecordingFirewall previous_firewall;
   ActiveFirewall previous_plan;
   previous_plan = apply_runtime_firewall(
@@ -871,7 +871,7 @@ TEST_CASE("runtime emits DNS detours as OUTPUT TCP/UDP rules") {
                             "detour":"wan"}]}
   })");
   RecordingFirewall firewall;
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-dns-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-dns-test-cache");
 
   (void)apply_runtime_firewall(
       config, {{internal_detour_mark_key("wan"), 0x200U}}, cache, firewall,
@@ -910,7 +910,7 @@ TEST_CASE("runtime DNS detour precedence follows configured order") {
       {internal_detour_mark_key("route_a"), 0x200U}};
   const auto apply = [&](const Config& candidate) {
     RecordingFirewall firewall;
-    CacheManager cache("/tmp/keen-pbr-firewall-runtime-dns-order-test-cache");
+    CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-dns-order-test-cache");
     (void)apply_runtime_firewall(candidate, marks, cache, firewall,
                                  FirewallApplyMode::PreserveSets);
     return firewall.recorded_rules;
@@ -954,7 +954,7 @@ TEST_CASE("runtime leaves inactive and empty route cases without rules") {
     ]}
   })");
   RecordingFirewall firewall;
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-noop-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-noop-test-cache");
 
   const auto states = apply_runtime_firewall(
       config, {{"wan", 0x100U}}, cache, firewall,
@@ -976,7 +976,7 @@ TEST_CASE("runtime forwards every apply mode and preserves RulesOnly no-streamin
     "outbounds": [{"type":"table","tag":"wan","table":100}],
     "route": {"rules":[{"outbound":"wan","dscp":46}]}
   })");
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-modes-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-modes-test-cache");
   for (const auto mode : {FirewallApplyMode::Destructive,
                           FirewallApplyMode::PreserveSets,
                           FirewallApplyMode::StaticSetsOnly,
@@ -995,7 +995,7 @@ TEST_CASE("RulesOnly reuses aligned empty file list without streaming") {
   const Config config = empty_source_list_config();
   RecordingFirewall previous_firewall;
   ActiveFirewall previous_plan;
-  CacheManager cache("/tmp/keen-pbr-rules-only-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-rules-only-test-cache");
   previous_plan = apply_runtime_firewall(
               previous_config, {{"wan", 1}}, cache, previous_firewall,
               FirewallApplyMode::PreserveSets);
@@ -1017,7 +1017,7 @@ TEST_CASE("RulesOnly reuses aligned empty file list without streaming") {
 TEST_CASE("non-RulesOnly list analysis fails before firewall preparation") {
   const Config config = empty_source_list_config();
   RecordingFirewall firewall;
-  CacheManager cache("/tmp/keen-pbr-non-rules-only-analysis-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-non-rules-only-analysis-test-cache");
 
   CHECK_THROWS(apply_runtime_firewall(
       config, {{"wan", 1}}, cache, firewall, FirewallApplyMode::PreserveSets));
@@ -1029,7 +1029,7 @@ TEST_CASE("RulesOnly falls back when the active plan is missing") {
   const Config config = empty_source_list_config();
   RulesOnlyFirewall firewall;
   const OutboundMarkMap marks{{"wan", 1}};
-  CacheManager cache("/tmp/keen-pbr-rules-only-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-rules-only-test-cache");
 
   CHECK_THROWS_AS(apply_runtime_firewall(
                       config, marks, cache, firewall,
@@ -1047,7 +1047,7 @@ TEST_CASE("RulesOnly falls back when active plan list identity is unknown") {
   const Config config = empty_source_list_config();
   RecordingFirewall previous_firewall;
   ActiveFirewall previous_plan;
-  CacheManager cache("/tmp/keen-pbr-rules-only-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-rules-only-test-cache");
   previous_plan = apply_runtime_firewall(
               previous_config, {{"wan", 1}}, cache, previous_firewall,
               FirewallApplyMode::PreserveSets);
@@ -1068,7 +1068,7 @@ TEST_CASE("RulesOnly reuses aligned empty URL list without streaming") {
   const Config config = empty_url_list_config();
   RecordingFirewall previous_firewall;
   ActiveFirewall previous_plan;
-  CacheManager cache("/tmp/keen-pbr-rules-only-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-rules-only-test-cache");
   previous_plan = apply_runtime_firewall(
               previous_config, {{"wan", 1}}, cache, previous_firewall,
               FirewallApplyMode::PreserveSets);
@@ -1090,7 +1090,7 @@ TEST_CASE("RulesOnly trusts realized empty state after inline entries parse away
   const Config config = invalid_inline_list_config();
   RecordingFirewall previous_firewall;
   ActiveFirewall previous_plan;
-  CacheManager cache("/tmp/keen-pbr-rules-only-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-rules-only-test-cache");
   previous_plan = apply_runtime_firewall(
               previous_config, {{"wan", 1}}, cache, previous_firewall,
               FirewallApplyMode::PreserveSets);
@@ -1114,7 +1114,7 @@ TEST_CASE("RulesOnly fallback preserves and materializes a valid list") {
   RecordingFirewall firewall;
   firewall.fail_rules_only = true;
   const OutboundMarkMap marks{{"wan", 1}};
-  CacheManager cache("/tmp/keen-pbr-rules-only-valid-list-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-rules-only-valid-list-test-cache");
   previous_plan = apply_runtime_firewall(
               config, marks, cache, previous_firewall,
               FirewallApplyMode::PreserveSets);
@@ -1145,7 +1145,7 @@ TEST_CASE("RulesOnly falls back when the previous result lacks a planned set") {
   const OutboundMarkMap marks{{"wan", 1}};
   RecordingFirewall previous_firewall;
   ActiveFirewall previous_plan;
-  CacheManager cache("/tmp/keen-pbr-rules-only-stale-set-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-rules-only-stale-set-test-cache");
   previous_plan = apply_runtime_firewall(
               config, marks, cache, previous_firewall,
               FirewallApplyMode::PreserveSets);
@@ -1177,7 +1177,7 @@ TEST_CASE("RulesOnly validates the active plan IPv6 static set") {
   }
 
   const auto sandbox = std::filesystem::temp_directory_path() /
-                       ("keen-pbr-firewall-runtime-ipv6-" +
+                       ("keen-pbr-sx-firewall-runtime-ipv6-" +
                         std::to_string(static_cast<long long>(getpid())));
   std::filesystem::remove_all(sandbox);
   std::filesystem::create_directories(sandbox);
@@ -1195,7 +1195,7 @@ TEST_CASE("RulesOnly validates the active plan IPv6 static set") {
   const OutboundMarkMap marks{{"wan", 1}};
   RecordingFirewall previous_firewall;
   ActiveFirewall previous_plan;
-  CacheManager cache("/tmp/keen-pbr-rules-only-stale-ipv6-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-rules-only-stale-ipv6-test-cache");
   previous_plan = apply_runtime_firewall(
               config, marks, cache, previous_firewall,
               FirewallApplyMode::PreserveSets);
@@ -1235,7 +1235,7 @@ TEST_CASE("RulesOnly reuses dynamic timeout from the active plan") {
   const OutboundMarkMap marks{{"wan", 1}};
   RecordingFirewall previous_firewall;
   ActiveFirewall previous_plan;
-  CacheManager cache("/tmp/keen-pbr-rules-only-dynamic-timeout-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-rules-only-dynamic-timeout-test-cache");
   previous_plan = apply_runtime_firewall(
               previous_config, marks, cache, previous_firewall,
               FirewallApplyMode::PreserveSets);
@@ -1268,7 +1268,7 @@ TEST_CASE("RulesOnly falls back when dynamic timeout changes") {
   const OutboundMarkMap marks{{"wan", 1}};
   RecordingFirewall previous_firewall;
   ActiveFirewall previous_plan;
-  CacheManager cache("/tmp/keen-pbr-rules-only-dynamic-timeout-change-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-rules-only-dynamic-timeout-change-test-cache");
   previous_plan = apply_runtime_firewall(
               previous_config, marks, cache, previous_firewall,
               FirewallApplyMode::PreserveSets);
@@ -1319,7 +1319,7 @@ std::string plan_fingerprint(const FirewallPlan& plan) {
 TEST_CASE("successful apply returns consistent plan, result and rule states") {
   const Config config = valid_inline_list_config();
   const OutboundMarkMap marks{{"wan", 1}};
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-active-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-active-test-cache");
   RecordingFirewall firewall;
 
   const auto active = apply_runtime_firewall(
@@ -1348,7 +1348,7 @@ TEST_CASE("preparation failure keeps the previous active firewall") {
                             "outbound":"wan"}]}
   })");
   const OutboundMarkMap marks{{"wan", 1}};
-  CacheManager cache("/tmp/keen-pbr-firewall-runtime-prep-fail-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-firewall-runtime-prep-fail-test-cache");
   RecordingFirewall previous_firewall;
   FirewallState state;
   state.publish_active_firewall(apply_runtime_firewall(
@@ -1371,7 +1371,7 @@ TEST_CASE("preparation failure keeps the previous active firewall") {
 TEST_CASE("RulesOnly with a matching previous result stays RulesOnly") {
   const Config config = valid_inline_list_config();
   const OutboundMarkMap marks{{"wan", 1}};
-  CacheManager cache("/tmp/keen-pbr-rules-only-match-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-rules-only-match-test-cache");
   RecordingFirewall previous_firewall;
   const auto previous = apply_runtime_firewall(
       config, marks, cache, previous_firewall, FirewallApplyMode::PreserveSets);
@@ -1391,7 +1391,7 @@ TEST_CASE("RulesOnly with a matching previous result stays RulesOnly") {
 TEST_CASE("RulesOnly with a stale previous result falls back exactly once") {
   const Config config = valid_inline_list_config();
   const OutboundMarkMap marks{{"wan", 1}};
-  CacheManager cache("/tmp/keen-pbr-rules-only-stale-result-test-cache");
+  CacheManager cache("/tmp/keen-pbr-sx-rules-only-stale-result-test-cache");
   RecordingFirewall previous_firewall;
   const auto previous = apply_runtime_firewall(
       config, marks, cache, previous_firewall, FirewallApplyMode::PreserveSets);

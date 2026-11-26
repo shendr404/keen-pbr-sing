@@ -173,7 +173,7 @@ struct FirewallApplyResult {
   // RulesOnly checks that every set its plan needs was realized by the
   // previous apply (set names are stable across applies).
   std::vector<std::string> physical_set_names;
-  // The complete ruleset keen-pbr expects in the kernel after this apply
+  // The complete ruleset keen-pbr-sx expects in the kernel after this apply
   // (Firewall::expected_ruleset), lowered once at apply time so verification
   // never re-lowers the plan.  Null only for a default-constructed result.
   std::shared_ptr<const PhysicalRuleset> expected_ruleset;
@@ -311,7 +311,7 @@ public:
       return raw_prerouting_mode().ipv4;
     }
 
-  // Everything keen-pbr expects in the kernel once `plan` has been applied by
+  // Everything keen-pbr-sx expects in the kernel once `plan` has been applied by
   // this backend, as the backend realized it: the lowered owned chains
   // (raw/mangle placement, comment support, resolved set names,
   // owned marks) merged with expected_hook_rules().  Call after apply() while

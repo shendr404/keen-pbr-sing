@@ -43,7 +43,7 @@ ensure_bun() {
 
 ensure_bun
 
-TMP_ROOT="${TMPDIR:-/tmp}/keen-pbr-bun"
+TMP_ROOT="${TMPDIR:-/tmp}/keen-pbr-sx-bun"
 TMP_BUILD_DIR="$(mktemp -d "${TMP_ROOT}.dist.XXXXXX")"
 trap 'rm -rf "$TMP_BUILD_DIR"' EXIT
 
@@ -59,4 +59,4 @@ rm -rf "$OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 cp -a "$TMP_BUILD_DIR"/. "$OUTPUT_DIR"/
 # Lets ensure-frontend-dist.sh tell bundles of different platforms apart.
-printf '%s\n' "$PLATFORM" >"$OUTPUT_DIR/.keen-pbr-platform"
+printf '%s\n' "$PLATFORM" >"$OUTPUT_DIR/.keen-pbr-sx-platform"
